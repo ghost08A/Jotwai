@@ -1,0 +1,85 @@
+# =========================
+# Operating System & IDEs
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.bak
+*.swp
+*~
+
+# Visual Studio / Visual Studio Code / Rider
+.vs/
+.idea/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# =========================
+# Node / Frontend (client)
+# =========================
+node_modules/
+*/node_modules/
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.turbo/
+*.tsbuildinfo
+
+# Node package manager logs & caches
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# =========================
+# .NET / C# (server)
+# =========================
+[Bb]in/
+[Oo]bj/
+**/bin/
+**/obj/
+[Tt]est[Rr]esults/
+**/[Tt]est[Rr]esults/
+*.DotSettings.user
+*.pidb
+*.booproj
+*.pidb
+*.sln.docstates
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.assets.json
+
+# =========================
+# Environment & Secrets
+# =========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+!*.env.example
+
+# Logs
+*.log
+logs/
+**/logs/
