@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Jotwai.Domain/Jotwai.Domain.csproj" />
+  <Project Path="Jotwai.IntegrationTests/Jotwai.IntegrationTests.csproj" />
+  <Project Path="Jotwai.Service/Jotwai.Service.csproj" />
+  <Project Path="Web.Jotwai/Web.Jotwai.csproj" />
+</Solution>

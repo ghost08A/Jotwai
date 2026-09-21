@@ -10,12 +10,12 @@ Before working in this repo, read:
 ## Repo layout
 
 - `client/` — React + TypeScript + Vite SPA
-- `server/` — ASP.NET Core modular monolith (Notes, Organization, AI Categorization, Search, Identity modules)
+- `backend/` — ASP.NET Core modular monolith, global 3-tier (`Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai`) per ADR-0010. Modules (Notes, Organization, AI Categorization, Search, Identity) live inside these three projects as internal features, not separate projects.
 - `docs/adr/` — architecture decision records
 
 ## Ground rules
 
-- Modules in `server/` communicate only via in-process Domain Events — never direct calls or cross-schema queries between modules (see ADR 0001–0003).
+- Modules in `backend/` communicate only via in-process Domain Events, by convention — never direct calls or cross-schema queries between modules (see ADR 0001–0003, ADR-0010). Each Module still keeps its own `DbContext` scoped to its own schema inside `Jotwai.Service`, even though the project split is global.
 - Note content is Markdown; the editor (Tiptap) is a view over that, not the source of truth.
 - Don't add real-time/push infrastructure, semantic search, note sharing, or version history without checking with the user first — these are explicit non-goals for the current scope (see ARCHITECTURE.md).
 

@@ -10,7 +10,7 @@ Jotwai is a "capture first, organize later" note-taking app: React SPA client, A
 
 Single monorepo:
 - `client/` — React SPA
-- `server/` — ASP.NET Core modular monolith
+- `backend/` — ASP.NET Core modular monolith (`Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai`, `Jotwai.sln`)
 - `docs/adr/` — architecture decision records
 - `GLOSSARY.md`, `ARCHITECTURE.md`, `CLAUDE.md` — project-level docs
 
@@ -24,9 +24,19 @@ Single monorepo:
 | **Search** | `search` schema | Cross-cutting search over content/Topic/Category, via its own read model |
 | **Identity** | `identity` schema | Accounts, login, sessions |
 
+### Backend project structure (global 3-tier)
+
+Per company standard (matching the existing Loyalty-Merchant convention), the backend is **one global** Domain → Service → Web layering, not one set per Module (ADR-0010, superseding ADR-0009):
+
+- **`Jotwai.Domain`** — no project dependencies. Entities/models, enums, request models, view models, validation models, and interfaces for *all* Modules, organized by technical-layer folder (`Models/`, `Enums/`, `Interfaces/`, `RequestModels/`, `ValidateModel/`, `ViewModels/`) — not per-Module subfolders.
+- **`Jotwai.Service`** — references `Jotwai.Domain` only. Business logic (`ImplementServices/`), helpers (`Helper/`), and each Module's own `DbContext` + EF Core configurations.
+- **`Web.Jotwai`** — references both `Jotwai.Service` and `Jotwai.Domain`. Controllers, `Program.cs`, middleware/configuration, `ExceptionHandler.cs`.
+
+Modules (Identity, and later Notes/Organization/AI Categorization/Search) live inside these three projects as internal features, not as separate project pairs. The module boundary is enforced by folder discipline, code review, and the event-communication convention below — not by the compiler.
+
 ### Module communication
 
-Modules never call each other's code or query each other's schema directly. They communicate exclusively through **Domain Events**, published in-process via a mediator (MediatR-style) when a Module's own state changes — e.g. `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `TopicRenamed`, `CategoryCreated`, `CategoryRenamed`, `CategoryDeleted`.
+Modules never call each other's code or query each other's schema directly, by convention. They communicate through **Domain Events**, published in-process via a mediator (MediatR-style) when a Module's own state changes — e.g. `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `TopicRenamed`, `CategoryCreated`, `CategoryRenamed`, `CategoryDeleted`. Event types and handler wiring both live in the shared `Jotwai.Domain`/`Jotwai.Service` projects (ADR-0010) — there's no cross-project reference problem to solve, since it's one project, but nothing prevents a direct cross-Module call either beyond code review.
 
 ### Cross-module reads: Read Models, not joins
 
@@ -34,7 +44,7 @@ If a Module needs data owned by another Module (Search needs Note content and To
 
 ### Database
 
-One PostgreSQL database, **schema-per-module** (`notes`, `organization`, `ai_categorization`, `search`, `identity`). Each Module has its own EF Core `DbContext` scoped to its own schema.
+One PostgreSQL database, **schema-per-module** (`notes`, `organization`, `ai_categorization`, `search`, `identity`). Each Module has its own EF Core `DbContext` scoped to its own schema (e.g. `IdentityDbContext`); all these `DbContext`s live inside the shared `Jotwai.Service` project (ADR-0010) — no shared `AppDbContext`.
 
 ### AI Categorization flow
 

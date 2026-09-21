@@ -8,7 +8,7 @@ The modules need to persist data, and some modules need data owned by another mo
 
 ## Decision
 - Use a single **PostgreSQL** database (free, cross-platform, first-class EF Core support, works well in Docker for local dev).
-- Give each Module its own **schema** (`notes`, `organization`, `ai_categorization`, `search`, `identity`), accessed only through that Module's own EF Core `DbContext`.
+- Give each Module its own **schema** (`notes`, `organization`, `ai_categorization`, `search`, `identity`), accessed only through that Module's own EF Core `DbContext` (e.g. `IdentityDbContext`). These per-Module `DbContext`s all live inside the single `Jotwai.Service` project (ADR-0010), not in per-Module projects — the schema/`DbContext` split is deliberately preserved as the one hard boundary even after the project-level split was reverted.
 - A Module that needs another Module's data maintains its **own denormalized read model**, kept current by subscribing to that Module's Domain Events (ADR 0002) — e.g. Search's read model is updated on `NoteCreated`/`NoteUpdated`/`TopicRenamed`/`CategoryRenamed`. No Module ever issues a SQL join across another Module's schema.
 
 ## Consequences

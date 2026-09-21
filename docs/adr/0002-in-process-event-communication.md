@@ -7,7 +7,7 @@ Accepted
 Given the modular monolith (ADR 0001), Modules still need to react to each other — e.g. AI Categorization needs to know when a Note is created; Search needs to know when Note content or Topic/Category names change. Direct in-process method calls between Modules would work today but silently couples them, defeating the point of drawing boundaries.
 
 ## Decision
-Modules communicate exclusively through in-process Domain Events, published via a mediator (MediatR-style) when a Module's own state changes: `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `TopicRenamed`, `CategoryCreated`, `CategoryRenamed`, `CategoryDeleted`, etc. No Module holds a direct reference to another Module's services or repositories.
+Modules communicate exclusively through in-process Domain Events, published via a mediator (MediatR-style) when a Module's own state changes: `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `TopicRenamed`, `CategoryCreated`, `CategoryRenamed`, `CategoryDeleted`, etc. No Module holds a direct reference to another Module's services or repositories — this is a **convention enforced by code review**, not a project boundary (per ADR-0010, all Modules live inside the same `Jotwai.Domain`/`Jotwai.Service` projects, so nothing stops a direct reference at compile time).
 
 ## Consequences
 - A Module can be developed, tested, and reasoned about without knowing which other Modules subscribe to its events.

@@ -19,5 +19,5 @@ Each Module owns its own database schema and communicates with other Modules onl
 
 ## Consequences
 - No inter-service network calls, no distributed transactions, no service mesh/orchestration to operate for MVP.
-- The module boundaries (schema ownership + event-only communication) are deliberately the same shape a real microservice boundary would have, so extracting a Module later is a deployment change, not a redesign.
-- Discipline is required: nothing prevents a developer from reaching across a Module boundary in code except code review and the schema-per-module DB constraint (ADR 0003).
+- The module boundaries (schema ownership + event-only communication) are deliberately the same shape a real microservice boundary would have, keeping a future extraction well-scoped even though it won't be a pure deployment change (see ADR-0010: the backend uses one global set of projects, not one per Module, so extracting a Module later means carving its code out of shared projects — a real, if bounded, redesign).
+- Discipline is required: nothing prevents a developer from reaching across a Module boundary in code except code review and the schema-per-module DB constraint (ADR 0003) — there is no project-level boundary either (ADR-0010).
