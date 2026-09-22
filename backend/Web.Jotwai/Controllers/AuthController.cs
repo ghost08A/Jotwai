@@ -1,6 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Jotwai.Domain.Interfaces;
 using Jotwai.Domain.RequestModels;
 using Jotwai.Domain.ValidateModel;
+using Jotwai.Domain.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Web.Jotwai.Controllers;
@@ -44,6 +48,24 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     {
         await authService.LogoutAsync(request, cancellationToken);
         return NoContent();
+    }
+
+    // Establishes the Identity Module's auth contract: every future feature (Notes,
+    // Organization, AI Categorization, Search) identifies the current user the same
+    // way - a valid Bearer access token, its "sub" claim as the user ID.
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        var subject = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        // [Authorize] already guarantees a valid, signed token; this only guards against
+        // a "sub" claim that isn't a Guid, so a future token-format change fails closed
+        // (401) instead of crashing the request (500).
+        if (!Guid.TryParse(subject, out var userId))
+            return Unauthorized();
+
+        return Ok(new CurrentUserResponse { UserId = userId });
     }
 
     private IActionResult MapFailure(AuthResult result) => result.FailureReason switch

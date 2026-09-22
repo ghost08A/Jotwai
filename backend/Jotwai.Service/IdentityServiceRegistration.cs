@@ -1,10 +1,14 @@
+using System.Text;
 using Jotwai.Domain.Interfaces;
 using Jotwai.Domain.Models;
 using Jotwai.Service.ImplementServices;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Jotwai.Service;
 
@@ -23,10 +27,39 @@ public static class IdentityServiceRegistration
             options.UseNpgsql(connectionString, npgsql =>
                 npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "identity")));
 
-        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+        var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>()
+            ?? throw new InvalidOperationException("Missing 'Jwt' configuration section.");
+
+        // Bound once here, not also via services.Configure<JwtOptions>(...): that would be
+        // a second, independent binding of the same section for the same IOptions<JwtOptions>
+        // consumers (TokenService, tests) to stay in sync with.
+        services.AddSingleton(Options.Create(jwtOptions));
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
+
+        // The Identity Module's public auth contract (see AuthController.Me), wired once
+        // here for the whole API.
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                // Keep claim types as issued ("sub", not the default-remapped
+                // ClaimTypes.NameIdentifier) so callers can read JwtRegisteredClaimNames.Sub
+                // directly off User, matching what TokenService actually puts in the token.
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.Zero,
+                };
+            });
+        services.AddAuthorization();
 
         return services;
     }
