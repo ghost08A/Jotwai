@@ -40,9 +40,12 @@ public sealed class TokenService(IOptions<JwtOptions> options) : ITokenService
     public RefreshTokenIssuance GenerateRefreshToken()
     {
         var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
+        var tokenHash = HashRefreshToken(rawToken);
         var expiresAt = DateTimeOffset.UtcNow.AddDays(_options.RefreshTokenDays);
 
         return new RefreshTokenIssuance(rawToken, tokenHash, expiresAt);
     }
+
+    public string HashRefreshToken(string rawToken) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
 }

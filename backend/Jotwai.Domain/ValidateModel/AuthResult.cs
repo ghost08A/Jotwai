@@ -7,6 +7,7 @@ public enum AuthFailureReason
     EmailAlreadyRegistered,
     PasswordPolicyViolation,
     InvalidCredentials,
+    InvalidRefreshToken,
 }
 
 public sealed class AuthResult

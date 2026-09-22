@@ -29,11 +29,22 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
             : MapFailure(result);
     }
 
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(RefreshTokenRequest request, CancellationToken cancellationToken)
+    {
+        var result = await authService.RefreshAsync(request, cancellationToken);
+
+        return result.Succeeded
+            ? Ok(result.Tokens)
+            : MapFailure(result);
+    }
+
     private IActionResult MapFailure(AuthResult result) => result.FailureReason switch
     {
         AuthFailureReason.EmailAlreadyRegistered => Conflict(new { error = result.Error }),
         AuthFailureReason.PasswordPolicyViolation => BadRequest(new { error = result.Error }),
         AuthFailureReason.InvalidCredentials => Unauthorized(new { error = result.Error }),
+        AuthFailureReason.InvalidRefreshToken => Unauthorized(new { error = result.Error }),
         _ => StatusCode(StatusCodes.Status500InternalServerError),
     };
 }

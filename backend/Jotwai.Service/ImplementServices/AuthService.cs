@@ -82,6 +82,32 @@ public sealed class AuthService(
         return AuthResult.Success(tokens);
     }
 
+    public async Task<AuthResult> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = tokenService.HashRefreshToken(request.RefreshToken);
+        var existing = await db.RefreshTokens.AsNoTracking().SingleOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
+
+        if (existing is null || existing.Revoked || existing.ExpiresAt <= DateTimeOffset.UtcNow)
+            return AuthResult.Failure(AuthFailureReason.InvalidRefreshToken, "Invalid or expired refresh token.");
+
+        // Atomic compare-and-swap at the database, not a tracked-entity write flushed later:
+        // only the first of any concurrent replay of this token can flip Revoked from false
+        // to true. A losing replay affects zero rows and is rejected outright.
+        var rotated = await db.RefreshTokens
+            .Where(t => t.Id == existing.Id && !t.Revoked)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.Revoked, true), cancellationToken);
+
+        if (rotated == 0)
+            return AuthResult.Failure(AuthFailureReason.InvalidRefreshToken, "Invalid or expired refresh token.");
+
+        var user = await db.Users.SingleAsync(u => u.Id == existing.UserId, cancellationToken);
+        var tokens = IssueTokens(user);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return AuthResult.Success(tokens);
+    }
+
     private TokenResponse IssueTokens(User user)
     {
         var accessToken = tokenService.GenerateAccessToken(user);

@@ -9,4 +9,6 @@ public interface ITokenService
     string GenerateAccessToken(User user);
 
     RefreshTokenIssuance GenerateRefreshToken();
+
+    string HashRefreshToken(string rawToken);
 }
