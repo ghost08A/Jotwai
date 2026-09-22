@@ -28,3 +28,7 @@ Issues live in GitHub Issues for ghost08A/Jotwai, using the `gh` CLI. See `docs/
 ### Domain docs
 
 Single-context layout: ARCHITECTURE.md, GLOSSARY.md, and docs/adr/ at the repo root. See `docs/agents/domain.md`.
+
+### Backend tickets
+
+Naming conventions, an over-engineering checklist, and a pre-done checklist for `backend/` work. See `docs/agents/backend.md`.

@@ -1,7 +1,7 @@
 # ADR 0005: ASP.NET Core Identity with JWT tokens
 
 ## Status
-Accepted
+Superseded by ADR-0011 (the "ASP.NET Core Identity" framing in the Decision below was narrower in practice than it reads; ADR-0011 corrects it). The JWT/refresh-token and Identity-Module-ownership decisions below are unchanged and still in effect.
 
 ## Context
 Jotwai needs accounts and login to support cross-device sync (a core product requirement) — notes must be reachable from any device the user logs into. The client is a separately-deployed SPA calling a JSON API (ADR 0007), which rules out cookie/session auth tied to server-rendered pages.
