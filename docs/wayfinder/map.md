@@ -38,6 +38,18 @@ Per-ADR audits found these behind the documented decision — left open as track
 - [ADR-0007 API-only backend, separate SPA deploy](tickets/016-audit-adr-0007.md) — API-only code shape is correct, but no CORS config and no deployment artifacts (Dockerfile/CI) exist yet to prove independent deployability.
 - [ADR-0008 frontend stack and editor](tickets/017-audit-adr-0008.md) — React/Vite/router/TanStack Query/Tailwind scaffolding exists; Tiptap, shadcn/ui-style components, axios usage, and all feature code are missing.
 
+## Open feature-implementation tickets (product spec decided, not yet built)
+
+Requirements v0.1's product spec (Note capture, Code Block, Topic, Category, AI Categorization, User Ownership, Search) is fully decided between the requirements doc, GLOSSARY.md, and this map's own decisions — but none of it exists in code yet, confirmed by grepping `backend/` and `client/src` for `Note`/`Topic`/`Category`/Tiptap (only Identity is built). Opened ahead of time as backlog, same convention as the ADR audit tickets above:
+
+- [Note capture & CRUD](tickets/020-feature-note-capture-crud.md) — create without Topic/Category, edit-overwrite, soft delete + Trash.
+- [Code Block with language metadata](tickets/021-feature-code-block.md) — blocked on the base editor (Tiptap, ADR-0008 audit ticket 017).
+- [Topic hierarchy](tickets/022-feature-topic-hierarchy.md) — nesting, sibling uniqueness, single-Topic-per-Note, non-empty delete guard.
+- [Category flat structure](tickets/023-feature-category-flat.md) — global uniqueness, multi-Category-per-Note.
+- [AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md) — background trigger, confidence threshold, atomic bulk-accept.
+- [User Ownership enforcement](tickets/025-feature-user-ownership.md) — cross-cutting invariant across Notes/Topic/Category/AI Categorization; blocked on all four landing.
+- [Search](tickets/026-feature-search.md) — content/Topic/Category substring search including code block bodies.
+
 ## Not yet specified
 
 - Whether "moving" a Note to a Topic includes inline-creating a not-yet-existing Topic in the same action, or requires the Topic to exist first (surfaced while narrowing the destination; not sharp enough to ticket yet).
