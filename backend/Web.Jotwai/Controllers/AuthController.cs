@@ -39,6 +39,13 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
             : MapFailure(result);
     }
 
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(RefreshTokenRequest request, CancellationToken cancellationToken)
+    {
+        await authService.LogoutAsync(request, cancellationToken);
+        return NoContent();
+    }
+
     private IActionResult MapFailure(AuthResult result) => result.FailureReason switch
     {
         AuthFailureReason.EmailAlreadyRegistered => Conflict(new { error = result.Error }),

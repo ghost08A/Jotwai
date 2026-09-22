@@ -93,9 +93,7 @@ public sealed class AuthService(
         // Atomic compare-and-swap at the database, not a tracked-entity write flushed later:
         // only the first of any concurrent replay of this token can flip Revoked from false
         // to true. A losing replay affects zero rows and is rejected outright.
-        var rotated = await db.RefreshTokens
-            .Where(t => t.Id == existing.Id && !t.Revoked)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.Revoked, true), cancellationToken);
+        var rotated = await RevokeIfNotAlreadyRevokedAsync(existing.Id, cancellationToken);
 
         if (rotated == 0)
             return AuthResult.Failure(AuthFailureReason.InvalidRefreshToken, "Invalid or expired refresh token.");
@@ -107,6 +105,25 @@ public sealed class AuthService(
 
         return AuthResult.Success(tokens);
     }
+
+    public async Task LogoutAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = tokenService.HashRefreshToken(request.RefreshToken);
+        var existing = await db.RefreshTokens.AsNoTracking().SingleOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
+
+        // Idempotent by construction: an unknown, already-revoked, or missing token
+        // just matches zero rows below, which is indistinguishable from a fresh revoke
+        // as far as the caller is concerned - logout never fails on its input.
+        if (existing is not null)
+            await RevokeIfNotAlreadyRevokedAsync(existing.Id, cancellationToken);
+    }
+
+    // Atomic compare-and-swap: flips Revoked from false to true for exactly one caller,
+    // even under concurrent replay of the same token. Returns rows affected (0 or 1).
+    private Task<int> RevokeIfNotAlreadyRevokedAsync(Guid refreshTokenId, CancellationToken cancellationToken) =>
+        db.RefreshTokens
+            .Where(t => t.Id == refreshTokenId && !t.Revoked)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.Revoked, true), cancellationToken);
 
     private TokenResponse IssueTokens(User user)
     {
