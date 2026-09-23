@@ -1,6 +1,6 @@
 ---
 id: 16
-title: "Audit implementation: ADR-0007 API-only backend, separately deployed static SPA"
+title: "ตรวจสอบการ implement: ADR-0007 API-only backend, separately deployed static SPA"
 type: wayfinder:research
 status: open
 assignee: null
@@ -11,12 +11,12 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/16
 
 ## Question
 
-Does the current codebase implement the decision recorded in `docs/adr/0007-deployment-topology.md`? Check Program.cs for static-file/SPA serving, controllers for pure-API shape, and any CI/CD/Dockerfile/docker-compose config showing separate deployability.
+โค้ดเบสปัจจุบัน implement การตัดสินใจที่บันทึกไว้ใน `docs/adr/0007-deployment-topology.md` หรือไม่? ตรวจสอบ Program.cs ว่ามีการ serve static-file/SPA หรือไม่, ตรวจสอบ controller ว่ามีรูปแบบเป็น pure-API หรือไม่, และตรวจสอบว่ามีการตั้งค่า CI/CD/Dockerfile/docker-compose ใดที่แสดงให้เห็นว่าสามารถ deploy แยกกันได้หรือไม่
 
-## Finding (partially implemented)
+## Finding (implement บางส่วนแล้ว)
 
-`Program.cs` has no `UseStaticFiles`/`UseSpaStaticFiles`/SPA-fallback wiring, and `AuthController` is a pure `[ApiController]` returning JSON — the "API-only, no SPA serving" half of the decision is honored. But no `.github/workflows/`, no `Dockerfile` anywhere, and `docker-compose.yml` only runs Postgres/pgAdmin — nothing demonstrates the two being independently deployed yet. No CORS configuration exists either, which the ADR calls out as a required consequence.
+`Program.cs` ไม่มีการเชื่อมต่อ `UseStaticFiles`/`UseSpaStaticFiles`/SPA-fallback ใดๆ และ `AuthController` เป็น `[ApiController]` แบบบริสุทธิ์ที่คืนค่า JSON — ครึ่งหนึ่งของการตัดสินใจที่ว่า "เป็น API เท่านั้น ไม่ serve SPA" นั้นได้รับการปฏิบัติตามแล้ว แต่ไม่มี `.github/workflows/`, ไม่มี `Dockerfile` อยู่ที่ไหนเลย และ `docker-compose.yml` รันเพียง Postgres/pgAdmin เท่านั้น — ยังไม่มีสิ่งใดแสดงให้เห็นว่าทั้งสองส่วนถูก deploy แยกกันอย่างเป็นอิสระ นอกจากนี้ยังไม่มีการตั้งค่า CORS ซึ่ง ADR ระบุว่าเป็นผลลัพธ์ที่จำเป็นด้วย
 
-**Missing**: deployment config (Dockerfile(s)/CI) actually showing SPA and API as separate artifacts, and CORS setup for the SPA's origin.
+**ขาด**: การตั้งค่า deployment (Dockerfile/CI) ที่แสดงให้เห็นจริงว่า SPA และ API เป็น artifact แยกกัน และการตั้งค่า CORS สำหรับ origin ของ SPA
 
-Left open — implementation debt, not a re-litigated decision.
+ยังคงเปิดไว้ — หนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่

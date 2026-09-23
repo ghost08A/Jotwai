@@ -1,15 +1,15 @@
-# ADR 0006: Postgres substring search, no external search engine
+# ADR 0006: ค้นหาแบบ substring ด้วย Postgres ไม่ใช้ search engine ภายนอก
 
-## Status
-Accepted
+## สถานะ
+ยอมรับแล้ว
 
-## Context
-The product requirement is explicit: case-insensitive substring match over Note content, Topic, and Category for MVP — no LLM semantic search, vector database, or embeddings (BR-014, BR-015, BR-016, and the "Search Scope — MVP" section of the requirements). Standing up Elasticsearch/Meilisearch for this would be infrastructure the requirement doesn't call for.
+## บริบท
+ข้อกำหนดของผลิตภัณฑ์ระบุไว้ชัดเจน: การจับคู่ substring แบบไม่สนตัวพิมพ์เล็กใหญ่ (case-insensitive) กับเนื้อหาของ Note, Topic และ Category สำหรับ MVP — ไม่มี semantic search ด้วย LLM, vector database หรือ embeddings (BR-014, BR-015, BR-016 และหัวข้อ "Search Scope — MVP" ในข้อกำหนด) การติดตั้ง Elasticsearch/Meilisearch สำหรับสิ่งนี้จะเป็นโครงสร้างพื้นฐานที่ข้อกำหนดไม่ได้เรียกร้อง
 
-## Decision
-Implement search as Postgres `ILIKE` substring queries against the Search Module's own read model (ADR 0003), backed by a `pg_trgm` trigram GIN index for acceptable performance at scale. Code block bodies count as searchable content; a code block's declared language is searchable metadata. Filtering by a parent Topic includes all descendant Topics.
+## การตัดสินใจ
+ทำการค้นหาด้วย Postgres `ILIKE` แบบ substring query กับ read model ของ Search Module เอง (ADR 0003) รองรับด้วย trigram GIN index จาก `pg_trgm` เพื่อประสิทธิภาพที่ยอมรับได้เมื่อข้อมูลขยายตัว เนื้อหาภายใน code block ถือเป็นเนื้อหาที่ค้นหาได้ ส่วนภาษาที่ประกาศไว้ของ code block ถือเป็น metadata ที่ค้นหาได้ การกรองตาม Topic แม่จะรวม Topic ลูกทั้งหมดด้วย
 
-## Consequences
-- No new infrastructure to run or operate.
-- Search quality is limited to substring matching — no ranking by relevance, no typo tolerance, no semantic understanding. This is an accepted MVP limitation, explicitly deferred as a future feature by the requirements.
-- If search needs change later (ranking, fuzzy match, semantic search), the read-model boundary (ADR 0003) means only the Search Module's internals change, not its event-driven inputs.
+## ผลที่ตามมา
+- ไม่มีโครงสร้างพื้นฐานใหม่ที่ต้องรันหรือดูแล
+- คุณภาพของการค้นหาจำกัดอยู่ที่การจับคู่แบบ substring — ไม่มีการจัดอันดับตามความเกี่ยวข้อง ไม่มีการยอมรับการพิมพ์ผิด ไม่มีความเข้าใจเชิงความหมาย นี่เป็นข้อจำกัดที่ยอมรับได้สำหรับ MVP และถูกเลื่อนออกไปเป็นฟีเจอร์ในอนาคตตามข้อกำหนดอย่างชัดเจน
+- หากในอนาคตต้องการเปลี่ยนแปลงการค้นหา (การจัดอันดับ, fuzzy match, semantic search) ขอบเขตของ read model (ADR 0003) หมายความว่าจะมีเพียงส่วนภายในของ Search Module ที่เปลี่ยนแปลง ไม่ใช่ input ที่ขับเคลื่อนด้วย event ของมัน

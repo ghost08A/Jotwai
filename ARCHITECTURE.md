@@ -1,99 +1,99 @@
 # Jotwai Architecture
 
-See `GLOSSARY.md` for domain terms used below, and `docs/adr/` for the reasoning behind each decision.
+ดู `GLOSSARY.md` สำหรับคำศัพท์ domain ที่ใช้ด้านล่าง และ `docs/adr/` สำหรับเหตุผลเบื้องหลังการตัดสินใจแต่ละอย่าง
 
 ## Overview
 
-Jotwai is a "capture first, organize later" note-taking app: React SPA client, ASP.NET Core backend, PostgreSQL storage. The backend is a **Modular Monolith** — one deployable, five internally-bounded Modules — not a true microservices system yet. Each Module is designed to be extractable into its own service later without a rewrite.
+Jotwai เป็นแอปจดโน้ตแบบ "จดก่อน จัดทีหลัง": React SPA client, ASP.NET Core backend, เก็บข้อมูลใน PostgreSQL Backend เป็น **Modular Monolith** — deploy เป็นชิ้นเดียว แต่แบ่งเป็น 5 Module ที่มีขอบเขตชัดเจนภายใน ยังไม่ใช่ true microservices แต่ละ Module ถูกออกแบบให้สามารถแยกออกเป็น service ของตัวเองในอนาคตได้โดยไม่ต้อง rewrite
 
 ## Repository layout
 
-Single monorepo:
+Monorepo เดียว:
 - `client/` — React SPA
 - `backend/` — ASP.NET Core modular monolith (`Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai`, `Jotwai.sln`)
 - `docs/adr/` — architecture decision records
-- `GLOSSARY.md`, `ARCHITECTURE.md`, `CLAUDE.md` — project-level docs
+- `GLOSSARY.md`, `ARCHITECTURE.md`, `CLAUDE.md` — เอกสารระดับ project
 
 ## Backend modules
 
-| Module | Owns | Responsibilities |
+| Module | เป็นเจ้าของ | หน้าที่รับผิดชอบ |
 |---|---|---|
-| **Notes** | `notes` schema | Note CRUD, Markdown content, soft delete |
-| **Organization** | `organization` schema | Topics (hierarchy), Categories (flat), naming rules |
-| **AI Categorization** | `ai_categorization` schema | Background suggestion generation, suggestion state, outbox |
-| **Search** | `search` schema | Cross-cutting search over content/Topic/Category, via its own read model |
-| **Identity** | `identity` schema | Accounts, login, sessions |
+| **Notes** | schema `notes` | Note CRUD, เนื้อหา Markdown, soft delete |
+| **Organization** | schema `organization` | Topics (แบบลำดับชั้น), Categories (แบบแบน), กฎการตั้งชื่อ |
+| **AI Categorization** | schema `ai_categorization` | สร้าง Suggestion แบบ background, สถานะของ suggestion, outbox |
+| **Search** | schema `search` | Search แบบ cross-cutting ครอบคลุมเนื้อหา/Topic/Category ผ่าน read model ของตัวเอง |
+| **Identity** | schema `identity` | Account, login, session |
 
 ### Backend project structure (global 3-tier)
 
-Per company standard (matching the existing Loyalty-Merchant convention), the backend is **one global** Domain → Service → Web layering, not one set per Module (ADR-0010, superseding ADR-0009):
+ตามมาตรฐานของบริษัท (ตาม convention เดิมของ Loyalty-Merchant) backend ใช้ layering แบบ Domain → Service → Web **เดียวทั้งระบบ** (global) ไม่ใช่แยกชุดต่อ Module (ADR-0010 แทนที่ ADR-0009):
 
-- **`Jotwai.Domain`** — no project dependencies. Entities/models, enums, request models, view models, validation models, and interfaces for *all* Modules, organized by technical-layer folder (`Models/`, `Enums/`, `Interfaces/`, `RequestModels/`, `ValidateModel/`, `ViewModels/`) — not per-Module subfolders.
-- **`Jotwai.Service`** — references `Jotwai.Domain` only. Business logic (`ImplementServices/`), helpers (`Helper/`), and each Module's own `DbContext` + EF Core configurations.
-- **`Web.Jotwai`** — references both `Jotwai.Service` and `Jotwai.Domain`. Controllers, `Program.cs`, middleware/configuration, `ExceptionHandler.cs`.
+- **`Jotwai.Domain`** — ไม่ reference project อื่นเลย มี entity/model, enum, request model, view model, validation model และ interface ของ**ทุก** Module จัดเรียงตามโฟลเดอร์ระดับ technical layer (`Models/`, `Enums/`, `Interfaces/`, `RequestModels/`, `ValidateModel/`, `ViewModels/`) — ไม่ใช่แยกโฟลเดอร์ตาม Module
+- **`Jotwai.Service`** — reference `Jotwai.Domain` เท่านั้น มี business logic (`ImplementServices/`), helper (`Helper/`) และ `DbContext` + EF Core configuration ของแต่ละ Module
+- **`Web.Jotwai`** — reference ทั้ง `Jotwai.Service` และ `Jotwai.Domain` มี Controller, `Program.cs`, middleware/configuration, `ExceptionHandler.cs`
 
-Modules (Identity, and later Notes/Organization/AI Categorization/Search) live inside these three projects as internal features, not as separate project pairs. The module boundary is enforced by folder discipline, code review, and the event-communication convention below — not by the compiler.
+Module (Identity และต่อไปคือ Notes/Organization/AI Categorization/Search) อยู่ภายใน 3 project นี้ในฐานะ feature ภายใน ไม่ใช่คู่ project แยกกัน ขอบเขตของ Module ถูกบังคับด้วยวินัยเรื่องโฟลเดอร์, code review และ convention การสื่อสารผ่าน event ด้านล่าง — ไม่ใช่ด้วย compiler
 
 ### Module communication
 
-Modules never call each other's code or query each other's schema directly, by convention. They communicate through **Domain Events**, published in-process via a mediator (MediatR-style) when a Module's own state changes — e.g. `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `TopicRenamed`, `CategoryCreated`, `CategoryRenamed`, `CategoryDeleted`. Event types and handler wiring both live in the shared `Jotwai.Domain`/`Jotwai.Service` projects (ADR-0010) — there's no cross-project reference problem to solve, since it's one project, but nothing prevents a direct cross-Module call either beyond code review.
+Module ไม่เรียกโค้ดของกันหรือ query schema ของกันโดยตรง ตาม convention พวกมันสื่อสารกันผ่าน **Domain Events** ที่ publish แบบ in-process ผ่าน mediator (สไตล์ MediatR) เมื่อ state ของ Module เจ้าของเปลี่ยน — เช่น `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `TopicRenamed`, `CategoryCreated`, `CategoryRenamed`, `CategoryDeleted` Event type และการ wire handler ทั้งคู่อยู่ใน `Jotwai.Domain`/`Jotwai.Service` ที่ใช้ร่วมกัน (ADR-0010) — ไม่มีปัญหาเรื่อง cross-project reference ต้องแก้เพราะเป็น project เดียว แต่ก็ไม่มีอะไรกันไม่ให้เรียกข้าม Module โดยตรงนอกจาก code review
 
-### Cross-module reads: Read Models, not joins
+### Cross-module reads: Read Model ไม่ใช่ join
 
-If a Module needs data owned by another Module (Search needs Note content and Topic/Category names; AI Categorization needs the current Category list), it keeps its **own denormalized Read Model**, kept current by subscribing to the relevant Domain Events. No Module issues a SQL join across another Module's schema, even though physically they share one PostgreSQL database. This is what keeps the boundary real and extraction-ready.
+ถ้า Module หนึ่งต้องการข้อมูลที่ Module อื่นเป็นเจ้าของ (Search ต้องการเนื้อหา Note และชื่อ Topic/Category; AI Categorization ต้องการ Category list ปัจจุบัน) มันจะเก็บ **Read Model ของตัวเองแบบ denormalized** ที่อัปเดตให้ทันสมัยด้วยการ subscribe Domain Events ที่เกี่ยวข้อง ไม่มี Module ไหน join SQL ข้าม schema ของ Module อื่น แม้ในทางกายภาพทุก Module จะแชร์ PostgreSQL database เดียวกันก็ตาม นี่คือสิ่งที่ทำให้ขอบเขตนี้เป็นของจริงและพร้อมสำหรับการแยกในอนาคต
 
 ### Database
 
-One PostgreSQL database, **schema-per-module** (`notes`, `organization`, `ai_categorization`, `search`, `identity`). Each Module has its own EF Core `DbContext` scoped to its own schema (e.g. `IdentityDbContext`); all these `DbContext`s live inside the shared `Jotwai.Service` project (ADR-0010) — no shared `AppDbContext`.
+PostgreSQL database เดียว แบ่งแบบ **schema-per-module** (`notes`, `organization`, `ai_categorization`, `search`, `identity`) แต่ละ Module มี EF Core `DbContext` ของตัวเองผูกกับ schema ของตัวเอง (เช่น `IdentityDbContext`); `DbContext` เหล่านี้ทั้งหมดอยู่ใน project `Jotwai.Service` ที่ใช้ร่วมกัน (ADR-0010) — ไม่มี `AppDbContext` ที่ใช้ร่วมกัน
 
 ### AI Categorization flow
 
-1. Notes Module saves a new Note, publishes `NoteCreated`.
-2. AI Categorization Module writes an **outbox** row transactionally in response (durable — survives a restart).
-3. A `BackgroundService` polls the outbox, calls the AI provider, and produces a ranked Suggestion (candidate Categories, possibly including a brand-new name).
-4. Suggestion state is exposed to the client as a non-real-time in-app indicator — the user sees it next time they view the Note or open the app, no push/websocket infrastructure.
-5. User acts (accepts any subset / edits / ignores) — this resolves the suggestion set; unaccepted candidates are discarded, not left pending.
-6. Per **User Ownership**: this flow runs exactly once automatically, on first save with content. Editing a Note never re-triggers it. The user can manually re-invoke a "Suggest Category" action at any time.
+1. Notes Module บันทึก Note ใหม่ แล้ว publish `NoteCreated`
+2. AI Categorization Module เขียนแถว **outbox** แบบ transactional เพื่อตอบสนอง (durable — รอดจากการ restart)
+3. `BackgroundService` poll outbox แล้วเรียก AI provider เพื่อสร้าง Suggestion แบบจัดอันดับ (Category ที่เป็นตัวเลือก อาจรวมถึงชื่อใหม่ที่ยังไม่เคยมี)
+4. สถานะของ Suggestion แสดงให้ client เห็นเป็น indicator ในแอปแบบไม่ real-time — ผู้ใช้จะเห็นในครั้งถัดไปที่เปิดดู Note หรือเปิดแอป ไม่มี push/websocket infrastructure
+5. ผู้ใช้ดำเนินการ (accept บางส่วน / แก้ไข / เพิกเฉย) — สิ่งนี้ resolve ชุด suggestion; candidate ที่ไม่ได้ถูก accept จะถูกทิ้ง ไม่ใช่ค้างไว้
+6. ตามกฎ **User Ownership**: flow นี้ทำงานแค่ครั้งเดียวโดยอัตโนมัติ ตอน save ครั้งแรกที่มีเนื้อหา การแก้ไข Note จะไม่ trigger ซ้ำ ผู้ใช้สามารถเรียก action "Suggest Category" ด้วยตัวเองได้ทุกเมื่อ
 
-**AI provider**: Google Gemini (2.5 Flash-Lite tier) — a lightweight classification task doesn't need a large/expensive model. The provider sits behind an interface inside the AI Categorization Module so it's swappable via config.
+**AI provider**: Google Gemini (tier 2.5 Flash-Lite) — งาน classification ที่เบาแบบนี้ไม่จำเป็นต้องใช้โมเดลใหญ่/แพง Provider อยู่หลัง interface ภายใน AI Categorization Module เพื่อให้สลับได้ผ่าน config
 
 ### Search implementation
 
-Postgres `ILIKE` substring queries against the Search Module's own read model, backed by a `pg_trgm` trigram GIN index for performance. No external search engine, no semantic/vector search — matches the explicit MVP scope decision. Filtering by a parent Topic includes all descendant Topics.
+ใช้ query แบบ Postgres `ILIKE` substring กับ read model ของ Search Module เอง หนุนหลังด้วย trigram GIN index จาก `pg_trgm` เพื่อ performance ไม่มี search engine ภายนอก ไม่มี semantic/vector search ตรงตาม MVP scope ที่ตัดสินใจไว้ชัดเจน การ filter ตาม Topic แม่จะรวม Topic ลูกทั้งหมดด้วย
 
 ### Auth
 
-ASP.NET Core Identity (email/password for MVP, OAuth as a fast-follow) issuing JWT access + refresh tokens. The SPA attaches the access token to API calls.
+ASP.NET Core Identity (email/password สำหรับ MVP, OAuth เป็น fast-follow) ออก JWT access + refresh token SPA แนบ access token ไปกับการเรียก API
 
 ### Background jobs
 
-In-process `BackgroundService` consuming the outbox table described above. No external message broker (RabbitMQ/Azure Service Bus) for MVP — this is the seam where one would be introduced if AI Categorization is ever extracted into its own service.
+`BackgroundService` แบบ in-process ที่ consume ตาราง outbox ที่อธิบายไว้ข้างบน ไม่มี external message broker (RabbitMQ/Azure Service Bus) สำหรับ MVP — นี่คือจุดที่จะใส่ message broker ถ้า AI Categorization ถูกแยกออกเป็น service ของตัวเองในอนาคต
 
 ## Frontend
 
 - **React + TypeScript + Vite**
-- **react-router-dom** for routing
-- **TanStack Query** for server state (fetching/caching Notes, Topics, Categories)
-- **axios** for HTTP calls to the API
-- No dedicated client-state library — `useState`/Context handles UI-only state (active filters, editor draft, sidebar state)
-- **Tailwind CSS** + shadcn/ui-style headless components for styling
-- **Tiptap** (ProseMirror) as the Note editor, serializing to/from Markdown — gives WYSIWYG bullet/numbered lists and a code-block language picker while the canonical storage stays plain Markdown
+- **react-router-dom** สำหรับ routing
+- **TanStack Query** สำหรับ server state (fetch/cache Notes, Topics, Categories)
+- **axios** สำหรับเรียก HTTP ไปยัง API
+- ไม่มี client-state library เฉพาะ — `useState`/Context จัดการ UI-only state (filter ที่ใช้งาน, draft ของ editor, สถานะ sidebar)
+- **Tailwind CSS** + headless component สไตล์ shadcn/ui สำหรับ styling
+- **Tiptap** (ProseMirror) เป็น editor ของ Note, serialize ไป/กลับเป็น Markdown — ให้ bullet/numbered list แบบ WYSIWYG และตัวเลือกภาษาของ code block ในขณะที่ที่เก็บข้อมูลจริงยังเป็น Markdown ธรรมดา
 
-Navigation model: a default "All Notes" feed (sorted by most-recently-updated, infinite scroll) with a Topic tree and Category filter as persistent side navigation; search is layered on top, not the only way to find a Note.
+Navigation model: feed "All Notes" เป็นค่าเริ่มต้น (เรียงตามอัปเดตล่าสุด, infinite scroll) พร้อม Topic tree และตัวกรอง Category เป็น side navigation แบบถาวร; search เป็น layer เสริมด้านบน ไม่ใช่วิธีเดียวในการหา Note
 
 ## Deployment topology
 
-The ASP.NET Core backend serves **only the JSON API**. The React SPA is built and deployed as a **separate static artifact** (static hosting/CDN), calling the API over HTTP. They are independently deployable and scalable.
+ASP.NET Core backend เสิร์ฟ**เฉพาะ** JSON API React SPA ถูก build และ deploy เป็น **artifact แบบ static แยกต่างหาก** (static hosting/CDN) เรียก API ผ่าน HTTP ทั้งสองส่วน deploy และ scale ได้อย่างอิสระจากกัน
 
 ## Local development
 
-`docker-compose.yml` at the repo root runs **PostgreSQL only**. The API runs natively via `dotnet watch`; the client runs natively via `vite dev`. App processes are not containerized for local dev — only the database, to keep the inner loop fast.
+`docker-compose.yml` ที่ root รัน **เฉพาะ PostgreSQL** API รันแบบ native ผ่าน `dotnet watch`; client รันแบบ native ผ่าน `vite dev` App process ไม่ถูก containerize สำหรับ dev ในเครื่อง — มีแค่ database ที่ถูก containerize เพื่อให้ inner loop เร็ว
 
 ## Explicit non-goals for MVP
 
-- No LLM semantic/vector search
-- No real-time push notifications (websockets) for AI suggestions
-- No note sharing/collaboration between accounts
-- No note version history
-- No image/file attachments in Notes
-- No true separate microservices deployment (that's a possible future extraction, not the MVP)
+- ไม่มี LLM semantic/vector search
+- ไม่มี real-time push notification (websocket) สำหรับ AI suggestion
+- ไม่มีการแชร์/ทำงานร่วมกันของ note ระหว่าง account
+- ไม่มี version history ของ note
+- ไม่มีการแนบไฟล์/รูปภาพใน Note
+- ไม่มี true microservices deployment แยกจริง (เป็น extraction ที่เป็นไปได้ในอนาคต ไม่ใช่ MVP)

@@ -1,6 +1,6 @@
 ---
 id: 12
-title: "Audit implementation: ADR-0002 In-process event/mediator communication between modules"
+title: "ตรวจสอบการ implement: ADR-0002 In-process event/mediator communication between modules"
 type: wayfinder:research
 status: open
 assignee: null
@@ -11,12 +11,12 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/12
 
 ## Question
 
-Does the current codebase implement the decision recorded in `docs/adr/0002-in-process-event-communication.md`? Search for a mediator/MediatR dependency or hand-rolled equivalent, any domain event types/classes, any event handlers, any pub/sub wiring in Program.cs or DI setup.
+โค้ดเบสปัจจุบัน implement การตัดสินใจที่บันทึกไว้ใน `docs/adr/0002-in-process-event-communication.md` หรือไม่? ค้นหา dependency ของ mediator/MediatR หรือสิ่งที่เขียนขึ้นเองในลักษณะเดียวกัน, ชนิด/คลาสของ domain event ใดๆ, event handler ใดๆ, และการเชื่อมต่อ pub/sub ใน Program.cs หรือ DI setup
 
-## Finding (not implemented)
+## Finding (ยังไม่ได้ implement)
 
-No mediator package (MediatR or otherwise) is referenced in any `.csproj` — `Jotwai.Domain.csproj` has zero package references, `Jotwai.Service.csproj` only references EF Core/Npgsql/Identity/JWT packages. Grepping `backend/` for `MediatR`, `IEventHandler`, `IDomainEvent`, `INotification`, `DomainEvent`, and the specific event names from ARCHITECTURE.md (`NoteCreated`, `TopicRenamed`, `CategoryCreated`/`Renamed`/`Deleted`) returns nothing.
+ไม่มี package ของ mediator (MediatR หรืออื่นใด) ถูกอ้างอิงใน `.csproj` ไฟล์ใดเลย — `Jotwai.Domain.csproj` ไม่มีการอ้างอิง package ใดๆ, `Jotwai.Service.csproj` อ้างอิงเฉพาะ package ของ EF Core/Npgsql/Identity/JWT เท่านั้น การ grep หา `MediatR`, `IEventHandler`, `IDomainEvent`, `INotification`, `DomainEvent`, และชื่อ event เฉพาะจาก ARCHITECTURE.md (`NoteCreated`, `TopicRenamed`, `CategoryCreated`/`Renamed`/`Deleted`) ทั่ว `backend/` ไม่พบผลลัพธ์ใดๆ
 
-**Missing**: everything — a mediator dependency, the Domain Event types themselves, event handlers, and DI/pub-sub registration in `Program.cs`. No scaffolding exists yet; this needs to be introduced from scratch when the Notes module lands.
+**ขาด**: ทุกอย่าง — dependency ของ mediator, ชนิด Domain Event เอง, event handler, และการลงทะเบียน DI/pub-sub ใน `Program.cs` ยังไม่มีโครงสร้างพื้นฐานใดๆ อยู่เลย ต้องสร้างขึ้นใหม่ทั้งหมดเมื่อ module Notes เสร็จสมบูรณ์
 
-Left open — implementation debt, not a re-litigated decision.
+ยังคงเปิดไว้ — หนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่

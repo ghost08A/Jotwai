@@ -1,43 +1,43 @@
 # Jotwai Domain Glossary
 
-Shared vocabulary for the product domain and the architecture. Use these exact terms in code, comments, commits, and specs — don't invent synonyms.
+คำศัพท์ที่ใช้ร่วมกันสำหรับ product domain และ architecture ใช้คำเหล่านี้เป๊ะๆ ในโค้ด, comment, commit และ spec — ห้ามคิดคำพ้องความหมายขึ้นเอง (คำศัพท์เอง — ตัวหนา — ให้คงเป็นภาษาอังกฤษเสมอ เพราะตรงกับชื่อ class/identifier ในโค้ด)
 
 ## Product domain
 
 **Note**
-The core unit of capture. Freeform content (plain text, bulleted list, numbered list, code blocks) stored as Markdown. Can exist with no Topic and no Category. Soft-deletable. No version history — edits overwrite.
+หน่วยพื้นฐานของการจดบันทึก เนื้อหาอิสระ (plain text, bulleted list, numbered list, code block) เก็บเป็น Markdown สามารถมีอยู่ได้โดยไม่มี Topic และไม่มี Category Soft-deletable ไม่มี version history — การแก้ไขจะ overwrite ทับของเดิม
 
 **Topic**
-A hierarchical classification a Note can optionally belong to. A Note belongs to at most one Topic. Topics can have child Topics (unlimited depth). Sibling Topic names are unique (case-insensitive) under the same parent. A Topic with Notes or child Topics directly inside it cannot be deleted until emptied.
+การจัดหมวดหมู่แบบลำดับชั้นที่ Note สามารถเลือกอยู่ในนั้นได้ Note หนึ่งอยู่ได้อย่างมากหนึ่ง Topic Topic มี Topic ลูกได้ (ลึกไม่จำกัด) ชื่อ Topic พี่น้องกันต้อง unique (ไม่สนตัวพิมพ์เล็ก-ใหญ่) ภายใต้ parent เดียวกัน Topic ที่มี Note หรือ Topic ลูกอยู่ภายในโดยตรงจะลบไม่ได้จนกว่าจะว่างก่อน
 
 **Category**
-A flat, non-hierarchical label. A Note can have multiple Categories. Category names are globally unique (case-insensitive). Freely creatable by the user, or proposed by AI Categorization.
+Label แบบแบน ไม่มีลำดับชั้น Note หนึ่งมีได้หลาย Category ชื่อ Category ต้อง unique ทั้งระบบ (ไม่สนตัวพิมพ์เล็ก-ใหญ่) ผู้ใช้สร้างเองได้อย่างอิสระ หรือถูกเสนอโดย AI Categorization
 
 **AI Categorization**
-The background process that analyzes a newly created Note and suggests candidate Categories. Runs exactly once, the first time a Note is saved with real content. Never re-triggered automatically by edits (see "User Ownership" rule below). Can be re-triggered manually by the user via an on-demand action.
+กระบวนการ background ที่วิเคราะห์ Note ที่เพิ่งสร้างใหม่และเสนอ Category ที่เป็นตัวเลือก ทำงานแค่ครั้งเดียว ตอนที่ Note ถูกบันทึกครั้งแรกพร้อมเนื้อหาจริง จะไม่ถูก trigger ซ้ำโดยอัตโนมัติจากการแก้ไข (ดูกฎ "User Ownership" ด้านล่าง) ผู้ใช้ trigger ซ้ำเองได้ผ่าน action แบบ on-demand
 
 **Suggestion (Category Suggestion)**
-A ranked list of candidate Categories produced by AI Categorization for a Note, including possibly a brand-new Category name not yet in the system. A Note has at most one active suggestion set at a time. The user may accept any subset, edit, or ignore; acting on the set resolves and discards the rest.
+รายการ Category ที่เป็นตัวเลือก จัดอันดับโดย AI Categorization สำหรับ Note หนึ่งๆ อาจรวมถึงชื่อ Category ใหม่ที่ยังไม่มีในระบบด้วย Note หนึ่งมี suggestion set ที่ active ได้อย่างมากหนึ่งชุดในแต่ละครั้ง ผู้ใช้ accept ได้บางส่วน, แก้ไข หรือเพิกเฉยก็ได้; เมื่อดำเนินการกับชุดนั้นแล้วถือว่า resolve และทิ้งส่วนที่เหลือ
 
 **User Ownership**
-The rule that once a Note's Topic/Category is set (by the user or by accepting an AI suggestion), the system never moves or re-categorizes it automatically again. Only an explicit user action changes it.
+กฎที่ว่า เมื่อ Topic/Category ของ Note ถูกกำหนดแล้ว (โดยผู้ใช้เอง หรือโดยการ accept AI suggestion) ระบบจะไม่ย้ายหรือจัดหมวดหมู่ใหม่ให้อัตโนมัติอีกเลย มีแค่ action ของผู้ใช้ที่ชัดเจนเท่านั้นที่เปลี่ยนมันได้
 
 **Search**
-Case-insensitive substring match across a Note's content (including code block bodies), a code block's declared language, its Topic, and its Categories.
+การจับคู่ substring แบบไม่สนตัวพิมพ์เล็ก-ใหญ่ ครอบคลุมเนื้อหาของ Note (รวมถึงเนื้อหาใน code block), ภาษาที่ประกาศไว้ของ code block, Topic และ Category ของมัน
 
 ## Architecture domain
 
 **Module**
-A bounded, independently-reasoned-about slice of the backend modular monolith. See `ARCHITECTURE.md` for the module map. Each Module owns its own database schema; no other Module's code may query it directly.
+ส่วนหนึ่งของ backend modular monolith ที่มีขอบเขตชัดเจนและคิดแยกกันได้อย่างอิสระ ดู `ARCHITECTURE.md` สำหรับแผนผัง module แต่ละ Module เป็นเจ้าของ database schema ของตัวเอง ไม่มีโค้ดของ Module อื่นสามารถ query มันได้โดยตรง
 
 **Domain Event**
-An in-process notification (e.g. `NoteCreated`, `TopicRenamed`, `CategoryDeleted`) published by the Module that owns the change, and consumed by any other Module that needs to react — the only sanctioned way Modules talk to each other.
+การแจ้งเตือนแบบ in-process (เช่น `NoteCreated`, `TopicRenamed`, `CategoryDeleted`) ที่ publish โดย Module เจ้าของการเปลี่ยนแปลงนั้น และถูก consume โดย Module อื่นที่ต้องการตอบสนอง — เป็นวิธีเดียวที่อนุญาตให้ Module คุยกัน
 
 **Read Model (Projection)**
-A denormalized, event-synced copy of data a Module needs but doesn't own — e.g. the Search Module's copy of Note content and Topic/Category names, kept current via Domain Events rather than cross-schema SQL joins.
+สำเนาข้อมูลแบบ denormalized ที่ sync ผ่าน event ซึ่ง Module หนึ่งต้องการใช้แต่ไม่ได้เป็นเจ้าของ — เช่น สำเนาเนื้อหา Note และชื่อ Topic/Category ของ Search Module ที่อัปเดตให้ทันสมัยผ่าน Domain Events แทนที่จะ join SQL ข้าม schema
 
 **Outbox**
-The durable table backing the AI Categorization background job: a row is written transactionally alongside the Note that needs processing, and a `BackgroundService` polls and processes it, so pending work survives an app restart.
+ตารางแบบ durable ที่หนุนหลัง background job ของ AI Categorization: แถวหนึ่งจะถูกเขียนแบบ transactional พร้อมกับ Note ที่ต้องประมวลผล แล้ว `BackgroundService` จะ poll และประมวลผลมัน ทำให้งานที่ค้างอยู่รอดจากการ restart ของแอปได้
 
 **Modular Monolith**
-The chosen starting architecture: a single deployable ASP.NET Core application internally split into Modules with strict boundaries (own schema, communicate only via Domain Events), designed so any Module could later be extracted into its own service without a rewrite.
+สถาปัตยกรรมเริ่มต้นที่เลือกใช้: ASP.NET Core application ตัวเดียวที่ deploy เป็นชิ้นเดียว แต่แบ่งภายในเป็น Module ที่มีขอบเขตเข้มงวด (มี schema ของตัวเอง, สื่อสารกันผ่าน Domain Events เท่านั้น) ออกแบบมาให้ Module ใดๆ สามารถถูกแยกออกเป็น service ของตัวเองในอนาคตได้โดยไม่ต้อง rewrite

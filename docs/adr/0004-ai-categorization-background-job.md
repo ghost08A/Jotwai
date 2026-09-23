@@ -1,19 +1,19 @@
-# ADR 0004: Outbox + in-process background worker for AI Categorization, using Gemini
+# ADR 0004: Outbox + background worker แบบ in-process สำหรับ AI Categorization โดยใช้ Gemini
 
-## Status
-Accepted
+## สถานะ
+ยอมรับแล้ว
 
-## Context
-Per the product requirements, AI categorization must run in the background and must never block Note creation (BR-008, BR-009), and must run automatically exactly once per Note (BR-010, BR-011, BR-012). It needs to survive an app restart between "Note saved" and "AI suggestion produced" — a fire-and-forget in-memory task would silently drop work on a crash/redeploy. It also needs an actual LLM to call; this is a lightweight classification task (pick likely Categories for a short note), not one that needs a large/expensive/highly-capable model.
+## บริบท
+ตามข้อกำหนดของผลิตภัณฑ์ การจัดหมวดหมู่ด้วย AI ต้องทำงานในเบื้องหลังและต้องไม่บล็อกการสร้าง Note (BR-008, BR-009) และต้องทำงานโดยอัตโนมัติเพียงครั้งเดียวต่อ Note (BR-010, BR-011, BR-012) มันต้องรอดพ้นจากการรีสตาร์ตแอปที่เกิดขึ้นระหว่างช่วง "Note ถูกบันทึก" ถึง "Suggestion จาก AI ถูกสร้างขึ้น" — งานแบบ fire-and-forget ในหน่วยความจำจะทำให้งานหายไปอย่างเงียบ ๆ เมื่อแอปล่มหรือ redeploy นอกจากนี้ยังต้องเรียกใช้ LLM จริง งานนี้เป็นงานจำแนกประเภทที่เบา (เลือก Category ที่น่าจะเป็นไปได้สำหรับโน้ตสั้น ๆ) ไม่ใช่งานที่ต้องใช้โมเดลขนาดใหญ่ ราคาแพง หรือความสามารถสูง
 
-## Decision
-- The AI Categorization Module writes an **outbox row** transactionally when it reacts to `NoteCreated` (first save with real content only).
-- An in-process **`BackgroundService`** polls the outbox, calls the AI provider, and records the resulting ranked Suggestion.
-- No external message broker (RabbitMQ/Azure Service Bus) or job framework (Hangfire) for MVP — the outbox table is the durability mechanism, and it is the seam where a real broker would be introduced if this Module is ever extracted.
-- AI provider: **Google Gemini** (2.5 Flash-Lite tier), chosen for its generous free tier and because the classification task doesn't require a large model. The provider is called through an interface owned by this Module, so switching providers later is a configuration change, not a rewrite.
+## การตัดสินใจ
+- AI Categorization Module เขียน **แถว outbox** แบบ transactional เมื่อตอบสนองต่อ `NoteCreated` (เฉพาะการบันทึกครั้งแรกที่มีเนื้อหาจริงเท่านั้น)
+- **`BackgroundService`** แบบ in-process จะ poll outbox เรียกผู้ให้บริการ AI และบันทึก Suggestion ที่จัดอันดับแล้วซึ่งได้ผลลัพธ์มา
+- ไม่มี message broker ภายนอก (RabbitMQ/Azure Service Bus) หรือ job framework (Hangfire) สำหรับ MVP — ตาราง outbox คือกลไกความคงทน (durability) และเป็นจุดต่อที่ broker จริงจะถูกนำมาใช้หาก Module นี้ถูกแยกออกในอนาคต
+- ผู้ให้บริการ AI: **Google Gemini** (ระดับ 2.5 Flash-Lite) ถูกเลือกเพราะมี free tier ที่ให้ใช้งานได้มาก และงานจำแนกประเภทนี้ไม่จำเป็นต้องใช้โมเดลขนาดใหญ่ ผู้ให้บริการถูกเรียกผ่าน interface ที่ Module นี้เป็นเจ้าของ ดังนั้นการเปลี่ยนผู้ให้บริการในภายหลังจึงเป็นแค่การเปลี่ยนค่า configuration ไม่ใช่การเขียนใหม่ทั้งหมด
 
-## Consequences
-- Pending categorization work survives an app restart (it's a row in the database, not in-memory state).
-- No new infrastructure (broker, job server) to run or operate for MVP.
-- Gemini's free-tier rate limits are a real constraint to monitor; the provider abstraction means hitting them doesn't require re-architecting, just swapping the implementation behind the interface.
-- The suggestion result is surfaced to the client as a non-real-time in-app indicator (no websocket/push infrastructure) — the user sees it next time they view the Note or open the app.
+## ผลที่ตามมา
+- งานจัดหมวดหมู่ที่ค้างอยู่จะรอดพ้นจากการรีสตาร์ตแอป (เพราะมันเป็นแถวข้อมูลในฐานข้อมูล ไม่ใช่สถานะในหน่วยความจำ)
+- ไม่มีโครงสร้างพื้นฐานใหม่ (broker, job server) ที่ต้องรันหรือดูแลสำหรับ MVP
+- ข้อจำกัดอัตรา (rate limit) ของ free tier ของ Gemini เป็นข้อจำกัดจริงที่ต้องเฝ้าติดตาม การมี abstraction ของผู้ให้บริการหมายความว่าเมื่อชนข้อจำกัดนี้ ไม่จำเป็นต้องออกแบบสถาปัตยกรรมใหม่ เพียงแค่สลับ implementation ที่อยู่หลัง interface
+- ผลลัพธ์ของ Suggestion จะแสดงต่อ client เป็นตัวบ่งชี้ในแอปแบบไม่เรียลไทม์ (ไม่มีโครงสร้างพื้นฐาน websocket/push) — ผู้ใช้จะเห็นมันในครั้งถัดไปที่เปิดดู Note หรือเปิดแอป

@@ -1,6 +1,6 @@
 ---
 id: 24
-title: "Build: AI Categorization suggestion flow (background trigger, confidence threshold, accept/edit/ignore, atomic bulk-accept)"
+title: "สร้าง: กระบวนการเสนอแนะของ AI Categorization (ทริกเกอร์เบื้องหลัง, เกณฑ์ความเชื่อมั่น, ยอมรับ/แก้ไข/เพิกเฉย, การยอมรับแบบ bulk แบบ atomic)"
 type: wayfinder:task
 status: open
 assignee: null
@@ -10,16 +10,16 @@ blocked_by: []
 
 ## Question
 
-Product spec (Requirements v0.1 §6–§8; GLOSSARY.md "AI Categorization"/"Suggestion"; BR-007 through BR-012) plus this map's own decisions are all settled:
+Product spec (Requirements v0.1 §6–§8; GLOSSARY.md "AI Categorization"/"Suggestion"; BR-007 ถึง BR-012) รวมถึงการตัดสินใจของ map นี้เองล้วนตกลงกันหมดแล้ว:
 
-- Runs in background on first save with real content only; never blocks Note creation; never re-triggers automatically on edit.
-- Produces a ranked Suggestion (possibly including a brand-new Category name).
-- Below the confidence threshold, nothing is shown (ticket 009).
-- User accepts any subset / edits / ignores; accepting is one atomic transaction (ticket 010).
-- Once resolved (accepted/ignored), never auto-moves the Note again (User Ownership, ticket 025).
+- ทำงานเบื้องหลังเมื่อบันทึกครั้งแรกที่มีเนื้อหาจริงเท่านั้น; ไม่เคยบล็อกการสร้าง Note; ไม่ทริกเกอร์ซ้ำโดยอัตโนมัติเมื่อมีการแก้ไข
+- สร้าง Suggestion แบบจัดอันดับ (อาจรวมถึงชื่อ Category ใหม่เอี่ยม)
+- หากต่ำกว่าเกณฑ์ความเชื่อมั่น จะไม่แสดงผลใด ๆ (ตั๋ว 009)
+- ผู้ใช้สามารถยอมรับบางส่วน / แก้ไข / เพิกเฉยได้; การยอมรับเป็นธุรกรรมแบบ atomic เดียว (ตั๋ว 010)
+- เมื่อได้รับการแก้ไขแล้ว (ยอมรับ/เพิกเฉย) จะไม่ย้าย Note โดยอัตโนมัติอีกต่อไป (User Ownership, ตั๋ว 025)
 
-Nothing exists in code yet — confirmed by ADR-0004 audit (ticket 014): no outbox, no BackgroundService, no Gemini client. Blocked on the Notes module (ticket 020, for `NoteCreated`) and the Domain Event mechanism (ticket 012).
+ยังไม่มีสิ่งใดอยู่ในโค้ดเลย — ยืนยันแล้วจากการตรวจสอบ ADR-0004 (ตั๋ว 014): ไม่มี outbox, ไม่มี BackgroundService, ไม่มี Gemini client ถูก block อยู่จนกว่า Module Notes (ตั๋ว 020 สำหรับ `NoteCreated`) และกลไก Domain Event (ตั๋ว 012) จะมีอยู่จริง
 
 ## Finding
 
-Not started.
+ยังไม่เริ่มดำเนินการ

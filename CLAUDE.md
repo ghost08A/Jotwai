@@ -1,71 +1,70 @@
 # Jotwai
 
-"Capture first, organize later" note-taking app. React SPA client + ASP.NET Core modular-monolith backend + PostgreSQL.
+แอปจดโน้ตแบบ "จดก่อน จัดทีหลัง" (capture first, organize later) ประกอบด้วย React SPA client + ASP.NET Core modular-monolith backend + PostgreSQL
 
-## Routing — read first, even for trivial edits
+## Routing — อ่านก่อนเสมอ แม้จะเป็นการแก้ไขเล็กน้อย
 
-Before touching any file under a path below, you MUST Read the matching file
-first — no exceptions for small changes.
+ก่อนแตะไฟล์ใดๆ ภายใต้ path ด้านล่าง คุณ**ต้อง** Read ไฟล์ที่ตรงกันก่อน — ไม่มีข้อยกเว้นแม้เป็นการแก้ไขเล็กน้อย
 
-| Path prefix | Read this file first |
+| Path prefix | อ่านไฟล์นี้ก่อน |
 | --- | --- |
 | `client/**` | `client/CLAUDE.md` |
 | `backend/**` | `backend/CLAUDE.md` |
 
-Before working in this repo, read:
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — module map, data strategy, AI categorization flow, frontend stack, deployment
-- **[GLOSSARY.md](GLOSSARY.md)** — exact domain vocabulary (Note, Topic, Category, Suggestion, Module, Read Model, ...). Use these terms, don't invent synonyms.
-- **[docs/adr/](docs/adr/)** — why each architectural decision was made; read the relevant ADR before changing that area
+ก่อนเริ่มทำงานใน repo นี้ ให้อ่าน:
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — แผนผัง Module, กลยุทธ์ข้อมูล, flow ของ AI categorization, frontend stack, deployment
+- **[GLOSSARY.md](GLOSSARY.md)** — คำศัพท์เฉพาะของ domain (Note, Topic, Category, Suggestion, Module, Read Model, ...) ใช้คำเหล่านี้ตามที่กำหนด ห้ามคิดคำพ้องความหมายขึ้นเอง
+- **[docs/adr/](docs/adr/)** — เหตุผลเบื้องหลังการตัดสินใจเชิงสถาปัตยกรรมแต่ละอย่าง อ่าน ADR ที่เกี่ยวข้องก่อนแก้ไขส่วนนั้น
 
 ## Tech Stack
 
-- Client: React + TypeScript + Vite — see [client/CLAUDE.md](client/CLAUDE.md)
-- Backend: ASP.NET Core (.NET 10) modular monolith + EF Core + PostgreSQL — see [backend/CLAUDE.md](backend/CLAUDE.md)
+- Client: React + TypeScript + Vite — ดู [client/CLAUDE.md](client/CLAUDE.md)
+- Backend: ASP.NET Core (.NET 10) modular monolith + EF Core + PostgreSQL — ดู [backend/CLAUDE.md](backend/CLAUDE.md)
 
-## Repo layout
+## โครงสร้าง Repo
 
 - `client/` — React + TypeScript + Vite SPA
-- `backend/` — ASP.NET Core modular monolith, global 3-tier (`Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai`) per ADR-0010. Modules (Notes, Organization, AI Categorization, Search, Identity) live inside these three projects as internal features, not separate projects.
+- `backend/` — ASP.NET Core modular monolith, global 3-tier (`Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai`) ตาม ADR-0010 แต่ละ Module (Notes, Organization, AI Categorization, Search, Identity) อยู่ภายใน 3 project นี้ในฐานะ feature ภายใน ไม่ใช่ project แยก
 - `docs/adr/` — architecture decision records
 
 ## Ground rules
 
-- Modules in `backend/` communicate only via in-process Domain Events, by convention — never direct calls or cross-schema queries between modules (see ADR 0001–0003, ADR-0010). Each Module still keeps its own `DbContext` scoped to its own schema inside `Jotwai.Service`, even though the project split is global.
-- Note content is Markdown; the editor (Tiptap) is a view over that, not the source of truth.
-- Don't add real-time/push infrastructure, semantic search, note sharing, or version history without checking with the user first — these are explicit non-goals for the current scope (see ARCHITECTURE.md).
-- Never run `git commit` on the user's behalf, even when a skill/workflow (e.g. `/implement`) says to commit as one of its steps. Implement, verify (build, tests), and stop — the user commits themselves.
+- Module ใน `backend/` สื่อสารกันผ่าน in-process Domain Events เท่านั้น โดยเป็น convention — ห้ามเรียกกันโดยตรงหรือ query ข้าม schema ระหว่าง module (ดู ADR 0001–0003, ADR-0010) แต่ละ Module ยังคงมี `DbContext` ของตัวเองที่ผูกกับ schema ของตัวเองภายใน `Jotwai.Service` แม้ project จะถูกแบ่งแบบ global ก็ตาม
+- เนื้อหา Note เป็น Markdown; editor (Tiptap) เป็นเพียง view ของข้อมูลนั้น ไม่ใช่ source of truth
+- ห้ามเพิ่ม real-time/push infrastructure, semantic search, การแชร์โน้ต หรือ version history โดยไม่ปรึกษาผู้ใช้ก่อน — สิ่งเหล่านี้เป็น non-goal ที่ระบุไว้ชัดเจนสำหรับ scope ปัจจุบัน (ดู ARCHITECTURE.md)
+- ห้ามรัน `git commit` แทนผู้ใช้เด็ดขาด แม้ skill/workflow (เช่น `/implement`) จะบอกให้ commit เป็นหนึ่งในขั้นตอนก็ตาม ให้ implement, verify (build, tests) แล้วหยุด — ผู้ใช้เป็นคน commit เอง
 
 ## Security Rules
 
-- DO NOT hardcode API keys, tokens, passwords, or credentials in source code
-- DO NOT log sensitive data (passwords, tokens, secrets, connection strings)
-- DO NOT commit `.env`, `.env.local`, or any file containing secrets or credentials
-- `.env.example` is the only env file allowed in version control — placeholder values only
-- Never expose stack traces or internal error details in API responses
-- `appsettings.Example.json` is also an acceptable config template alongside `.env.example` — placeholder values only
+- ห้าม hardcode API key, token, password หรือ credential ใดๆ ในซอร์สโค้ด
+- ห้าม log ข้อมูลอ่อนไหว (password, token, secret, connection string)
+- ห้าม commit `.env`, `.env.local` หรือไฟล์ใดๆ ที่มี secret หรือ credential
+- `.env.example` เป็นไฟล์ env เดียวที่อนุญาตให้อยู่ใน version control — ใช้ค่า placeholder เท่านั้น
+- ห้ามเปิดเผย stack trace หรือรายละเอียด error ภายในใน API response
+- `appsettings.Example.json` ก็เป็น config template ที่ยอมรับได้เช่นเดียวกับ `.env.example` — ใช้ค่า placeholder เท่านั้น
 
 ## Definition of Done
 
-A task is complete only when
+งานจะถือว่าเสร็จสมบูรณ์ก็ต่อเมื่อ
 
-- Build succeeds
-- Tests pass
-- Formatting and any configured analyzers pass, verified in CI and not only locally
-- Existing behavior is preserved
-- Requested functionality is implemented
-- No unnecessary files are added
-- No unrelated code is modified
+- Build ผ่าน
+- Tests ผ่าน
+- Formatting และ analyzer ที่ตั้งค่าไว้ผ่าน โดยยืนยันผลใน CI ไม่ใช่แค่ในเครื่อง
+- พฤติกรรมเดิมยังคงทำงานถูกต้อง
+- ฟังก์ชันที่ร้องขอถูก implement ครบ
+- ไม่มีไฟล์ที่ไม่จำเป็นถูกเพิ่มเข้ามา
+- ไม่มีโค้ดที่ไม่เกี่ยวข้องถูกแก้ไข
 
 ## Agent skills
 
 ### Issue tracker
 
-Issues live in GitHub Issues for ghost08A/Jotwai, using the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issue อยู่ใน GitHub Issues ของ ghost08A/Jotwai โดยใช้ `gh` CLI ดู `docs/agents/issue-tracker.md`
 
 ### Domain docs
 
-Single-context layout: ARCHITECTURE.md, GLOSSARY.md, and docs/adr/ at the repo root. See `docs/agents/domain.md`.
+โครงสร้างแบบ single-context: ARCHITECTURE.md, GLOSSARY.md และ docs/adr/ อยู่ที่ root ของ repo ดู `docs/agents/domain.md`
 
 ### Backend tickets
 
-Naming conventions, an over-engineering checklist, and a pre-done checklist for `backend/` work. See `docs/agents/backend.md`.
+Naming convention, checklist ป้องกัน over-engineering และ pre-done checklist สำหรับงานใน `backend/` ดู `docs/agents/backend.md`

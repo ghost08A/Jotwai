@@ -1,23 +1,23 @@
 # Domain Docs
 
-How the engineering skills should consume this repo's domain documentation when exploring the codebase.
+วิธีที่ engineering skill ควรใช้เอกสาร domain ของ repo นี้เมื่อสำรวจโค้ดเบส
 
-## Before exploring, read these
+## ก่อนสำรวจ ให้อ่านสิ่งเหล่านี้ก่อน
 
-- **`ARCHITECTURE.md`** at the repo root — module map, data strategy, AI categorization flow, frontend stack, deployment.
-- **`GLOSSARY.md`** at the repo root — exact domain vocabulary (Note, Topic, Category, Suggestion, Module, Read Model, ...). Use these terms, don't invent synonyms.
-- **`docs/adr/`** — read ADRs that touch the area you're about to work in.
+- **`ARCHITECTURE.md`** ที่ root ของ repo — แผนผัง module, กลยุทธ์ข้อมูล, flow ของ AI categorization, frontend stack, deployment
+- **`GLOSSARY.md`** ที่ root ของ repo — คำศัพท์เฉพาะของ domain (Note, Topic, Category, Suggestion, Module, Read Model, ...) ใช้คำเหล่านี้ตามที่กำหนด ห้ามคิดคำพ้องความหมายขึ้นเอง
+- **`docs/adr/`** — อ่าน ADR ที่เกี่ยวข้องกับส่วนที่คุณกำลังจะแก้ไข
 
-This repo is single-context: one ARCHITECTURE.md/GLOSSARY.md pair and one docs/adr/ at the root (no CONTEXT-MAP.md / per-context split).
+Repo นี้เป็นแบบ single-context: มี ARCHITECTURE.md/GLOSSARY.md คู่เดียวและ docs/adr/ ชุดเดียวที่ root (ไม่มีการแบ่ง CONTEXT-MAP.md / per-context แยก)
 
-## Use the glossary's vocabulary
+## ใช้คำศัพท์จาก glossary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in GLOSSARY.md. Don't drift to synonyms the glossary explicitly avoids.
+เมื่อผลงานของคุณอ้างถึง domain concept (ใน issue title, ข้อเสนอ refactor, สมมติฐาน, ชื่อ test) ให้ใช้คำตามที่นิยามไว้ใน GLOSSARY.md อย่าเบี่ยงไปใช้คำพ้องความหมายที่ glossary จงใจหลีกเลี่ยง
 
-If the concept you need isn't in the glossary yet, that's a signal: either you're inventing language the project doesn't use (reconsider) or there's a real gap worth raising.
+ถ้า concept ที่คุณต้องการยังไม่มีใน glossary นั่นคือสัญญาณ: อาจเป็นเพราะคุณกำลังคิดคำที่ project ไม่ได้ใช้ขึ้นเอง (ควรทบทวนใหม่) หรือมี gap จริงที่ควรหยิบยกขึ้นมา
 
-## Flag ADR conflicts
+## แจ้งเมื่อขัดแย้งกับ ADR
 
-If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
+ถ้าผลงานของคุณขัดแย้งกับ ADR ที่มีอยู่แล้ว ให้แจ้งอย่างชัดเจนแทนที่จะ override เงียบๆ:
 
-> _Contradicts ADR-0002 (in-process event communication), but worth reopening because…_
+> _ขัดแย้งกับ ADR-0002 (in-process event communication) แต่ควรค่าแก่การหยิบยกมาทบทวนใหม่เพราะ…_

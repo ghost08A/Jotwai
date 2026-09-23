@@ -1,18 +1,18 @@
-# ADR 0008: Frontend stack, styling, and note editor
+# ADR 0008: Frontend stack, การจัดสไตล์ และตัวแก้ไข Note
 
-## Status
-Accepted
+## สถานะ
+ยอมรับแล้ว
 
-## Context
-`client/` already had React, TypeScript, Vite, `react-router-dom`, `@tanstack/react-query`, and `axios` installed (found in `node_modules`, no `package.json` committed to lock it in). No styling/UI library or client-state library existed yet, and the original product requirements left "exact Note editor technology" and "exact representation of rich text" explicitly open.
+## บริบท
+`client/` ติดตั้ง React, TypeScript, Vite, `react-router-dom`, `@tanstack/react-query` และ `axios` ไว้อยู่แล้ว (พบใน `node_modules` แต่ยังไม่มี `package.json` ถูก commit เพื่อล็อกไว้) ยังไม่มี library สำหรับ styling/UI หรือ client-state library ใด ๆ และข้อกำหนดผลิตภัณฑ์เดิมยังเปิดกว้างไว้อย่างชัดเจนในเรื่อง "เทคโนโลยีตัวแก้ไข Note ที่แน่ชัด" และ "รูปแบบที่แน่ชัดของ rich text"
 
-## Decision
-- Formalize the already-installed packages as the frontend baseline: **React + TypeScript + Vite**, **react-router-dom** (routing), **TanStack Query** (server state — fetching/caching Notes, Topics, Categories), **axios** (HTTP).
-- No dedicated client-state library; `useState`/Context handles UI-only state (active filters, editor draft, sidebar state) — TanStack Query already owns server state.
-- **Tailwind CSS** + shadcn/ui-style headless components for styling — fast to build a custom notepad-like UI without a heavy component library's visual opinions.
-- **Tiptap** (ProseMirror) as the Note editor, configured to serialize to/from **Markdown** (the canonical storage format). Gives WYSIWYG bulleted/numbered lists and a code-block language picker while the persisted content stays plain Markdown.
+## การตัดสินใจ
+- กำหนดให้ package ที่ติดตั้งไว้แล้วเป็นฐานของ frontend อย่างเป็นทางการ: **React + TypeScript + Vite**, **react-router-dom** (การทำ routing), **TanStack Query** (server state — การดึง/cache Note, Topic, Category), **axios** (HTTP)
+- ไม่มี client-state library เฉพาะทาง; `useState`/Context จัดการ state ที่เกี่ยวกับ UI เท่านั้น (ตัวกรองที่ใช้งานอยู่, ฉบับร่างของตัวแก้ไข, สถานะ sidebar) — TanStack Query เป็นเจ้าของ server state อยู่แล้ว
+- **Tailwind CSS** ร่วมกับ component แบบ headless สไตล์ shadcn/ui สำหรับการจัดสไตล์ — สร้าง UI แบบสมุดโน้ตที่ปรับแต่งเองได้อย่างรวดเร็ว โดยไม่ต้องยึดติดกับความเห็นด้านภาพของ component library ที่หนัก
+- **Tiptap** (ProseMirror) เป็นตัวแก้ไข Note ตั้งค่าให้ serialize ไปมากับ **Markdown** (รูปแบบการจัดเก็บหลัก) ให้รายการแบบ WYSIWYG bulleted/numbered และตัวเลือกภาษาของ code block ในขณะที่เนื้อหาที่จัดเก็บยังคงเป็น Markdown ธรรมดา
 
-## Consequences
-- `package.json` needs to be (re)created to match what's actually installed, with proper scripts.
-- Markdown stays the single source of truth for Note content regardless of which editor renders it — swapping the editor later doesn't require a data migration.
-- No CSS-in-JS or heavy component library lock-in; Tailwind utility classes are the styling layer throughout.
+## ผลที่ตามมา
+- ต้อง (สร้างใหม่) `package.json` ให้ตรงกับสิ่งที่ติดตั้งไว้จริง พร้อม script ที่เหมาะสม
+- Markdown ยังคงเป็นแหล่งความจริงเดียวของเนื้อหา Note ไม่ว่าตัวแก้ไขใดจะ render มันก็ตาม — การเปลี่ยนตัวแก้ไขในภายหลังไม่ต้องอาศัยการทำ data migration
+- ไม่มีการผูกติดกับ CSS-in-JS หรือ component library ที่หนัก; Tailwind utility class เป็นชั้นการจัดสไตล์ตลอดทั้งระบบ

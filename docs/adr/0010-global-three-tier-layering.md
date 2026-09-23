@@ -1,14 +1,14 @@
-# ADR 0010: Global three-tier project structure, matching company convention (supersedes ADR-0009)
+# ADR 0010: โครงสร้าง project แบบ three-tier ระดับ global ให้สอดคล้องกับ convention ของบริษัท (แทนที่ ADR-0009)
 
-## Status
-Accepted. Supersedes ADR-0009.
+## สถานะ
+ยอมรับแล้ว แทนที่ ADR-0009
 
-## Context
-ADR-0009 introduced a Domain/Service project pair *per Module* to get a compiler-enforced version of the module boundary ADR-0001 originally described as review-enforced only. After review against the company's existing engineering precedent — the Loyalty-Merchant project — that precedent uses a single **global** three-tier structure per backend (one Domain project, one Service project, one Web project), not a project pair per feature. To stay consistent with established team convention, tooling, and CI/onboarding expectations, Jotwai reverts to that global structure. Part of Issue #2 had already been scaffolded under ADR-0009's per-module shape; that work is being restructured to match this decision before the ticket is finished.
+## บริบท
+ADR-0009 นำเสนอคู่ project Domain/Service *ต่อ Module* เพื่อให้ได้ขอบเขต Module ที่ ADR-0001 เคยอธิบายว่าบังคับใช้ผ่าน review เท่านั้น ให้กลายเป็นแบบบังคับใช้โดย compiler หลังจากทบทวนเทียบกับแบบแผนทางวิศวกรรมที่มีอยู่แล้วของบริษัท — โปรเจกต์ Loyalty-Merchant — พบว่าแบบแผนนั้นใช้โครงสร้าง three-tier แบบ **global** เพียงชุดเดียวต่อ backend (Domain project หนึ่งชุด, Service project หนึ่งชุด, Web project หนึ่งชุด) ไม่ใช่คู่ project ต่อ feature เพื่อให้สอดคล้องกับแบบแผนของทีม เครื่องมือ และความคาดหวังของ CI/onboarding ที่มีอยู่แล้ว Jotwai จึงย้อนกลับไปใช้โครงสร้าง global นั้น บางส่วนของ Issue #2 ถูกจัดโครงร่างไปแล้วตามรูปแบบต่อ module ของ ADR-0009 งานนั้นกำลังถูกจัดโครงสร้างใหม่ให้ตรงกับการตัดสินใจนี้ก่อนที่ ticket จะเสร็จสิ้น
 
-## Decision
+## การตัดสินใจ
 
-**Repository layout:**
+**โครงสร้าง repository:**
 ```
 Jotwai/
 ├── client/
@@ -18,25 +18,25 @@ Jotwai/
     ├── Web.Jotwai/
     └── Jotwai.sln
 ```
-(`server/` is renamed to `backend/`.)
+(`server/` ถูกเปลี่ยนชื่อเป็น `backend/`)
 
-**Projects** (one set for the whole backend, not one per feature):
-- **`Jotwai.Domain`** — no project dependencies. Entities/models, enums, request models, view models, validation models, and interfaces for *all* features, organized by **technical-layer folder** (`Models/`, `Enums/`, `Interfaces/`, `RequestModels/`, `ValidateModel/`, `ViewModels/`) — matching the Loyalty-Merchant convention. Not organized by per-feature subfolder.
-- **`Jotwai.Service`** — references `Jotwai.Domain` only. Business logic (`ImplementServices/`), helpers (`Helper/`), and each feature's EF Core `DbContext` + configurations (see DbContext strategy below).
-- **`Web.Jotwai`** — references both `Jotwai.Service` and `Jotwai.Domain`. Controllers, `Program.cs`, middleware/configuration, `ExceptionHandler.cs`.
-- Dependency direction: `Web.Jotwai` → `Jotwai.Service` → `Jotwai.Domain`; `Jotwai.Domain` → nothing.
+**Project** (หนึ่งชุดสำหรับทั้ง backend ไม่ใช่หนึ่งชุดต่อ feature):
+- **`Jotwai.Domain`** — ไม่มี dependency กับ project อื่น entity/model, enum, request model, view model, validation model และ interface สำหรับ *ทุก* feature จัดกลุ่มตาม **โฟลเดอร์ชั้นเทคนิค** (`Models/`, `Enums/`, `Interfaces/`, `RequestModels/`, `ValidateModel/`, `ViewModels/`) — ตรงตามแบบแผนของ Loyalty-Merchant ไม่ได้จัดกลุ่มตามโฟลเดอร์ย่อยของแต่ละ feature
+- **`Jotwai.Service`** — reference เฉพาะ `Jotwai.Domain` เท่านั้น business logic (`ImplementServices/`), helper (`Helper/`) และ `DbContext` + configuration ของ EF Core ของแต่ละ feature (ดูกลยุทธ์ DbContext ด้านล่าง)
+- **`Web.Jotwai`** — reference ทั้ง `Jotwai.Service` และ `Jotwai.Domain` Controller, `Program.cs`, middleware/configuration, `ExceptionHandler.cs`
+- ทิศทางของ dependency: `Web.Jotwai` → `Jotwai.Service` → `Jotwai.Domain`; `Jotwai.Domain` → ไม่มีอะไรเลย
 
-Identity (and every future feature — Notes, Organization, AI Categorization, Search) lives inside these three projects as an internal feature, **not** as a separate project pair. No `src/Modules`, no `<Feature>.Domain`/`<Feature>.Service` projects.
+Identity (และทุก feature ในอนาคต — Notes, Organization, AI Categorization, Search) อยู่ภายในสาม project นี้ในฐานะ feature ภายใน **ไม่ใช่** คู่ project แยกต่างหาก ไม่มี `src/Modules`, ไม่มี project `<Feature>.Domain`/`<Feature>.Service`
 
-**DbContext strategy** (this is what keeps ADR-0003's data isolation alive despite the project merge): each feature keeps its **own `DbContext`, scoped to its own Postgres schema** — `IdentityDbContext` → `identity` schema now, `NotesDbContext` → `notes` schema later, and so on. No shared `AppDbContext`. This is a deliberate choice to preserve schema-level isolation and a future extraction path even though the project-level split is gone.
+**กลยุทธ์ DbContext** (สิ่งนี้คือสิ่งที่รักษาการแยกข้อมูลของ ADR-0003 ให้คงอยู่ต่อไปแม้จะรวม project เข้าด้วยกัน): แต่ละ feature ยังคงมี **`DbContext` ของตัวเอง จำกัดขอบเขตอยู่ที่ Postgres schema ของตัวเอง** — `IdentityDbContext` → schema `identity` ในตอนนี้, `NotesDbContext` → schema `notes` ในภายหลัง และต่อ ๆ ไป ไม่มี `AppDbContext` ที่ใช้ร่วมกัน นี่เป็นทางเลือกที่ตั้งใจเพื่อรักษาการแยกในระดับ schema และเส้นทางการแยกตัวในอนาคต แม้ว่าการแบ่งแยกในระดับ project จะไม่มีอีกต่อไป
 
-**Cross-feature communication**: unchanged in substance from ADR-0002 — features still communicate via MediatR-style in-process Domain Events, kept as a **convention**, not a compiler-enforced rule. There is no longer a project boundary preventing one feature's code from directly calling another's; this now relies entirely on team discipline and code review. Direct concrete service-to-service calls across features are explicitly **not** the default, even though nothing technically prevents them anymore.
+**การสื่อสารข้าม feature**: ไม่เปลี่ยนแปลงในสาระสำคัญจาก ADR-0002 — feature ต่าง ๆ ยังคงสื่อสารกันผ่าน in-process Domain Event สไตล์ MediatR โดยยังคงเป็นเพียง **แนวปฏิบัติ** ไม่ใช่กฎที่บังคับใช้โดย compiler ไม่มีขอบเขตระดับ project อีกต่อไปที่ป้องกันไม่ให้โค้ดของ feature หนึ่งเรียกโค้ดของอีก feature หนึ่งโดยตรง เรื่องนี้ตอนนี้อาศัยวินัยของทีมและ code review เพียงอย่างเดียวทั้งหมด การเรียก service-to-service โดยตรงข้าม feature นั้นไม่ใช่ค่าเริ่มต้นอย่างชัดเจน แม้ว่าจะไม่มีสิ่งใดในทางเทคนิคป้องกันได้อีกต่อไปแล้วก็ตาม
 
-**Domain Event types** live in `Jotwai.Domain` (shared by all features — there's no cross-project reference problem left to solve, since it's one project); publish/handle logic lives in `Jotwai.Service`. ADR-0009's "narrow shared-kernel" question is moot: with only one Domain/Service project, no separate contracts project is ever needed for cross-feature events.
+**ประเภทของ Domain Event** อยู่ใน `Jotwai.Domain` (ใช้ร่วมกันโดยทุก feature — ไม่มีปัญหาการ reference ข้าม project ที่ต้องแก้ไขอีกต่อไป เนื่องจากเป็น project เดียว) ตรรกะ publish/handle อยู่ใน `Jotwai.Service` คำถามเรื่อง "shared-kernel แบบแคบ" ของ ADR-0009 หมดความสำคัญไปแล้ว: เมื่อมี project Domain/Service เพียงชุดเดียว จึงไม่จำเป็นต้องมี contracts project แยกต่างหากสำหรับ event ข้าม feature อีกเลย
 
-## Consequences
-- Matches existing company convention (Loyalty-Merchant) — valuable for team familiarity, shared tooling/CI templates, and onboarding. This is judged to outweigh the compiler-enforced isolation ADR-0009 offered.
-- Feature boundaries (Identity, and later Notes/Organization/AI Categorization/Search) are now enforced only by folder discipline within `Jotwai.Domain`/`Jotwai.Service` (a technical-layer-first folder structure, not even feature-first) plus code review and the MediatR-events convention. This is a real, accepted loss of rigor relative to ADR-0009.
-- ADR-0001's claim that "extracting a Module later is a deployment change, not a redesign" no longer fully holds: extracting a feature later means carving its code out of shared `Jotwai.Domain`/`Jotwai.Service` projects, which is a genuine — if data-layer-bounded — redesign. The per-feature `DbContext`/schema split is the one hard boundary that survives, and is what keeps that future redesign from also being a full rewrite of the data layer.
-- Supersedes ADR-0009 entirely (see that ADR's status). ADR-0001 and ADR-0002's module/event *design* concepts remain valid; only their physical realization (project structure) changes.
-- Issue #2 is rescoped to create `Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai` (plus a test project) under `backend/`, with Identity's entities, `DbContext`, migration, and DI registration living inside them as the first feature — not as separate Identity-named projects.
+## ผลที่ตามมา
+- สอดคล้องกับแบบแผนของบริษัทที่มีอยู่ (Loyalty-Merchant) — มีคุณค่าต่อความคุ้นเคยของทีม เครื่องมือ/เทมเพลต CI ที่ใช้ร่วมกัน และความคาดหวังใน onboarding สิ่งนี้ถูกตัดสินว่ามีน้ำหนักมากกว่าการแยกตัวที่บังคับใช้โดย compiler ที่ ADR-0009 เสนอ
+- ขอบเขตของ feature (Identity และในภายหลัง Notes/Organization/AI Categorization/Search) ตอนนี้บังคับใช้ได้เพียงด้วยวินัยของโฟลเดอร์ภายใน `Jotwai.Domain`/`Jotwai.Service` (โครงสร้างโฟลเดอร์ที่ยึดชั้นเทคนิคเป็นหลัก ไม่ใช่แม้แต่ยึด feature เป็นหลัก) บวกกับ code review และแนวปฏิบัติเรื่อง event ของ MediatR นี่คือการสูญเสียความเข้มงวดที่แท้จริงและถูกยอมรับ เมื่อเทียบกับ ADR-0009
+- ข้อกล่าวอ้างของ ADR-0001 ที่ว่า "การแยก Module ในภายหลังเป็นการเปลี่ยน deployment ไม่ใช่การออกแบบใหม่" ไม่ได้เป็นจริงอย่างสมบูรณ์อีกต่อไป: การแยก feature ในภายหลังหมายถึงการตัดโค้ดออกจาก project `Jotwai.Domain`/`Jotwai.Service` ที่ใช้ร่วมกัน ซึ่งเป็นการออกแบบใหม่ที่แท้จริง — แม้จะจำกัดอยู่ที่ชั้นข้อมูลก็ตาม การแยก `DbContext`/schema ต่อ feature เป็นขอบเขตที่แข็งแรงเพียงหนึ่งเดียวที่ยังคงอยู่ และเป็นสิ่งที่ป้องกันไม่ให้การออกแบบใหม่ในอนาคตนั้นกลายเป็นการเขียนชั้นข้อมูลใหม่ทั้งหมด
+- แทนที่ ADR-0009 ทั้งหมด (ดูสถานะของ ADR นั้น) แนวคิดการออกแบบเรื่อง module/event ของ ADR-0001 และ ADR-0002 ยังคงใช้ได้ มีเพียงการนำไปปฏิบัติจริง (โครงสร้าง project) เท่านั้นที่เปลี่ยนแปลง
+- Issue #2 ถูกปรับขอบเขตใหม่ให้สร้าง `Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai` (พร้อม test project) ภายใต้ `backend/` โดยมี entity, `DbContext`, migration และการลงทะเบียน DI ของ Identity อยู่ภายในสิ่งเหล่านี้ในฐานะ feature แรก — ไม่ใช่ในฐานะ project ที่ตั้งชื่อ Identity แยกต่างหาก

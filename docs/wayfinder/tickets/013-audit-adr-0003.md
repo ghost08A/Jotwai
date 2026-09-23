@@ -1,6 +1,6 @@
 ---
 id: 13
-title: "Audit implementation: ADR-0003 PostgreSQL, schema-per-module, and event-synced read models"
+title: "ตรวจสอบการ implement: ADR-0003 PostgreSQL, schema-per-module, and event-synced read models"
 type: wayfinder:research
 status: open
 assignee: null
@@ -11,12 +11,12 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/13
 
 ## Question
 
-Does the current codebase implement the decision recorded in `docs/adr/0003-schema-per-module-and-read-models.md`? Check DbContexts, EF Core configuration, migrations, and docker-compose.yml for schema-per-module and read-model patterns.
+โค้ดเบสปัจจุบัน implement การตัดสินใจที่บันทึกไว้ใน `docs/adr/0003-schema-per-module-and-read-models.md` หรือไม่? ตรวจสอบ DbContext, การตั้งค่า EF Core, migration, และ docker-compose.yml ว่ามีรูปแบบ schema-per-module และ read-model หรือไม่
 
-## Finding (partially implemented)
+## Finding (implement บางส่วนแล้ว)
 
-Only `IdentityDbContext` (`backend/Jotwai.Service/IdentityDbContext.cs`) exists, correctly using `HasDefaultSchema("identity")`, with its migration schema-qualifying all tables. `docker-compose.yml` provisions a single Postgres 16 instance, consistent with the one-database decision. No `NotesDbContext`/`OrganizationDbContext`/`AiCategorizationDbContext`/`SearchDbContext` exist, and no read-model/event-sync code exists for cross-module reads.
+มีเพียง `IdentityDbContext` (`backend/Jotwai.Service/IdentityDbContext.cs`) ที่ใช้ `HasDefaultSchema("identity")` อย่างถูกต้อง โดย migration ของมันกำหนด schema ให้ทุกตารางครบถ้วน `docker-compose.yml` จัดเตรียม Postgres 16 เพียงอินสแตนซ์เดียว สอดคล้องกับการตัดสินใจให้ใช้ฐานข้อมูลเดียว ยังไม่มี `NotesDbContext`/`OrganizationDbContext`/`AiCategorizationDbContext`/`SearchDbContext` และยังไม่มีโค้ด read-model/event-sync สำหรับการอ่านข้ามโมดูล
 
-**Missing**: DbContexts, schemas, and migrations for `notes`, `organization`, `ai_categorization`, `search`; the read-model pattern for cross-module reads is unproven beyond the one-schema case. The pattern itself (own DbContext + `HasDefaultSchema`) is correctly established for Identity and should carry over directly.
+**ขาด**: DbContext, schema, และ migration สำหรับ `notes`, `organization`, `ai_categorization`, `search`; รูปแบบ read-model สำหรับการอ่านข้ามโมดูลยังไม่ได้รับการพิสูจน์นอกเหนือจากกรณี schema เดียว ตัวรูปแบบเอง (DbContext ของตัวเอง + `HasDefaultSchema`) ถูกวางไว้อย่างถูกต้องแล้วสำหรับ Identity และควรนำไปใช้ต่อได้โดยตรง
 
-Left open — implementation debt, not a re-litigated decision.
+ยังคงเปิดไว้ — หนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่

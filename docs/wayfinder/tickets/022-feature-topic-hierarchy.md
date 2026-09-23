@@ -1,6 +1,6 @@
 ---
 id: 22
-title: "Build: Topic hierarchy (create/nest, sibling uniqueness, single-Topic-per-Note, non-empty delete guard)"
+title: "สร้าง: โครงสร้างลำดับชั้นของ Topic (สร้าง/ซ้อนกัน, ความไม่ซ้ำกันของ sibling, หนึ่ง Note ต่อหนึ่ง Topic, การป้องกันการลบเมื่อยังไม่ว่าง)"
 type: wayfinder:task
 status: open
 assignee: null
@@ -10,10 +10,10 @@ blocked_by: []
 
 ## Question
 
-Product spec (Requirements v0.1 §4; GLOSSARY.md "Topic"; BR-003, BR-004) is decided: Topics are hierarchical with unlimited depth, sibling names unique case-insensitively per parent, a Note belongs to at most one Topic, a Topic with Notes or child Topics can't be deleted until emptied, and moving a Note to another Topic is always an explicit user action. Nothing exists in code (Organization module is entirely unbuilt — see ADR-0001 audit, ticket 011).
+Product spec (Requirements v0.1 §4; GLOSSARY.md "Topic"; BR-003, BR-004) ตัดสินใจแล้วว่า: Topic มีลำดับชั้นแบบไม่จำกัดความลึก ชื่อของ sibling ต้องไม่ซ้ำกันแบบไม่สนตัวพิมพ์เล็ก-ใหญ่ภายใต้ parent เดียวกัน Note หนึ่งรายการอยู่ใน Topic ได้อย่างมากหนึ่งรายการ Topic ที่ยังมี Note หรือ Topic ลูกอยู่จะลบไม่ได้จนกว่าจะว่างเปล่า และการย้าย Note ไปยัง Topic อื่นต้องเป็นการกระทำที่ผู้ใช้สั่งอย่างชัดเจนเสมอ ยังไม่มีสิ่งใดอยู่ในโค้ด (Module Organization ยังไม่ถูกสร้างเลย — ดูการตรวจสอบ ADR-0001, ตั๋ว 011)
 
-Note: the "Not yet specified" fog item on the map (whether moving to a not-yet-existing Topic can inline-create it) should be resolved as its own grilling ticket before or during this build — not assumed either way here.
+หมายเหตุ: ประเด็นที่ยังไม่ชัดเจน ("Not yet specified") บน map (ว่าการย้าย Note ไปยัง Topic ที่ยังไม่มีอยู่จะสามารถสร้าง Topic นั้นแบบ inline ได้หรือไม่) ควรถูกแก้ไขในฐานะตั๋วสำหรับ grilling แยกต่างหาก ก่อนหรือระหว่างการสร้างงานนี้ — ไม่ควรสันนิษฐานไปทางใดทางหนึ่งในที่นี้
 
 ## Finding
 
-Not started. No Topic entity, DbContext, or UI exists anywhere in the repo.
+ยังไม่เริ่มดำเนินการ ไม่มีเอนทิตี Topic, DbContext หรือ UI อยู่ที่ใดในโปรเจกต์เลย

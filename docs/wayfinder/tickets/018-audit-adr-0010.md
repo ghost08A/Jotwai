@@ -1,6 +1,6 @@
 ---
 id: 18
-title: "Audit implementation: ADR-0010 Global three-tier project structure, matching company convention"
+title: "ตรวจสอบการนำไปใช้จริง: ADR-0010 โครงสร้างโปรเจกต์แบบสามชั้นระดับ Global ให้สอดคล้องกับธรรมเนียมของบริษัท"
 type: wayfinder:research
 status: closed
 assignee: voramatep
@@ -11,10 +11,10 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/18
 
 ## Question
 
-Does the current codebase implement the decision recorded in `docs/adr/0010-global-three-tier-layering.md`? Check the three .csproj files' ProjectReferences, and list the actual folder structure under each of backend/Jotwai.Domain, backend/Jotwai.Service, backend/Web.Jotwai.
+โค้ดเบสปัจจุบันนำการตัดสินใจที่บันทึกไว้ใน `docs/adr/0010-global-three-tier-layering.md` ไปใช้จริงหรือไม่? ให้ตรวจสอบ ProjectReferences ในไฟล์ .csproj ทั้งสามไฟล์ และแสดงรายการโครงสร้างโฟลเดอร์จริงภายใต้ backend/Jotwai.Domain, backend/Jotwai.Service, backend/Web.Jotwai แต่ละโปรเจกต์
 
-## Finding (implemented)
+## Finding (ทำตามแล้ว)
 
-Project reference graph matches exactly: `Jotwai.Domain` has zero project references; `Jotwai.Service` references `Jotwai.Domain` only; `Web.Jotwai` references both. Folder structure under each project matches the ADR's technical-layer convention (`Interfaces/`, `Models/`, `RequestModels/`, `ValidateModel/`, `ViewModels/` under Domain; `ImplementServices/`, `Helper/`, `Configurations/`, `Migrations/` under Service; `Controllers/` under Web). No per-module subfolder split exists — correct per this ADR. `Enums/` folder is simply absent since no enums exist yet, not a deviation.
+กราฟการอ้างอิงโปรเจกต์ตรงกันทุกประการ: `Jotwai.Domain` ไม่มีการอ้างอิงโปรเจกต์อื่นเลย; `Jotwai.Service` อ้างอิงเฉพาะ `Jotwai.Domain`; `Web.Jotwai` อ้างอิงทั้งสองโปรเจกต์ โครงสร้างโฟลเดอร์ในแต่ละโปรเจกต์ตรงกับธรรมเนียมการแบ่งชั้นทางเทคนิคตามที่ ADR กำหนด (`Interfaces/`, `Models/`, `RequestModels/`, `ValidateModel/`, `ViewModels/` ใน Domain; `ImplementServices/`, `Helper/`, `Configurations/`, `Migrations/` ใน Service; `Controllers/` ใน Web) ไม่มีการแบ่งโฟลเดอร์ย่อยตาม Module ซึ่งถูกต้องตาม ADR นี้ โฟลเดอร์ `Enums/` ไม่มีอยู่เพียงเพราะยังไม่มี enum ใด ๆ เกิดขึ้น ไม่ใช่ความคลาดเคลื่อนจากแผน
 
-No further modules exist yet to prove the pattern holds at scale, but for everything currently built (Identity), the structure is exactly as decided.
+ยังไม่มี Module อื่นเพิ่มเติมที่จะพิสูจน์ว่ารูปแบบนี้ใช้ได้ในระดับใหญ่ขึ้น แต่สำหรับทุกอย่างที่สร้างขึ้นแล้วในปัจจุบัน (Identity) โครงสร้างตรงกับที่ตัดสินใจไว้ทุกประการ

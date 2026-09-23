@@ -1,6 +1,6 @@
 ---
 id: 23
-title: "Build: Category flat structure (create, global uniqueness, multi-Category-per-Note)"
+title: "สร้าง: โครงสร้าง Category แบบเรียบ (สร้าง, ความไม่ซ้ำกันทั่วทั้งระบบ, หลาย Category ต่อหนึ่ง Note)"
 type: wayfinder:task
 status: open
 assignee: null
@@ -10,8 +10,8 @@ blocked_by: []
 
 ## Question
 
-Product spec (Requirements v0.1 §5; GLOSSARY.md "Category"; BR-005, BR-006) is decided: Categories are flat (no nesting in MVP), names globally unique case-insensitively, a Note can have multiple Categories, freely creatable by the user or proposed by AI. Nothing exists in code (Organization module unbuilt — ADR-0001 audit, ticket 011).
+Product spec (Requirements v0.1 §5; GLOSSARY.md "Category"; BR-005, BR-006) ตัดสินใจแล้วว่า: Category เป็นโครงสร้างแบบเรียบ (ไม่มีการซ้อนกันใน MVP) ชื่อไม่ซ้ำกันทั่วทั้งระบบแบบไม่สนตัวพิมพ์เล็ก-ใหญ่ หนึ่ง Note สามารถมีได้หลาย Category สร้างได้อย่างอิสระโดยผู้ใช้หรือถูกเสนอโดย AI ยังไม่มีสิ่งใดอยู่ในโค้ด (Module Organization ยังไม่ถูกสร้าง — การตรวจสอบ ADR-0001, ตั๋ว 011)
 
 ## Finding
 
-Not started. No Category entity, DbContext, or UI exists anywhere in the repo.
+ยังไม่เริ่มดำเนินการ ไม่มีเอนทิตี Category, DbContext หรือ UI อยู่ที่ใดในโปรเจกต์เลย

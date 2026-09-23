@@ -1,35 +1,35 @@
 # Backend tickets
 
-Checklist for agents implementing backend (`backend/`) tickets, on top of the architecture in ADR-0001–0003, ADR-0010, ADR-0011.
+Checklist สำหรับ agent ที่ implement ticket ฝั่ง backend (`backend/`) เพิ่มเติมจาก architecture ใน ADR-0001–0003, ADR-0010, ADR-0011
 
-## Don't over-engineer
+## อย่า over-engineer
 
-Build only what the current ticket requires. Do not create:
+สร้างเฉพาะสิ่งที่ ticket ปัจจุบันต้องการเท่านั้น ห้ามสร้าง:
 
-- A shared kernel, generic repositories, or repositories at all, without a concrete need
-- Unnecessary base classes or abstractions
-- Interfaces with only one implementation and no reason to expect a second
-- Event handlers or subscriptions for events nothing publishes yet
-- A feature's `DbContext`/schema before that feature exists
-- Authentication/authorization abstractions beyond what the current feature needs
+- Shared kernel, generic repository หรือ repository ใดๆ โดยไม่มีความจำเป็นที่ชัดเจน
+- Base class หรือ abstraction ที่ไม่จำเป็น
+- Interface ที่มี implementation เดียวและไม่มีเหตุผลว่าจะมีตัวที่สองในอนาคต
+- Event handler หรือ subscription สำหรับ event ที่ยังไม่มีใคร publish
+- `DbContext`/schema ของ feature ที่ยังไม่มีอยู่จริง
+- Authentication/authorization abstraction ที่เกินความจำเป็นของ feature ปัจจุบัน
 
 ## Naming
 
-- Classes, methods: `PascalCase`
-- Variables: `camelCase`
-- Interfaces: `I` prefix (`IAuthService`)
-- Service implementations: `Service` suffix (`AuthService`)
-- Async methods: `Async` suffix (`RegisterAsync`, `LoginAsync`)
-- Boolean properties/variables: `Is`/`Has`/`Can` prefix (`IsActive`, `HasRefreshToken`)
+- Class, method: `PascalCase`
+- Variable: `camelCase`
+- Interface: นำหน้าด้วย `I` (`IAuthService`)
+- Service implementation: ลงท้ายด้วย `Service` (`AuthService`)
+- Async method: ลงท้ายด้วย `Async` (`RegisterAsync`, `LoginAsync`)
+- Boolean property/variable: นำหน้าด้วย `Is`/`Has`/`Can` (`IsActive`, `HasRefreshToken`)
 
-Prefer existing Jotwai terminology from [`GLOSSARY.md`](../../GLOSSARY.md) over any other naming source.
+ใช้คำศัพท์ของ Jotwai จาก [`GLOSSARY.md`](../../GLOSSARY.md) ก่อนแหล่งอื่นเสมอ
 
-## Before calling a change done
+## ก่อนถือว่างานเสร็จ
 
-1. Check project references match the dependency direction in ADR-0010 (`Web.Jotwai` → `Jotwai.Service` → `Jotwai.Domain`; `Jotwai.Domain` → nothing).
-2. Build the whole solution; zero warnings, zero errors.
-3. Generate/verify EF Core migrations for any model change.
-4. Start the Postgres dependency (`docker-compose.yml`) if the change touches persistence.
-5. Run the integration test suite — it must run against **Testcontainers**, never a native/local Postgres instance.
-6. Review `git diff` for stale files left over from a prior structure or approach.
-7. Don't close the GitHub issue until the implementation and tests are actually complete.
+1. ตรวจสอบว่า project reference ตรงกับ dependency direction ใน ADR-0010 (`Web.Jotwai` → `Jotwai.Service` → `Jotwai.Domain`; `Jotwai.Domain` → ไม่ขึ้นกับอะไร)
+2. Build ทั้ง solution; ต้องไม่มี warning และไม่มี error
+3. Generate/verify EF Core migration ทุกครั้งที่ model เปลี่ยน
+4. เปิด dependency Postgres (`docker-compose.yml`) ถ้าการเปลี่ยนแปลงเกี่ยวกับ persistence
+5. รัน integration test suite — ต้องรันกับ **Testcontainers** เท่านั้น ห้ามใช้ Postgres ที่ติดตั้ง/native ในเครื่อง
+6. ตรวจสอบ `git diff` เพื่อหาไฟล์ค้างจาก structure หรือแนวทางเดิมที่ไม่ได้ใช้แล้ว
+7. อย่าปิด GitHub issue จนกว่า implementation และ test จะเสร็จสมบูรณ์จริงๆ

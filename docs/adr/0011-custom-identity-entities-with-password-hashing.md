@@ -1,17 +1,17 @@
-# ADR 0011: Custom Identity entities with ASP.NET Core Identity password hashing (supersedes ADR-0005)
+# ADR 0011: Entity ของ Identity แบบกำหนดเองพร้อมการแฮชรหัสผ่านของ ASP.NET Core Identity (แทนที่ ADR-0005)
 
-## Status
-Accepted. Supersedes ADR-0005.
+## สถานะ
+ยอมรับแล้ว แทนที่ ADR-0005
 
-## Context
-ADR-0005 named "ASP.NET Core Identity" as the auth mechanism, which reads as adopting the full framework — `IdentityUser`, `IdentityDbContext<TUser>`, `UserManager`, `SignInManager`. What was actually built for the Identity Module (Issue #2, #3) is narrower: plain `User`/`RefreshToken` entities in `Jotwai.Domain`, a hand-written `IdentityDbContext : DbContext` (not `IdentityDbContext<TUser>`), and JWT issuance/validation written directly in `TokenService`/`AuthService`. The framework's password-hashing (`IPasswordHasher<User>`) and its default password-policy rules are reused, but nothing else from ASP.NET Core Identity is wired up. ADR-0005 should describe what's actually in the codebase rather than the broader framework name.
+## บริบท
+ADR-0005 ระบุ "ASP.NET Core Identity" เป็นกลไกการยืนยันตัวตน ซึ่งอ่านแล้วเหมือนกับการนำ framework ทั้งหมดมาใช้ — `IdentityUser`, `IdentityDbContext<TUser>`, `UserManager`, `SignInManager` สิ่งที่ถูกสร้างขึ้นจริงสำหรับ Identity Module (Issue #2, #3) นั้นแคบกว่านั้น: entity `User`/`RefreshToken` ธรรมดาใน `Jotwai.Domain`, `IdentityDbContext : DbContext` ที่เขียนขึ้นเอง (ไม่ใช่ `IdentityDbContext<TUser>`) และการออก/ตรวจสอบ JWT ที่เขียนโดยตรงใน `TokenService`/`AuthService` การแฮชรหัสผ่านของ framework (`IPasswordHasher<User>`) และกฎ default password-policy ของมันถูกนำมาใช้ซ้ำ แต่ไม่มีสิ่งอื่นใดจาก ASP.NET Core Identity ที่ถูกเชื่อมต่อเข้ามา ADR-0005 ควรอธิบายสิ่งที่มีอยู่จริงในโค้ดแทนที่จะเป็นชื่อ framework ที่กว้างกว่านั้น
 
-## Decision
-Keep custom `User`/`RefreshToken` entities and a hand-written `IdentityDbContext`, not ASP.NET Core Identity's `IdentityUser`/`IdentityDbContext<TUser>`/`UserManager`/`SignInManager`. Reuse only two pieces of ASP.NET Core Identity: `IPasswordHasher<User>` for hashing/verifying passwords, and its default password-policy validation (via `PasswordPolicy`). Account/session state (email, password hash, refresh tokens) is modeled and persisted entirely by the Identity Module's own entities and `DbContext`, scoped to the `identity` schema (ADR-0003).
+## การตัดสินใจ
+คงไว้ซึ่ง entity `User`/`RefreshToken` แบบกำหนดเองและ `IdentityDbContext` ที่เขียนขึ้นเอง ไม่ใช้ `IdentityUser`/`IdentityDbContext<TUser>`/`UserManager`/`SignInManager` ของ ASP.NET Core Identity นำมาใช้ซ้ำเพียงสองส่วนจาก ASP.NET Core Identity เท่านั้น: `IPasswordHasher<User>` สำหรับการแฮช/ตรวจสอบรหัสผ่าน และการตรวจสอบ default password-policy ของมัน (ผ่าน `PasswordPolicy`) สถานะบัญชี/session (อีเมล, password hash, refresh token) ถูกจำลองและจัดเก็บทั้งหมดโดย entity และ `DbContext` ของ Identity Module เอง จำกัดขอบเขตอยู่ที่ schema `identity` (ADR-0003)
 
-Everything else ADR-0005 decided is unchanged: JWT access tokens plus refresh tokens, the Identity Module owns credentials entirely, refresh-token rotation/expiry are implementation details, and OAuth remains a fast-follow.
+ทุกอย่างอื่นที่ ADR-0005 ตัดสินใจไว้ยังคงไม่เปลี่ยนแปลง: JWT access token พร้อม refresh token, Identity Module เป็นเจ้าของ credential ทั้งหมด, การหมุนเวียน/วันหมดอายุของ refresh token เป็นรายละเอียดการ implement และ OAuth ยังคงเป็นงานที่ตามมาทีหลัง
 
-## Consequences
-- ADR-0005's "ASP.NET Core Identity" framing is corrected to "ASP.NET Core Identity's password hasher + password policy," which matches the shipped code (`Jotwai.Domain/Models/User.cs`, `Jotwai.Domain/Models/RefreshToken.cs`, `Jotwai.Service/IdentityDbContext.cs`).
-- No `UserManager`/`SignInManager`/ASP.NET Core Identity claims-and-roles system exists or is planned; if roles/claims are ever needed, that is a new decision, not something already covered by "ASP.NET Core Identity" as named in ADR-0005.
-- Keeping custom entities (rather than `IdentityUser`) keeps the `identity` schema fully owned and shaped by this Module, consistent with ADR-0003's schema-per-module isolation — no framework-owned tables outside that shape.
+## ผลที่ตามมา
+- แนวคิด "ASP.NET Core Identity" ของ ADR-0005 ถูกแก้ไขเป็น "ตัวแฮชรหัสผ่าน + password policy ของ ASP.NET Core Identity" ซึ่งตรงกับโค้ดที่ส่งมอบจริง (`Jotwai.Domain/Models/User.cs`, `Jotwai.Domain/Models/RefreshToken.cs`, `Jotwai.Service/IdentityDbContext.cs`)
+- ไม่มีระบบ `UserManager`/`SignInManager`/claims-and-roles ของ ASP.NET Core Identity อยู่หรือมีแผนจะมี หากในอนาคตต้องการ roles/claims นั่นคือการตัดสินใจใหม่ ไม่ใช่สิ่งที่ครอบคลุมอยู่แล้วโดย "ASP.NET Core Identity" ตามที่ระบุใน ADR-0005
+- การคงไว้ซึ่ง entity แบบกำหนดเอง (แทนที่จะเป็น `IdentityUser`) ทำให้ schema `identity` ยังคงเป็นเจ้าของและถูกกำหนดรูปร่างโดย Module นี้อย่างสมบูรณ์ สอดคล้องกับการแยก schema-per-module ของ ADR-0003 — ไม่มีตารางที่ framework เป็นเจ้าของอยู่นอกรูปร่างนี้

@@ -1,15 +1,15 @@
-# ADR 0007: API-only backend, separately deployed static SPA
+# ADR 0007: Backend แบบ API-only, SPA แบบ static ที่ deploy แยกต่างหาก
 
-## Status
-Accepted
+## สถานะ
+ยอมรับแล้ว
 
-## Context
-The repo already scaffolds `client/` and `server/` as separate top-level folders. The product needs to work "everywhere the user logs in" (web now, mobile later per the requirements grilling), which means the client is a distinct artifact from the backend regardless.
+## บริบท
+Repo ได้จัดวางโครงร่าง `client/` และ `server/` เป็นโฟลเดอร์ระดับบนสุดที่แยกจากกันอยู่แล้ว ผลิตภัณฑ์ต้องทำงาน "ได้ทุกที่ที่ผู้ใช้เข้าสู่ระบบ" (บนเว็บตอนนี้ บนมือถือในภายหลังตามที่วิเคราะห์ข้อกำหนดไว้) ซึ่งหมายความว่า client เป็นสิ่งที่แยกออกจาก backend อยู่แล้วไม่ว่าอย่างไรก็ตาม
 
-## Decision
-The ASP.NET Core backend serves only the JSON API. The React SPA is built and deployed as a separate static artifact (static hosting/CDN), calling the API over HTTP. The backend never serves the SPA's static files.
+## การตัดสินใจ
+ASP.NET Core backend ให้บริการเฉพาะ JSON API เท่านั้น React SPA ถูก build และ deploy เป็น artifact แบบ static แยกต่างหาก (static hosting/CDN) โดยเรียก API ผ่าน HTTP backend จะไม่ให้บริการไฟล์ static ของ SPA เลย
 
-## Consequences
-- Frontend and backend scale, cache, and deploy independently.
-- CORS must be configured on the API for the SPA's origin(s).
-- This also sets up cleanly for the "mobile later" direction — a future mobile client is just another consumer of the same API, no backend change needed.
+## ผลที่ตามมา
+- Frontend และ backend สามารถ scale, cache และ deploy ได้อย่างเป็นอิสระจากกัน
+- ต้องตั้งค่า CORS บน API สำหรับ origin ของ SPA
+- สิ่งนี้ยังวางรากฐานที่สะอาดสำหรับทิศทาง "มือถือในภายหลัง" — client มือถือในอนาคตก็เป็นแค่ผู้ใช้งาน API เดียวกันอีกราย โดยไม่ต้องเปลี่ยนแปลง backend

@@ -1,6 +1,6 @@
 ---
 id: 15
-title: "Audit implementation: ADR-0006 Postgres substring search, no external search engine"
+title: "ตรวจสอบการ implement: ADR-0006 Postgres substring search, no external search engine"
 type: wayfinder:research
 status: open
 assignee: null
@@ -11,12 +11,12 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/15
 
 ## Question
 
-Does the current codebase implement the decision recorded in `docs/adr/0006-search-postgres-substring.md`? Search for a Search module/controller, ILIKE usage, pg_trgm/GIN index migration, a read-model entity for search.
+โค้ดเบสปัจจุบัน implement การตัดสินใจที่บันทึกไว้ใน `docs/adr/0006-search-postgres-substring.md` หรือไม่? ค้นหา module/controller ของ Search, การใช้งาน ILIKE, migration ของ pg_trgm/GIN index, และ entity ของ read-model สำหรับ search
 
-## Finding (not implemented)
+## Finding (ยังไม่ได้ implement)
 
-Only migration is the Identity-only `InitialCreate` — no `pg_trgm` extension, no GIN index, no Search read-model table. No `SearchController` or `*Search*` files exist anywhere under `backend/`. Repo-wide grep for `ILIKE`, `pg_trgm`, `GIN`, `Search` found only the same forward-looking comment in `AuthController.cs` naming future modules — not actual code.
+migration ที่มีอยู่มีเพียง `InitialCreate` ของ Identity เท่านั้น — ไม่มี extension `pg_trgm`, ไม่มี GIN index, ไม่มีตาราง read-model ของ Search ไม่มีไฟล์ `SearchController` หรือ `*Search*` อยู่ที่ไหนใน `backend/` เลย การ grep ทั่ว repo หาคำว่า `ILIKE`, `pg_trgm`, `GIN`, `Search` พบเพียงคอมเมนต์เดิมที่กล่าวถึง module ในอนาคตใน `AuthController.cs` เท่านั้น ไม่ใช่โค้ดจริง
 
-**Missing**: Search Module read-model entity + DbContext, migration enabling `pg_trgm`/GIN index, `ILIKE`-based query logic, `SearchController`, and event handlers projecting Note/Topic/Category changes into the read model.
+**ขาด**: entity read-model + DbContext ของ Search Module, migration สำหรับเปิดใช้งาน `pg_trgm`/GIN index, ตรรกะ query แบบ `ILIKE`, `SearchController`, และ event handler ที่ทำ projection การเปลี่ยนแปลงของ Note/Topic/Category เข้าสู่ read model
 
-Left open — implementation debt, not a re-litigated decision.
+ยังคงเปิดไว้ — หนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่

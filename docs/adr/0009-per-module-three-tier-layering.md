@@ -1,35 +1,35 @@
-# ADR 0009: Per-module three-tier project structure (Domain/Service per Module + shared API)
+# ADR 0009: โครงสร้าง project แบบ three-tier ต่อ module (Domain/Service ต่อ Module + API ที่ใช้ร่วมกัน)
 
-## Status
-**Superseded by ADR-0010.** Kept for historical record — the per-module project split described below was implemented for part of Issue #2, then reverted before that ticket was finished, in favor of matching the company's existing global 3-tier convention (see ADR-0010 for why and what replaces it).
+## สถานะ
+**ถูกแทนที่โดย ADR-0010** เก็บไว้เป็นบันทึกทางประวัติศาสตร์ — การแบ่ง project ต่อ module ที่อธิบายไว้ด้านล่างถูก implement ไปแล้วบางส่วนสำหรับ Issue #2 แล้วถูกยกเลิกก่อนที่ ticket นั้นจะเสร็จสิ้น เพื่อให้สอดคล้องกับ convention 3-tier แบบ global ที่บริษัทใช้อยู่แล้ว (ดู ADR-0010 สำหรับเหตุผลและสิ่งที่มาแทนที่)
 
-## Context
-The company enforces a 3-tier project standard on all backend projects:
+## บริบท
+บริษัทบังคับใช้มาตรฐาน project แบบ 3-tier กับ backend project ทั้งหมด:
 
-- **Domain** — no project dependencies; entities, enums, DTOs, common models, core interfaces.
-- **Service** — references Domain only; `DbContext` + EF Core configurations, business logic/services, service interfaces, external integrations.
-- **API** — references Service and Domain; controllers/endpoints, middleware, auth/JWT, configuration, DI registration.
-- Dependency direction: API → Service → Domain.
+- **Domain** — ไม่มี dependency กับ project อื่น; entity, enum, DTO, model ทั่วไป, core interface
+- **Service** — reference เฉพาะ Domain; `DbContext` + การตั้งค่า EF Core, business logic/service, service interface, การเชื่อมต่อภายนอก
+- **API** — reference ทั้ง Service และ Domain; controller/endpoint, middleware, auth/JWT, configuration, การลงทะเบียน DI
+- ทิศทางของ dependency: API → Service → Domain
 
-ADR-0001 already splits the backend **vertically** into five Modules (Notes, Organization, AI Categorization, Search, Identity), each a bounded context designed to be independently extractable, with boundaries enforced by schema ownership (ADR-0003) and event-only communication (ADR-0002). Applying the 3-tier standard literally as one global `Domain`/`Service`/`API` project set for the whole backend would decompose the codebase by technical layer instead of by Module — the opposite axis from ADR-0001 — merging all five Modules' entities into one Domain assembly and all business logic into one Service assembly. That would weaken ADR-0001's central justification ("extracting a Module later is a deployment change, not a redesign") and leaves no explicit home for Domain Events, mediator dispatch, or Read Model projections (ADR-0002, ADR-0003).
+ADR-0001 ได้แบ่ง backend แบบ **แนวตั้ง** ออกเป็นห้า Module อยู่แล้ว (Notes, Organization, AI Categorization, Search, Identity) แต่ละ Module เป็น bounded context ที่ออกแบบให้แยกออกได้อย่างอิสระในอนาคต โดยมีขอบเขตบังคับใช้ผ่านความเป็นเจ้าของ schema (ADR-0003) และการสื่อสารผ่าน event เท่านั้น (ADR-0002) การใช้มาตรฐาน 3-tier ตามตัวอักษรเป็นชุด project `Domain`/`Service`/`API` แบบ global ชุดเดียวสำหรับทั้ง backend จะแยกโค้ดตามชั้นเทคนิคแทนที่จะตาม Module — เป็นแกนตรงข้ามกับ ADR-0001 — ซึ่งจะรวม entity ของทั้งห้า Module ไว้ใน Domain assembly เดียว และรวม business logic ทั้งหมดไว้ใน Service assembly เดียว สิ่งนี้จะบั่นทอนเหตุผลหลักของ ADR-0001 ("การแยก Module ในภายหลังเป็นการเปลี่ยน deployment ไม่ใช่การออกแบบใหม่") และไม่มีที่อยู่ที่ชัดเจนสำหรับ Domain Event, การส่ง mediator หรือ Read Model projection (ADR-0002, ADR-0003)
 
-## Decision
-Apply the company's 3-tier layering **independently within each Module**, not once globally:
+## การตัดสินใจ
+ใช้การแบ่งชั้น 3-tier ของบริษัท **แยกกันภายในแต่ละ Module** ไม่ใช่ครั้งเดียวแบบ global:
 
-- **`<Module>.Domain`** — entities, enums, DTOs, and core interfaces for that Module only. No project dependencies.
-- **`<Module>.Service`** — references only that Module's own `.Domain`. Owns that Module's EF Core `DbContext` and configurations (scoped to that Module's own Postgres schema, per ADR-0003), business logic, service interfaces, and external integrations.
-- **`Jotwai.Api`** — one shared ASP.NET Core Web API host (preserving "one deployable" from ADR-0001), referencing every Module's `.Service` (and transitively its `.Domain`). Hosts controllers/endpoints, middleware, JWT authentication, configuration, and DI registration for all Modules.
+- **`<Module>.Domain`** — entity, enum, DTO และ core interface สำหรับ Module นั้นเท่านั้น ไม่มี dependency กับ project อื่น
+- **`<Module>.Service`** — reference เฉพาะ `.Domain` ของ Module ตัวเอง เป็นเจ้าของ `DbContext` และการตั้งค่า EF Core ของ Module นั้น (จำกัดขอบเขตอยู่ที่ Postgres schema ของ Module นั้นเอง ตาม ADR-0003), business logic, service interface และการเชื่อมต่อภายนอก
+- **`Jotwai.Api`** — โฮสต์ ASP.NET Core Web API ที่ใช้ร่วมกันเพียงหนึ่งเดียว (รักษาแนวคิด "deployable เดียว" จาก ADR-0001) reference `.Service` ของทุก Module (และโดยผ่าน `.Domain` ของมันด้วย) โฮสต์ controller/endpoint, middleware, การยืนยันตัวตนแบบ JWT, configuration และการลงทะเบียน DI สำหรับทุก Module
 
-**Hard rule**: a Module's `.Domain` or `.Service` must never reference another Module's `.Domain` or `.Service`. This makes the module boundary ADR-0001 described as code-review-enforced into a **compiler-enforced** one.
+**กฎเข้มงวด**: `.Domain` หรือ `.Service` ของ Module หนึ่งต้องไม่ reference `.Domain` หรือ `.Service` ของอีก Module หนึ่งเด็ดขาด สิ่งนี้ทำให้ขอบเขตของ Module ที่ ADR-0001 อธิบายว่าบังคับใช้ผ่าน code review กลายเป็นขอบเขตที่ **บังคับใช้โดย compiler**
 
-**No Shared Kernel project is introduced by this decision.** One is justified only by a concrete cross-Module need that can't otherwise be met — none exists yet (see Domain Events, below).
+**การตัดสินใจนี้ไม่นำ project แบบ Shared Kernel เข้ามาใช้** การมี Shared Kernel จะสมเหตุสมผลก็ต่อเมื่อมีความต้องการข้าม Module ที่เป็นรูปธรรมและไม่สามารถแก้ไขได้ด้วยวิธีอื่น — ซึ่งยังไม่มีในตอนนี้ (ดู Domain Event ด้านล่าง)
 
-**Domain Events placement (resolves the ADR-0002 gap):** a Module's own Domain Event types are declared in that Module's `.Domain` project as plain types with no framework dependency. Publishing and handling logic (mediator wiring) lives in that Module's `.Service` project. A Module's `.Service` handles only events it defines and publishes itself — never by referencing another Module's `.Domain` to see that Module's event shape. Cross-Module event consumption (e.g. a future Search Module reacting to `NoteCreated` from the Notes Module) is deferred: it is exactly the concrete requirement that would justify a minimal shared contracts project later, scoped narrowly to event marker types, when the first real cross-Module consumer exists. For Issue #2, the Identity Module has no cross-Module event consumers — other Modules will identify the current user via the JWT bearer contract enforced at the `Jotwai.Api` HTTP layer, not via a Domain Event — so no shared project is needed now.
+**ตำแหน่งของ Domain Event (แก้ช่องว่างของ ADR-0002):** ประเภทของ Domain Event ของแต่ละ Module ถูกประกาศไว้ใน project `.Domain` ของ Module นั้น เป็น plain type ที่ไม่มี dependency กับ framework ตรรกะการ publish และ handle (การเชื่อมต่อ mediator) อยู่ใน project `.Service` ของ Module นั้น `.Service` ของ Module หนึ่งจะจัดการเฉพาะ event ที่ตัวเอง define และ publish เท่านั้น — ไม่มีทางที่จะ reference `.Domain` ของ Module อื่นเพื่อดูรูปร่าง event ของ Module นั้น การบริโภค event ข้าม Module (เช่น Search Module ในอนาคตที่ตอบสนองต่อ `NoteCreated` จาก Notes Module) ถูกเลื่อนออกไป — นี่คือความต้องการที่เป็นรูปธรรมซึ่งจะสมเหตุสมผลสำหรับการสร้าง shared contracts project ขนาดเล็กในภายหลัง ที่จำกัดขอบเขตเฉพาะ event marker type เมื่อมีผู้บริโภค event ข้าม Module รายแรกเกิดขึ้นจริง สำหรับ Issue #2 นั้น Identity Module ไม่มีผู้บริโภค event ข้าม Module — Module อื่นจะระบุตัวผู้ใช้ปัจจุบันผ่าน JWT bearer contract ที่บังคับใช้ที่ชั้น HTTP ของ `Jotwai.Api` ไม่ใช่ผ่าน Domain Event — ดังนั้นจึงยังไม่จำเป็นต้องมี shared project ในตอนนี้
 
-**ADR-0003 (schema-per-module, DbContext-per-module) is unchanged and reaffirmed.** Each Module's `DbContext` now has an explicit, unambiguous home — its own `.Service` project — which closes the ambiguity the company standard's singular "DbContext … in Service" phrasing could otherwise have introduced (e.g. a shared `DbContext` spanning modules).
+**ADR-0003 (schema-per-module, DbContext-per-module) ไม่เปลี่ยนแปลงและได้รับการยืนยันอีกครั้ง** `DbContext` ของแต่ละ Module ตอนนี้มีที่อยู่ที่ชัดเจนและไม่คลุมเครือ — คือ project `.Service` ของตัวเอง — ซึ่งปิดช่องว่างความคลุมเครือที่ถ้อยคำ "DbContext … ใน Service" แบบเอกพจน์ของมาตรฐานบริษัทอาจทำให้เกิดขึ้นได้ (เช่น `DbContext` ที่ใช้ร่วมกันข้าม module)
 
-## Consequences
-- More projects overall (an eventual ~11 across all five Modules: 5×`.Domain` + 5×`.Service` + 1×`Jotwai.Api`), but Module boundaries are now enforced by the compiler, not just review.
-- Issue #2 scaffolds only `Jotwai.Identity.Domain`, `Jotwai.Identity.Service`, and `Jotwai.Api` — the other four Modules' projects are created only when their own tickets start, avoiding speculative scaffolding.
-- If a future Module genuinely needs to consume another Module's Domain Event, that is the trigger to introduce a narrowly-scoped shared contracts project (event marker types only) — not before.
-- This ADR supersedes the project-structure implications of ADR-0001 (which described Modules only at the schema/communication level, not the project level) without changing ADR-0001's module boundaries themselves.
+## ผลที่ตามมา
+- มี project โดยรวมมากขึ้น (ในที่สุดประมาณ 11 project ทั่วทั้งห้า Module: 5×`.Domain` + 5×`.Service` + 1×`Jotwai.Api`) แต่ขอบเขตของ Module ตอนนี้บังคับใช้โดย compiler ไม่ใช่แค่ review เท่านั้น
+- Issue #2 จัดโครงร่างเฉพาะ `Jotwai.Identity.Domain`, `Jotwai.Identity.Service` และ `Jotwai.Api` — project ของอีกสี่ Module ที่เหลือจะถูกสร้างขึ้นก็ต่อเมื่อ ticket ของตัวเองเริ่มต้น เพื่อหลีกเลี่ยงการจัดโครงร่างล่วงหน้าโดยไม่จำเป็น
+- หาก Module ในอนาคตต้องบริโภค Domain Event ของ Module อื่นจริง ๆ นั่นคือจุดกระตุ้นให้สร้าง shared contracts project ที่จำกัดขอบเขตแคบ (เฉพาะ event marker type) — ไม่ใช่ก่อนหน้านั้น
+- ADR นี้แทนที่ผลกระทบด้านโครงสร้าง project ของ ADR-0001 (ซึ่งอธิบาย Module ไว้เฉพาะระดับ schema/การสื่อสารเท่านั้น ไม่ใช่ระดับ project) โดยไม่เปลี่ยนแปลงขอบเขต Module ของ ADR-0001 เอง

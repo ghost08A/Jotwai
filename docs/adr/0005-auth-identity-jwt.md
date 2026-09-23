@@ -1,15 +1,15 @@
-# ADR 0005: ASP.NET Core Identity with JWT tokens
+# ADR 0005: ASP.NET Core Identity พร้อม JWT token
 
-## Status
-Superseded by ADR-0011 (the "ASP.NET Core Identity" framing in the Decision below was narrower in practice than it reads; ADR-0011 corrects it). The JWT/refresh-token and Identity-Module-ownership decisions below are unchanged and still in effect.
+## สถานะ
+ถูกแทนที่โดย ADR-0011 (แนวคิด "ASP.NET Core Identity" ในส่วนการตัดสินใจด้านล่างนั้นแคบกว่าที่ปฏิบัติจริง ADR-0011 ได้แก้ไขให้ถูกต้องแล้ว) การตัดสินใจเรื่อง JWT/refresh-token และความเป็นเจ้าของของ Identity Module ด้านล่างยังคงไม่เปลี่ยนแปลงและยังมีผลบังคับใช้อยู่
 
-## Context
-Jotwai needs accounts and login to support cross-device sync (a core product requirement) — notes must be reachable from any device the user logs into. The client is a separately-deployed SPA calling a JSON API (ADR 0007), which rules out cookie/session auth tied to server-rendered pages.
+## บริบท
+Jotwai ต้องการบัญชีผู้ใช้และการเข้าสู่ระบบเพื่อรองรับการซิงค์ข้ามอุปกรณ์ (ข้อกำหนดหลักของผลิตภัณฑ์) — ต้องเข้าถึง Note ได้จากทุกอุปกรณ์ที่ผู้ใช้เข้าสู่ระบบ Client เป็น SPA ที่ deploy แยกต่างหาก เรียกใช้ JSON API (ADR 0007) ซึ่งตัดตัวเลือกการยืนยันตัวตนแบบ cookie/session ที่ผูกกับหน้าเว็บที่ render จากฝั่งเซิร์ฟเวอร์ออกไป
 
-## Decision
-Use ASP.NET Core Identity for user/account management (email/password for MVP, OAuth providers as a fast-follow, not MVP), issuing JWT access tokens plus refresh tokens. The SPA attaches the access token to API requests.
+## การตัดสินใจ
+ใช้ ASP.NET Core Identity สำหรับการจัดการผู้ใช้/บัญชี (อีเมล/รหัสผ่านสำหรับ MVP, ผู้ให้บริการ OAuth เป็นงานที่ตามมาทีหลัง ไม่ใช่ MVP) โดยออก JWT access token พร้อม refresh token SPA จะแนบ access token ไปกับ request ของ API
 
-## Consequences
-- Standard, well-supported pattern for SPA-calls-API architectures; the Identity Module (ADR 0001) owns this entirely and no other Module touches credentials directly.
-- Refresh token storage/rotation and token expiry policy are implementation details to settle when the Identity Module is built, not architectural decisions.
-- Sync conflict handling across devices is out of scope for auth itself — see ARCHITECTURE.md: last-write-wins, no merge UI, for concurrent edits to the same Note.
+## ผลที่ตามมา
+- เป็นรูปแบบมาตรฐานที่รองรับดีสำหรับสถาปัตยกรรมแบบ SPA-เรียก-API; Identity Module (ADR 0001) เป็นเจ้าของเรื่องนี้ทั้งหมด และไม่มี Module อื่นแตะต้อง credential โดยตรง
+- การจัดเก็บ/หมุนเวียน refresh token และนโยบายวันหมดอายุของ token เป็นรายละเอียดการ implement ที่จะตัดสินใจตอนสร้าง Identity Module ไม่ใช่การตัดสินใจเชิงสถาปัตยกรรม
+- การจัดการความขัดแย้งของการซิงค์ข้ามอุปกรณ์ไม่อยู่ในขอบเขตของการยืนยันตัวตนเอง — ดู ARCHITECTURE.md: ใช้หลัก last-write-wins ไม่มี UI สำหรับ merge สำหรับการแก้ไข Note เดียวกันพร้อมกัน

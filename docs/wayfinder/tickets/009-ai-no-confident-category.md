@@ -1,6 +1,6 @@
 ---
 id: 9
-title: Decide AI behavior when no Category is confident enough
+title: ตัดสินใจพฤติกรรมของ AI เมื่อไม่มี Category ใดมั่นใจเพียงพอ
 type: wayfinder:grilling
 status: closed
 assignee: voramatep
@@ -11,10 +11,10 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/9
 
 ## Question
 
-ARCHITECTURE.md's AI Categorization flow always "produces a ranked Suggestion", but doesn't cover the case where a Note is too short/ambiguous for any candidate Category to be worth showing. Should the system (a) always show a best-effort suggestion regardless of confidence, (b) show an explicit empty suggestion set, or (c) use a confidence threshold below which nothing is shown at all?
+ขั้นตอนการทำงานของ AI Categorization ใน ARCHITECTURE.md ระบุว่าจะ "ผลิต Suggestion ที่จัดลำดับไว้เสมอ" แต่ไม่ได้ครอบคลุมกรณีที่ Note สั้นเกินไปหรือกำกวมเกินกว่าที่ candidate Category ใดจะควรค่าแก่การแสดง ระบบควร (a) แสดง suggestion แบบ best-effort เสมอไม่ว่าความมั่นใจจะเท่าใด (b) แสดงชุด suggestion ที่ว่างเปล่าอย่างชัดเจน หรือ (c) ใช้ค่า threshold ความมั่นใจที่หากต่ำกว่านั้นจะไม่แสดงอะไรเลย
 
 ## Resolution
 
-**Decision**: (c) — use a confidence threshold. If AI Categorization's best candidate confidence is below a configurable threshold, no Suggestion is surfaced to the user at all (no empty-set UI state to build).
+**การตัดสินใจ**: (c) — ใช้ค่า threshold ความมั่นใจ หากความมั่นใจของ candidate ที่ดีที่สุดจาก AI Categorization ต่ำกว่าค่า threshold ที่ตั้งค่าได้ ระบบจะไม่แสดง Suggestion ให้ผู้ใช้เห็นเลย (ไม่ต้องสร้าง UI สำหรับสถานะชุดว่างเปล่า)
 
-Rationale: avoids low-value suggestions cluttering the UI without needing new UI for "no suggestion".
+เหตุผล: ช่วยหลีกเลี่ยงการแสดง suggestion ที่มีคุณค่าต่ำจนรก UI โดยไม่ต้องสร้าง UI ใหม่สำหรับ "ไม่มี suggestion"

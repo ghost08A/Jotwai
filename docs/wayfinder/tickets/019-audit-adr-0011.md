@@ -1,6 +1,6 @@
 ---
 id: 19
-title: "Audit implementation: ADR-0011 Custom Identity entities with ASP.NET Core Identity password hashing"
+title: "ตรวจสอบการนำไปใช้จริง: ADR-0011 เอนทิตี Identity แบบกำหนดเองพร้อมการแฮชรหัสผ่านของ ASP.NET Core Identity"
 type: wayfinder:research
 status: closed
 assignee: voramatep
@@ -11,10 +11,10 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/19
 
 ## Question
 
-Does the current codebase implement the decision recorded in `docs/adr/0011-custom-identity-entities-with-password-hashing.md`? Search for Identity-related entities, password hashing usage, JWT issuance code, refresh-token rotation logic, and an Auth/Identity controller.
+โค้ดเบสปัจจุบันนำการตัดสินใจที่บันทึกไว้ใน `docs/adr/0011-custom-identity-entities-with-password-hashing.md` ไปใช้จริงหรือไม่? ให้ค้นหาเอนทิตีที่เกี่ยวข้องกับ Identity, การใช้งานการแฮชรหัสผ่าน, โค้ดออก JWT, ตรรกะการหมุนเวียน refresh token และ Controller ของ Auth/Identity
 
-## Finding (implemented)
+## Finding (ทำตามแล้ว)
 
-Entities are plain POCOs (`User`, `RefreshToken` — not `IdentityUser`), matching the ADR's decision against using framework Identity entities directly. Password hashing uses `IPasswordHasher<User>` only (not `UserManager`/`SignInManager`), with a constant-time dummy-hash check on unknown emails to prevent timing leaks, plus `PasswordPolicy.Validate`. JWT access tokens are hand-issued (`TokenService.GenerateAccessToken`, HMAC-SHA256), and refresh-token rotation (`AuthService.RefreshAsync`) uses an atomic `ExecuteUpdateAsync` compare-and-swap to revoke-on-use, blocking replay of a rotated token. `AuthController` exposes register/login/refresh/logout/me. Covered by `Jotwai.IntegrationTests/TokenRefreshTests.cs`.
+เอนทิตีเป็น POCO ธรรมดา (`User`, `RefreshToken` — ไม่ใช่ `IdentityUser`) ซึ่งตรงกับการตัดสินใจของ ADR ที่ไม่ใช้เอนทิตี Identity ของ framework โดยตรง การแฮชรหัสผ่านใช้ `IPasswordHasher<User>` เท่านั้น (ไม่ใช่ `UserManager`/`SignInManager`) พร้อมการตรวจสอบ dummy-hash แบบ constant-time เมื่ออีเมลไม่รู้จัก เพื่อป้องกันการรั่วไหลของข้อมูลผ่าน timing รวมถึง `PasswordPolicy.Validate` JWT access token ถูกออกเองด้วยมือ (`TokenService.GenerateAccessToken`, HMAC-SHA256) และการหมุนเวียน refresh token (`AuthService.RefreshAsync`) ใช้ `ExecuteUpdateAsync` แบบ atomic compare-and-swap เพื่อเพิกถอนทันทีที่ถูกใช้งาน ป้องกันการเล่นซ้ำของ token ที่ถูกหมุนเวียนไปแล้ว `AuthController` เปิดใช้งาน register/login/refresh/logout/me ครอบคลุมโดย `Jotwai.IntegrationTests/TokenRefreshTests.cs`
 
-No gaps found against this ADR's actual scope.
+ไม่พบช่องว่างใด ๆ เมื่อเทียบกับขอบเขตจริงของ ADR นี้

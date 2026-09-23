@@ -1,23 +1,23 @@
-# ADR 0001: Modular monolith with extractable module boundaries
+# ADR 0001: Modular monolith พร้อมขอบเขต Module ที่แยกออกได้ในอนาคต
 
-## Status
-Accepted
+## สถานะ
+ยอมรับแล้ว
 
-## Context
-Jotwai is greenfield with no proven load and (presumably) a small team. "A well-structured microservice system" was the ask, but true microservices from day one means separate deployables, separate databases, and inter-service networking/messaging before there's any real pain that justifies the cost.
+## บริบท
+Jotwai เป็นโปรเจกต์เริ่มต้นใหม่ ยังไม่มีภาระงาน (load) ที่พิสูจน์แล้ว และ (คาดว่า) มีทีมงานขนาดเล็ก โจทย์ที่ตั้งไว้คือ "ระบบ microservice ที่มีโครงสร้างดี" แต่การทำ microservices แบบแท้จริงตั้งแต่วันแรกหมายถึงต้องมี deployable แยกกัน ฐานข้อมูลแยกกัน และการสื่อสาร/ส่งข้อความระหว่างเซอร์วิสผ่านเครือข่าย ทั้งที่ยังไม่มีความเจ็บปวดจริงที่คุ้มค่ากับต้นทุนนี้
 
-## Decision
-Build a single deployable ASP.NET Core backend, internally split into five Modules with strict boundaries:
+## การตัดสินใจ
+สร้าง ASP.NET Core backend เป็น deployable เดียว โดยแบ่งภายในออกเป็นห้า Module ที่มีขอบเขตชัดเจน:
 
-- **Notes** — note CRUD, content, soft delete
-- **Organization** — Topics (hierarchy) + Categories (flat)
-- **AI Categorization** — background suggestion generation, suggestion state
-- **Search** — cross-cutting query over content/Topic/Category
-- **Identity** — accounts, login, sessions
+- **Notes** — CRUD ของ Note, เนื้อหา, soft delete
+- **Organization** — Topic (แบบลำดับชั้น) + Category (แบบแบน)
+- **AI Categorization** — การสร้าง suggestion แบบเบื้องหลัง, สถานะของ Suggestion
+- **Search** — การค้นหาข้ามขอบเขตของเนื้อหา/Topic/Category
+- **Identity** — บัญชีผู้ใช้, การเข้าสู่ระบบ, session
 
-Each Module owns its own database schema and communicates with other Modules only via in-process Domain Events (see ADR 0002). Client (`client/`) and backend (`server/`) live in one monorepo.
+แต่ละ Module เป็นเจ้าของ schema ฐานข้อมูลของตนเอง และสื่อสารกับ Module อื่นผ่าน in-process Domain Events เท่านั้น (ดู ADR 0002) Client (`client/`) และ backend (`server/`) อยู่ใน monorepo เดียวกัน
 
-## Consequences
-- No inter-service network calls, no distributed transactions, no service mesh/orchestration to operate for MVP.
-- The module boundaries (schema ownership + event-only communication) are deliberately the same shape a real microservice boundary would have, keeping a future extraction well-scoped even though it won't be a pure deployment change (see ADR-0010: the backend uses one global set of projects, not one per Module, so extracting a Module later means carving its code out of shared projects — a real, if bounded, redesign).
-- Discipline is required: nothing prevents a developer from reaching across a Module boundary in code except code review and the schema-per-module DB constraint (ADR 0003) — there is no project-level boundary either (ADR-0010).
+## ผลที่ตามมา
+- ไม่มีการเรียกข้ามเซอร์วิสผ่านเครือข่าย ไม่มี distributed transaction ไม่มี service mesh/orchestration ที่ต้องดูแลสำหรับ MVP
+- ขอบเขตของ Module (ความเป็นเจ้าของ schema + การสื่อสารผ่าน event เท่านั้น) ถูกออกแบบให้มีรูปทรงเดียวกับขอบเขต microservice จริง โดยตั้งใจ เพื่อให้การแยกตัวในอนาคตมีขอบเขตที่ชัดเจน แม้ว่าจะไม่ใช่แค่การเปลี่ยน deployment ล้วน ๆ (ดู ADR-0010: backend ใช้ชุด project ร่วมกันแบบ global เพียงชุดเดียว ไม่ได้แยกเป็นหนึ่งชุดต่อ Module ดังนั้นการแยก Module ในอนาคตจึงหมายถึงการตัดโค้ดออกจาก project ที่ใช้ร่วมกัน — เป็นการออกแบบใหม่จริง ๆ แม้จะมีขอบเขตจำกัด)
+- ต้องอาศัยวินัยของทีม: ไม่มีสิ่งใดป้องกันนักพัฒนาจากการข้ามขอบเขต Module ในโค้ดได้ นอกจาก code review และข้อจำกัดของฐานข้อมูลแบบ schema-per-module (ADR 0003) — และไม่มีขอบเขตระดับ project มาช่วยด้วยเช่นกัน (ADR-0010)

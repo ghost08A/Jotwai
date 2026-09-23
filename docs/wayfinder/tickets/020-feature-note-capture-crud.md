@@ -1,6 +1,6 @@
 ---
 id: 20
-title: "Build: Note capture & CRUD (create without Topic/Category, edit-overwrite, soft delete + Trash)"
+title: "สร้าง: การบันทึกและ CRUD ของ Note (สร้างได้โดยไม่ต้องมี Topic/Category, แก้ไขแบบเขียนทับ, ลบแบบ soft delete + ถังขยะ)"
 type: wayfinder:task
 status: open
 assignee: null
@@ -10,14 +10,14 @@ blocked_by: []
 
 ## Question
 
-Product spec (Requirements v0.1 §2, §9; GLOSSARY.md "Note"; ticket 008's Trash decision) is fully decided for Note capture. Nothing exists in code yet (confirmed: no `Note` model/controller anywhere in `backend/`, no Note UI in `client/src`). What needs building:
+Product spec (Requirements v0.1 §2, §9; GLOSSARY.md "Note"; การตัดสินใจเรื่องถังขยะในตั๋ว 008) ตัดสินใจครบถ้วนแล้วสำหรับการบันทึก Note ยังไม่มีสิ่งใดอยู่ในโค้ดเลย (ยืนยันแล้ว: ไม่มี model/controller ของ `Note` อยู่ที่ใดใน `backend/`, ไม่มี UI ของ Note ใน `client/src`) สิ่งที่ต้องสร้าง:
 
-- Note creation with no required Topic/Category, saved immediately (BR-001, BR-002).
-- Content stored as Markdown; edits overwrite (no version history).
-- Soft delete + the decided Trash/Bin view (list + Restore action, ticket 008).
+- การสร้าง Note โดยไม่ต้องมี Topic/Category บังคับ บันทึกทันที (BR-001, BR-002)
+- เนื้อหาจัดเก็บเป็น Markdown; การแก้ไขจะเขียนทับ (ไม่มีประวัติเวอร์ชัน)
+- Soft delete + มุมมองถังขยะ/Bin ที่ตัดสินใจไว้ (รายการ + ปุ่มกู้คืน, ตั๋ว 008)
 
-This is a build task, not an open decision — tracked here as backlog per this map's implementation-debt convention. Depends on the Notes module/schema existing (see ADR-0001/0003 audits, tickets 011/013) and the Domain Event mechanism (ticket 012) for `NoteCreated` to fire AI Categorization (ticket 024).
+นี่คืองานสร้าง (build task) ไม่ใช่การตัดสินใจที่ค้างอยู่ — ถูกติดตามที่นี่ในฐานะ backlog ตามธรรมเนียมของ map นี้เรื่องหนี้เชิงการนำไปใช้จริง ขึ้นอยู่กับการมี Module/schema ของ Notes อยู่ก่อน (ดูการตรวจสอบ ADR-0001/0003, ตั๋ว 011/013) และกลไก Domain Event (ตั๋ว 012) เพื่อให้ `NoteCreated` สามารถสั่งให้ AI Categorization ทำงาน (ตั๋ว 024)
 
 ## Finding
 
-Not started. No `Note` entity, DbContext, controller, or client-side Note UI exists anywhere in the repo.
+ยังไม่เริ่มดำเนินการ ไม่มีเอนทิตี `Note`, DbContext, controller หรือ UI ฝั่ง client สำหรับ Note อยู่ที่ใดในโปรเจกต์เลย

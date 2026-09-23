@@ -1,11 +1,11 @@
 # CLAUDE.md
 
-This file provides guidance to AI coding agents (Claude Code, Codex, etc.) when working with code in this repository
+ไฟล์นี้ให้คำแนะนำแก่ AI coding agent (Claude Code, Codex, ฯลฯ) เมื่อทำงานกับโค้ดใน repository นี้
 
-**Frontend App:** see [client/CLAUDE.md](../client/CLAUDE.md)
+**Frontend App:** ดู [client/CLAUDE.md](../client/CLAUDE.md)
 
-Root-wide rules (security, Definition of Done) live in
-[../CLAUDE.md](../CLAUDE.md) — this file only covers what's specific to the backend.
+กฎที่ใช้ร่วมกันทั้ง repo (security, Definition of Done) อยู่ที่
+[../CLAUDE.md](../CLAUDE.md) — ไฟล์นี้ครอบคลุมเฉพาะสิ่งที่เจาะจงกับฝั่ง backend เท่านั้น
 
 ## Tech Stack
 
@@ -16,36 +16,36 @@ Root-wide rules (security, Definition of Done) live in
 
 ## Architecture
 
-- See [../ARCHITECTURE.md](../ARCHITECTURE.md) and [ADR-0010](../docs/adr/0010-global-three-tier-layering.md) for the full picture.
-- Business logic belongs only in `Jotwai.Service`.
-- Controllers (`Web.Jotwai`) should only orchestrate requests and responses.
-- Do not access a `DbContext` directly from a Controller.
-- Reuse existing services before creating new ones.
-- Keep the `Domain` → `Service` → `Web` dependency direction unchanged.
-- Modules (Notes, Organization, AI Categorization, Search, Identity) communicate only via in-process Domain Events, by convention — never direct calls or cross-schema queries between modules (ADR 0001–0003, ADR-0010).
-- Cross-module reads go through a Module's own denormalized Read Model, kept current by subscribing to Domain Events — never a SQL join across another Module's schema, even though all schemas live in one PostgreSQL database.
+- ดู [../ARCHITECTURE.md](../ARCHITECTURE.md) และ [ADR-0010](../docs/adr/0010-global-three-tier-layering.md) สำหรับภาพรวมทั้งหมด
+- Business logic อยู่ใน `Jotwai.Service` เท่านั้น
+- Controller (`Web.Jotwai`) ทำหน้าที่แค่ orchestrate request/response
+- ห้ามเข้าถึง `DbContext` ตรงๆ จาก Controller
+- นำ service ที่มีอยู่แล้วกลับมาใช้ก่อนสร้างใหม่
+- คง dependency direction `Domain` → `Service` → `Web` ไว้เสมอ
+- Module (Notes, Organization, AI Categorization, Search, Identity) สื่อสารกันผ่าน in-process Domain Events เท่านั้น โดยเป็น convention — ห้ามเรียกกันโดยตรงหรือ query ข้าม schema ระหว่าง module (ADR 0001–0003, ADR-0010)
+- การอ่านข้อมูลข้าม module ต้องผ่าน Read Model ของ module นั้นเองที่ denormalize ไว้ และอัปเดตผ่านการ subscribe Domain Events — ห้าม join ข้าม schema ของ module อื่นด้วย SQL แม้ทุก schema จะอยู่ใน PostgreSQL database เดียวกันก็ตาม
 
 ## Project Structure
 
-One **global** Domain → Service → Web layering (ADR-0010, superseding ADR-0009's per-Module layering) — folders are organized by technical layer, not per-Module:
+ใช้ global Domain → Service → Web layering ชั้นเดียว (ADR-0010 แทนที่ ADR-0009 ที่แบ่ง layering ต่อ Module) — โฟลเดอร์จัดตาม technical layer ไม่ใช่ตาม Module:
 
 ```
 .editorconfig
-Jotwai.Domain/              # no project dependencies
-    Interfaces/              # I-prefixed interfaces for all Modules (e.g. IAuthService)
-    Models/                  # entities/domain models
-    RequestModels/           # request DTOs
-    ValidateModel/           # validation/result models
-    ViewModels/               # response/view models
-Jotwai.Service/              # references Jotwai.Domain only
-    ImplementServices/        # business logic (one *Service per interface)
+Jotwai.Domain/              # ไม่ reference project อื่นเลย
+    Interfaces/              # interface นำหน้าด้วย I สำหรับทุก Module (เช่น IAuthService)
+    Models/                  # entity/domain model
+    RequestModels/           # request DTO
+    ValidateModel/           # validation/result model
+    ViewModels/               # response/view model
+Jotwai.Service/              # reference Jotwai.Domain เท่านั้น
+    ImplementServices/        # business logic (หนึ่ง *Service ต่อหนึ่ง interface)
     Helper/
-    Configurations/           # EF Core IEntityTypeConfiguration<T> per entity
-    Migrations/               # EF Core migrations
-    <Module>DbContext.cs      # one DbContext per Module, scoped to its own schema
+    Configurations/           # EF Core IEntityTypeConfiguration<T> ต่อ entity
+    Migrations/               # EF Core migration
+    <Module>DbContext.cs      # หนึ่ง DbContext ต่อหนึ่ง Module ผูกกับ schema ของตัวเอง
     <Module>DbContextFactory.cs
     <Module>ServiceRegistration.cs
-Web.Jotwai/                  # references Jotwai.Service + Jotwai.Domain
+Web.Jotwai/                  # reference Jotwai.Service + Jotwai.Domain
     Controllers/
     Properties/
     Program.cs
@@ -54,113 +54,102 @@ Jotwai.IntegrationTests/     # XUnit + Testcontainers.PostgreSql + WebApplicatio
 
 ### Rules
 
-- Keep the `Domain` / `Service` / `Web` dependency direction unchanged — `Web.Jotwai`
-  depends on `Jotwai.Service` and `Jotwai.Domain`; `Jotwai.Service` depends on
-  `Jotwai.Domain` only; `Jotwai.Domain` depends on nothing project-specific.
-- New code goes into the matching technical-layer folder (`Interfaces/`, `Models/`,
-  `RequestModels/`, `ValidateModel/`, `ViewModels/` in `Jotwai.Domain`;
-  `ImplementServices/`, `Configurations/` in `Jotwai.Service`) — the Module boundary is
-  enforced by the Domain Events convention and code review, not by folder structure, so
-  don't invent per-Module subfolders.
-- Each Module gets its own `DbContext` (e.g. `IdentityDbContext`) scoped to its own
-  PostgreSQL schema — never a shared `AppDbContext`.
+- คง dependency direction `Domain` / `Service` / `Web` ไว้เสมอ — `Web.Jotwai`
+  ขึ้นกับ `Jotwai.Service` และ `Jotwai.Domain`; `Jotwai.Service` ขึ้นกับ
+  `Jotwai.Domain` เท่านั้น; `Jotwai.Domain` ไม่ขึ้นกับอะไรที่เจาะจง project เลย
+- โค้ดใหม่ให้ใส่ในโฟลเดอร์ตาม technical layer ที่ตรงกัน (`Interfaces/`, `Models/`,
+  `RequestModels/`, `ValidateModel/`, `ViewModels/` ใน `Jotwai.Domain`;
+  `ImplementServices/`, `Configurations/` ใน `Jotwai.Service`) — ขอบเขตของ Module
+  ถูกบังคับด้วย convention ของ Domain Events และ code review ไม่ใช่ด้วยโครงสร้างโฟลเดอร์
+  ดังนั้นอย่าคิดโฟลเดอร์ย่อยแยกตาม Module ขึ้นมาเอง
+- แต่ละ Module มี `DbContext` ของตัวเอง (เช่น `IdentityDbContext`) ผูกกับ
+  schema PostgreSQL ของตัวเอง — ห้ามใช้ `AppDbContext` ร่วมกัน
 
 ## Coding Convention
 
 ### Naming
 
-| Pattern            | Use for                                                 |
+| Pattern            | ใช้กับ                                                 |
 | ------------------- | -------------------------------------------------------- |
-| `PascalCase`         | Classes, methods, properties, public fields, constants     |
-| `camelCase`          | Local variables, method parameters                          |
-| `_camelCase`         | Private fields                                               |
-| `IPascalCase`        | Interfaces (e.g. `IAuthService`)                             |
-| `Async` suffix        | Async methods (e.g. `RegisterAsync`, `LoginAsync`)             |
-| `Service` suffix      | Service implementations (e.g. `AuthService`)                  |
-| `Is`/`Has`/`Can` prefix | Boolean properties/variables (e.g. `IsActive`, `HasRefreshToken`) |
+| `PascalCase`         | Class, method, property, public field, constant     |
+| `camelCase`          | Local variable, method parameter                          |
+| `_camelCase`         | Private field                                               |
+| `IPascalCase`        | Interface (เช่น `IAuthService`)                             |
+| `Async` suffix        | Async method (เช่น `RegisterAsync`, `LoginAsync`)             |
+| `Service` suffix      | Service implementation (เช่น `AuthService`)                  |
+| `Is`/`Has`/`Can` prefix | Boolean property/variable (เช่น `IsActive`, `HasRefreshToken`) |
 
-Prefer existing Jotwai terminology from [../GLOSSARY.md](../GLOSSARY.md) over any other naming source.
+ใช้คำศัพท์ของ Jotwai จาก [../GLOSSARY.md](../GLOSSARY.md) ก่อนแหล่งอื่นเสมอ
 
 ### Coding Rules
 
-- Handle null values safely
-- Do not swallow exceptions silently
-- Keep methods focused and small
-- Avoid duplicated logic. Extract helper methods only when reuse or clarity is improved
-- Prefer async/await for I/O operations
-- Do not use `.Result` or `.Wait()`
-- Log via the injected `ILogger<T>` — never `Console.WriteLine`
-- Register services with the correct DI lifetime (`Scoped` for request-bound state, `Singleton` for stateless/shared, `Transient` sparingly) — never resolve a `Scoped` service from a `Singleton`
+- จัดการค่า null อย่างปลอดภัย
+- ห้ามกลืน exception เงียบๆ
+- เขียน method ให้ focus และสั้น
+- หลีกเลี่ยง logic ที่ซ้ำกัน แยก helper method เฉพาะตอนที่ช่วยเรื่อง reuse หรือความชัดเจนจริงๆ
+- ใช้ async/await สำหรับงาน I/O เป็นหลัก
+- ห้ามใช้ `.Result` หรือ `.Wait()`
+- Log ผ่าน `ILogger<T>` ที่ inject มา — ห้ามใช้ `Console.WriteLine`
+- Register service ด้วย DI lifetime ที่ถูกต้อง (`Scoped` สำหรับ state ที่ผูกกับ request, `Singleton` สำหรับของที่ stateless/shared, `Transient` ใช้เท่าที่จำเป็น) — ห้าม resolve `Scoped` service จาก `Singleton`
 
 ### Don't over-engineer
 
-Build only what the current ticket requires. Do not create:
+สร้างเฉพาะสิ่งที่ ticket ปัจจุบันต้องการเท่านั้น ห้ามสร้าง:
 
-- A shared kernel, generic repositories, or repositories at all, without a concrete need
-- Unnecessary base classes or abstractions
-- Interfaces with only one implementation and no reason to expect a second
-- Event handlers or subscriptions for events nothing publishes yet
-- A feature's `DbContext`/schema before that feature exists
-- Authentication/authorization abstractions beyond what the current feature needs
+- Shared kernel, generic repository หรือ repository ใดๆ โดยไม่มีความจำเป็นที่ชัดเจน
+- Base class หรือ abstraction ที่ไม่จำเป็น
+- Interface ที่มี implementation เดียวและไม่มีเหตุผลว่าจะมีตัวที่สองในอนาคต
+- Event handler หรือ subscription สำหรับ event ที่ยังไม่มีใคร publish
+- `DbContext`/schema ของ feature ที่ยังไม่มีอยู่จริง
+- Authentication/authorization abstraction ที่เกินความจำเป็นของ feature ปัจจุบัน
 
 ### API Rules
 
-- Keep API response format consistent with existing endpoints
-- DO NOT change route names, request models, or response models unless required
-- Return meaningful error messages without exposing sensitive internal details
+- คง response format ของ API ให้สอดคล้องกับ endpoint ที่มีอยู่แล้ว
+- ห้ามเปลี่ยนชื่อ route, request model หรือ response model เว้นแต่จำเป็นจริงๆ
+- คืนข้อความ error ที่มีความหมาย โดยไม่เปิดเผยรายละเอียดภายในที่อ่อนไหว
 
 ### Database / EF Core Rules
 
-- DO NOT modify database schema unless explicitly requested
-- DO NOT rename EF-generated entity classes or properties
-- Use existing DbContext and entity configuration patterns (`IEntityTypeConfiguration<T>` in `Configurations/`)
-- Avoid N+1 queries
-- Use `AsNoTracking()` for read-only queries
-- Use `Include()` only when necessary
-- Avoid loading unused navigation properties
-- Generate/verify an EF Core migration for any model change
+- ห้ามแก้ database schema เว้นแต่ถูกร้องขอชัดเจน
+- ห้ามเปลี่ยนชื่อ entity class หรือ property ที่ EF generate ไว้
+- ใช้ DbContext และ entity configuration pattern ที่มีอยู่แล้ว (`IEntityTypeConfiguration<T>` ใน `Configurations/`)
+- หลีกเลี่ยง N+1 query
+- ใช้ `AsNoTracking()` สำหรับ query ที่อ่านอย่างเดียว
+- ใช้ `Include()` เฉพาะตอนจำเป็นเท่านั้น
+- หลีกเลี่ยงการโหลด navigation property ที่ไม่ได้ใช้
+- Generate/verify EF Core migration ทุกครั้งที่ model เปลี่ยน
 
 ### Editor Config
 
-This repo enforces formatting via `.editorconfig` at the repo root. An AI agent has no
-built-in mechanism to auto-load editor config files the way an IDE does — the concrete
-rule is restated here so it's actually in context. Match it in every file you write or
-edit; don't infer indentation by eyeballing surrounding code.
+Repo นี้บังคับ formatting ผ่าน `.editorconfig` ที่ root ของ repo AI agent ไม่มีกลไก auto-load editor config file แบบที่ IDE ทำได้ — กฎที่แท้จริงจึงถูกเขียนซ้ำไว้ที่นี่เพื่อให้อยู่ใน context จริงๆ ต้องทำตามในทุกไฟล์ที่คุณเขียนหรือแก้ไข อย่าเดา indentation จากการดูโค้ดรอบๆ
 
-- Indent: 4 spaces (repo-wide default)
-- Line endings: LF, UTF-8, final newline required
-- Trailing whitespace trimmed (except Markdown, where it's meaningful for line breaks)
-- Line endings are enforced by `.gitattributes` at the repo root, not by your local Git
-  settings — never "fix" them by hand, and never change `core.autocrlf` to work around a
-  complaint from a formatter
-- `.vscode/settings.json` is committed and pins the same rules for the editor. It is not
-  personal configuration — do not add themes, fonts, or machine-specific paths to it, and
-  do not relax its formatting keys to match a file that is already wrong
-- `.csproj`/`.props`/`.targets` use 2 spaces instead of the 4-space default
+- Indent: 4 spaces (ค่า default ของทั้ง repo)
+- Line ending: LF, UTF-8, ต้องมี final newline
+- ตัด trailing whitespace (ยกเว้น Markdown ที่ trailing space มีความหมายสำหรับ line break)
+- Line ending ถูกบังคับโดย `.gitattributes` ที่ root ไม่ใช่ Git setting ในเครื่องของคุณ — ห้าม "แก้" มันเองด้วยมือ และห้ามเปลี่ยน `core.autocrlf` เพื่อหนี complaint จาก formatter
+- `.vscode/settings.json` ถูก commit ไว้และ pin กฎเดียวกันสำหรับ editor มันไม่ใช่ personal configuration — ห้ามเพิ่ม theme, font หรือ path เฉพาะเครื่องเข้าไป และห้ามผ่อนปรน formatting key ให้ตรงกับไฟล์ที่ผิดอยู่แล้ว
+- `.csproj`/`.props`/`.targets` ใช้ 2 spaces แทนค่า default 4-space
 
-If a formatter reports a line-ending or whitespace failure across files you did not
-touch, that is a repository configuration problem, not a code problem. Report it and
-leave it alone. Do not answer it with a repo-wide reformat, and never let unrelated
-reformatted files ride along in a change.
+ถ้า formatter รายงาน error เรื่อง line-ending หรือ whitespace ในไฟล์ที่คุณไม่ได้แตะ นั่นคือปัญหา configuration ของ repo ไม่ใช่ปัญหาโค้ด รายงานแล้วปล่อยไว้ ห้ามแก้ด้วยการ reformat ทั้ง repo และห้ามให้ไฟล์ที่ถูก reformat โดยไม่เกี่ยวข้องติดไปกับการเปลี่ยนแปลงของคุณ
 
 ### Formatting Display
 
 - Date: `YYYY-MM-DD`
 - DateTime: `YYYY-MM-DD HH:mm:ss`
 - Time only: `HH:mm` / `HH:mm:ss`
-- Money / amounts stored as `decimal` — never `float`/`double` (not currently used by any Module, but the rule stands if one is ever added)
+- จำนวนเงินเก็บเป็น `decimal` — ห้ามใช้ `float`/`double` (ยังไม่มี Module ไหนใช้ตอนนี้ แต่กฎนี้ยังคงใช้ถ้ามีการเพิ่มในอนาคต)
 
 ### Comment Code
 
-- `// Note:` — allowed for context that aids understanding
-- `// TODO:` — if encountered **in files you are editing**, flag it to the user before proceeding
+- `// Note:` — อนุญาตให้ใช้สำหรับ context ที่ช่วยให้เข้าใจง่ายขึ้น
+- `// TODO:` — ถ้าเจอ **ในไฟล์ที่คุณกำลังแก้ไข** ให้แจ้งผู้ใช้ก่อนดำเนินการต่อ
 
 ### Before Creating New Code
 
-Before creating a new helper, extension, service, DTO, ViewModel, or interface — search
-whether an equivalent implementation already exists and reuse it whenever possible.
-Before introducing any new type, ask the user to confirm its name unless the name is
-explicitly specified in the requirement.
+ก่อนสร้าง helper, extension, service, DTO, ViewModel หรือ interface ใหม่ — ค้นหาก่อนว่ามี
+implementation ที่เทียบเท่าอยู่แล้วหรือไม่ และนำกลับมาใช้ซ้ำเมื่อเป็นไปได้
+ก่อนตั้ง type ใหม่ ให้ถามผู้ใช้เพื่อยืนยันชื่อ เว้นแต่ requirement จะระบุชื่อไว้ชัดเจนแล้ว
 
 ### Commands
 
@@ -168,43 +157,43 @@ explicitly specified in the requirement.
 dotnet restore
 dotnet build
 dotnet test
-dotnet format --verify-no-changes   # enforces .editorconfig; must pass in CI too
+dotnet format --verify-no-changes   # บังคับตาม .editorconfig; ต้องผ่านใน CI ด้วย
 ```
 
 ## Testing & Quality
 
-Before marking a task complete:
+ก่อนถือว่างานเสร็จ:
 
-1. Run build command
-2. Fix all compile errors
-3. Check affected flows manually
-4. Add or update tests when business logic changes
-5. Start the Postgres dependency (`docker-compose.yml`) if the change touches persistence
+1. รัน build command
+2. แก้ compile error ให้หมด
+3. ตรวจสอบ flow ที่ได้รับผลกระทบด้วยตัวเอง
+4. เพิ่ม/แก้ test เมื่อ business logic เปลี่ยน
+5. เปิด dependency Postgres (`docker-compose.yml`) ถ้าการเปลี่ยนแปลงเกี่ยวกับ persistence
 
 ### Test Runner
 
-- XUnit, via `Jotwai.IntegrationTests`
-- Tests run against **Testcontainers.PostgreSql** — never a native/local Postgres instance
-- `Microsoft.AspNetCore.Mvc.Testing` (`WebApplicationFactory`) drives the API in-process — see `JotwaiApiFactory.cs`
-- No unit-test project or mocking library exists yet; the current suite is integration-only. If pure business logic grows complex enough to warrant isolated unit tests, set up a separate unit-test project rather than mixing unit tests into `Jotwai.IntegrationTests`
+- XUnit ผ่าน `Jotwai.IntegrationTests`
+- Test รันกับ **Testcontainers.PostgreSql** เท่านั้น — ห้ามใช้ Postgres ที่ติดตั้งในเครื่องโดยตรง
+- `Microsoft.AspNetCore.Mvc.Testing` (`WebApplicationFactory`) เป็นตัวขับ API แบบ in-process — ดู `JotwaiApiFactory.cs`
+- ยังไม่มี unit-test project หรือ mocking library — ชุด test ปัจจุบันเป็น integration-only ถ้า business logic ล้วนๆ ซับซ้อนขึ้นจนคุ้มค่าที่จะมี unit test แยก ให้ตั้ง unit-test project แยกต่างหาก ไม่ใช่ปน unit test เข้ากับ `Jotwai.IntegrationTests`
 
 ### Unit Test Rules
 
-Test required for:
+ต้องมี test สำหรับ:
 
 - Business logic
 - Validation
-- Permission / auth flows
-- Bug fixes
+- Permission / auth flow
+- Bug fix
 
 #### Test Style
 
-- Use Arrange / Act / Assert
-- Use clear test names
-- Test both success and failure cases
-- DO NOT test private methods directly
-- Prefer testing public behavior
+- ใช้รูปแบบ Arrange / Act / Assert
+- ตั้งชื่อ test ให้ชัดเจน
+- Test ทั้ง success และ failure case
+- ห้าม test private method โดยตรง
+- เน้น test public behavior
 
 ### Rules
 
-- **DO NOT edit a test to make a failure pass.** When a test breaks after a code change, stop and report which tests failed and why — decide whether the _code_ regressed or the expected behavior genuinely changed, summarize the impact, and wait for explicit approval before touching any test. Do not assume the test is wrong just because it is red.
+- **ห้ามแก้ test เพื่อให้มันผ่าน** เมื่อ test พังหลังจากแก้โค้ด ให้หยุดแล้วรายงานว่า test ไหนพังและเพราะอะไร — ตัดสินใจว่า _โค้ด_ regress จริงหรือ expected behavior เปลี่ยนไปจริงๆ สรุปผลกระทบ แล้วรอการอนุมัติอย่างชัดเจนก่อนแตะ test ใดๆ อย่าคิดเอาเองว่า test ผิดเพียงเพราะมันขึ้นสีแดง
