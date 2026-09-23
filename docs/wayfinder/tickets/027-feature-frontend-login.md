@@ -2,8 +2,8 @@
 id: 27
 title: "Build: Frontend login flow (Identity/Auth)"
 type: wayfinder:task
-status: open
-assignee: null
+status: closed
+assignee: voramatep
 parent: ../map.md
 blocked_by: []
 ---
@@ -21,7 +21,7 @@ Backend Auth API build และ test เสร็จสมบูรณ์แล
 
 นี่คือ build task ไม่ใช่ open decision — track ไว้ที่นี่เป็น backlog ตาม convention เดียวกับ ticket 020–026 ไม่ถูก block ด้วยอะไร: backend API ที่ต้องพึ่งพามีอยู่แล้วและถูก cover ด้วย `Jotwai.IntegrationTests/TokenRefreshTests.cs` และ test อื่นๆ ที่เกี่ยวข้อง
 
-## Finding (implement แล้ว ยังไม่ได้ verify กับ backend ที่รันจริง)
+## Finding (implement และ verify กับ backend ที่รันจริงแล้ว)
 
 สิ่งที่ build แล้ว:
 
@@ -32,6 +32,11 @@ Backend Auth API build และ test เสร็จสมบูรณ์แล
 - `core/router/ProtectedRoute.tsx` / `PublicOnlyRoute.tsx` — การเข้าถึง `/` โดยไม่ login จะ render `core/pages/Unauthorized.tsx`; ผู้ใช้ที่ login อยู่แล้วเข้า `/login` หรือ `/register` จะถูก redirect ไปที่ `/`
 - Backend: เพิ่ม `Cors` policy (`Program.cs` + `Cors:AllowedOrigins` ใน `appsettings.Development.json`, ตอนนี้คือ `http://localhost:5173`) — เดิมไม่มีเลย (gap ที่ ticket 016 เคยแจ้งไว้) ทำให้ SPA เรียก API แบบ cross-origin ได้
 
-ยืนยันแล้วในเบราว์เซอร์ (Vite dev server, click-through จริง): เข้า `/` โดยไม่ login → เจอหน้า Unauthorized → link ไป `/login`; `/login` และ `/register` render และ validate ได้ถูกต้อง; ตอน submit จะ degrade ผ่านลำดับความสำคัญของ error message ได้ถูกต้อง (เจอ body 404 จาก Vite ก่อน แล้วค่อยเจอ `Network Error` จริงหลังแก้ `VITE_API_BASE_URL` ใน `client/.env` ให้ชี้ไปที่ API) — ยืนยันว่า request path และ error handling ถูก wire ไว้ถูกต้องครบวงจร ยกเว้นแค่ response จริงจาก API ที่รันอยู่
+**บั๊กที่เจอระหว่าง verify จริง และแก้แล้ว**: ตอนทดสอบจริงครั้งแรก register/login ขึ้น `Network Error` ทุกครั้ง สาเหตุคือ `app.UseHttpsRedirection()` ใน `Program.cs` ถูกวางไว้**ก่อน** `app.UseCors(...)` — ทุก request (รวม CORS preflight `OPTIONS`) โดน redirect ไป `https://localhost:7088` ก่อนที่ CORS middleware จะได้ตอบ และ browser ไม่ยอม follow redirect ระหว่าง preflight เลยบล็อก request ทั้งหมด แก้โดย:
+- ลบ `UseHttpsRedirection()` ออก — dev setup นี้ backend รับ http ตรงๆ ไม่มี reverse proxy บังคับ https ระหว่าง dev (ตรงกับ convention ของบริษัทที่ TLS terminate ที่ hosting/proxy ไม่ใช่ที่ Kestrel)
+- เพิ่ม `UseRouting()` และเรียงลำดับใหม่เป็น `UseRouting → UseCors → UseAuthentication → UseAuthorization`
+- ย้าย CORS setup ออกมาเป็น extension method `AddCustomCors` ใน `Jotwai.Service/CorsServiceRegistration.cs` (รูปแบบเดียวกับ `AddIdentityFeature`)
 
-**ยังไม่ได้ verify**: การ register/login/refresh/logout จริงกับ API + Postgres ที่รันอยู่จริง — Docker Desktop ใช้ไม่ได้ใน environment นี้ จึงเปิด dependency DB `identity` ของ API ไม่ได้ `dotnet build` ผ่าน และ CORS/route wiring ถูก review แล้ว แต่ยังไม่มีใครลอง response จริงแบบ 201/200 ผ่านโค้ด client ใหม่นี้เลย คนที่หยิบ ticket นี้ต่อควรรัน `docker-compose up` + API + `npm run dev` แล้ว click-through register → logout → login → refresh (รอให้ `AccessTokenMinutes` หมดอายุ หรือลดค่าลงชั่วคราวในเครื่อง) ก่อนปิด ticket นี้
+ยืนยันครบวงจรจริงแล้ว (Docker Postgres + API รันจริง + Vite dev server + click-through ในเบราว์เซอร์): เข้า `/` โดยไม่ login → เจอหน้า Unauthorized → link ไป `/login`; register ผู้ใช้ใหม่สำเร็จ (`201 Created`, ได้ access/refresh token จริง) → redirect เข้า `/` → เห็น "Signed in as `<userId>`" (ยืนยันว่า `GET /api/auth/me` ทำงานถูกต้องพร้อม token) → กด Log out → กลับไปหน้า Unauthorized → login ด้วย credential เดิมสำเร็จ → เห็น user ID เดิม ครบทุกขั้นตอนตาม Question ด้านบน
+
+Ticket นี้ทำสำเร็จครบตาม scope ที่วางไว้ พร้อมปิดได้
