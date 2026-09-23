@@ -29,21 +29,10 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddIdentityFeature(builder.Configuration);
+builder.Services.AddCustomCors(builder.Configuration);
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<IdentityDbContext>();
-
-// The SPA is deployed as a separate static artifact (ADR-0007), so its origin is never
-// same-origin with this API — CORS must be explicit. No origins configured = no cross-
-// origin access allowed, so a deployment that forgets to set this fails closed.
-var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("Client", policy => policy
-        .WithOrigins(corsOrigins)
-        .AllowAnyHeader()
-        .AllowAnyMethod());
-});
 
 var app = builder.Build();
 
@@ -59,9 +48,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseCors("Client");
+// No UseHttpsRedirection: TLS is terminated upstream (reverse proxy/hosting), not by
+// Kestrel — matching the company's standard convention. Redirecting here would also
+// break CORS preflight (a preflight response can't be a redirect), which is exactly
+// what broke local dev against the SPA on a plain-http origin.
+app.UseRouting();
+app.UseCors(CorsServiceRegistration.PolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();

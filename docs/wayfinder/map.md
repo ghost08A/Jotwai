@@ -25,6 +25,7 @@ Spec ที่ตัดสินใจแล้วและพร้อมให
 - [ตัดสินใจความหมายของ bulk-accept สำหรับ Category suggestion](tickets/010-bulk-accept-suggestions.md): เป็น transaction เดียวแบบ atomic — สร้าง + attach Category ที่ accept ทั้งหมดพร้อมกัน หรือไม่ทำเลยสักอัน
 - [Audit implementation: ADR-0010 Global three-tier project structure](tickets/018-audit-adr-0010.md): ยืนยันว่า implement แล้ว — project reference และ folder layout ตรงกันเป๊ะสำหรับ Identity module (module เดียวที่ build แล้วตอนนี้)
 - [Audit implementation: ADR-0011 Custom Identity entities with password hashing](tickets/019-audit-adr-0011.md): ยืนยันว่า implement แล้ว — `User`/`RefreshToken` POCO แบบ custom, hashing ผ่าน `IPasswordHasher` เท่านั้นพร้อม constant-time handling สำหรับ email ที่ไม่มีในระบบ, JWT ที่ออกเอง, และ refresh-token rotation แบบ atomic compare-and-swap ทั้งหมดมีอยู่จริงและมี test ครบ
+- [Frontend login flow](tickets/027-feature-frontend-login.md): build เสร็จและ verify ครบวงจรจริงแล้ว (register → me → logout → login ผ่าน Docker Postgres + API + browser click-through) ระหว่างทางเจอและแก้บั๊ก CORS preflight ที่โดน `UseHttpsRedirection()` ขวางไว้ ด้วยการลบ https redirect ออกและเรียง middleware ใหม่เป็น `UseRouting → UseCors → UseAuthentication → UseAuthorization`
 
 ## Open implementation-debt tickets (audited, not yet built)
 
@@ -49,7 +50,19 @@ Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Categ
 - [AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md) — background trigger, confidence threshold, bulk-accept แบบ atomic
 - [User Ownership enforcement](tickets/025-feature-user-ownership.md) — invariant แบบ cross-cutting ครอบคลุม Notes/Topic/Category/AI Categorization; ถูก block จนกว่าทั้ง 4 อย่างจะเสร็จ
 - [Search](tickets/026-feature-search.md) — search แบบ substring บนเนื้อหา/Topic/Category รวมถึงเนื้อหาใน code block
-- [Frontend login flow](tickets/027-feature-frontend-login.md) — UI login/register, การเก็บ token + refresh, การ wiring Protected Route; backend Auth API build และ test เสร็จแล้ว, `axios` ฝั่ง client ยังไม่ถูกใช้งาน
+
+## Open grilling tickets (database schema — not yet decided)
+
+เปิดขึ้นระหว่าง `/grill-with-docs` session เมื่อผู้ใช้ถามว่า DB มีตารางอะไรบ้าง/วางแผนไว้ยังไง (2026-09-23) — พบว่า schema `identity` เท่านั้นที่ build จริง (`Users`, `RefreshTokens`) ส่วน `notes`/`organization`/`ai_categorization`/`search` ยังไม่มี DbContext/migration ใดๆ เลย และเอกสารที่มีอยู่ตัดสินใจแค่ระดับพฤติกรรม/คำศัพท์ domain เท่านั้น ไม่เคยตัดสินใจรูปร่างตารางจริง ticket ด้านล่างคือ Round 1 ของคำถาม (ถามแล้ว ยังไม่ได้รับคำตอบจากผู้ใช้ ณ ตอนที่เขียนนี้) — module Search ยังไม่ถูก grill เพราะ design ของมันขึ้นกับคำตอบ ticket 029 (Topic hierarchy) โดยตรง รอ Round ถัดไป:
+
+- [User-scoping ของ Topic/Category](tickets/028-db-user-scoping.md) — ผูกกับ User ไหม (ขัดกับ GLOSSARY.md "globally unique" หรือเปล่า)
+- [Topic hierarchy storage](tickets/029-db-topic-hierarchy-storage.md) — adjacency list vs closure table vs materialized path (บล็อก schema ของ Search)
+- [Note มี Title แยกไหม](tickets/030-db-note-title.md)
+- [Soft-delete shape ของ Note](tickets/031-db-note-soft-delete-shape.md) — `DeletedAt` เดี่ยวๆ vs คู่กับ `IsDeleted`
+- [Note-Category join table เก็บที่มาไหม](tickets/032-db-note-category-join-provenance.md) — manual vs AI-suggested
+- [AI Categorization "รันแล้วครั้งเดียว" เช็คจากไหน](tickets/033-db-ai-categorization-trigger-tracking.md) — flag บน Notes vs infer จาก ai_categorization เอง
+- [Suggestion เก็บ Category ใหม่ยังไง](tickets/034-db-suggestion-new-category-shape.md) — ยืนยันว่าเป็น string ดิบๆ ไม่สร้างแถวจริงจนกว่าจะ accept
+- [Confidence threshold เก็บที่ไหน](tickets/035-db-confidence-threshold-storage.md) — app config vs DB-backed vs per-user
 
 ## Not yet specified
 
