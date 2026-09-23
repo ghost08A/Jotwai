@@ -33,6 +33,18 @@ builder.Services.AddIdentityFeature(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<IdentityDbContext>();
 
+// The SPA is deployed as a separate static artifact (ADR-0007), so its origin is never
+// same-origin with this API — CORS must be explicit. No origins configured = no cross-
+// origin access allowed, so a deployment that forgets to set this fails closed.
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Client", policy => policy
+        .WithOrigins(corsOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -48,6 +60,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("Client");
 
 app.UseAuthentication();
 app.UseAuthorization();
