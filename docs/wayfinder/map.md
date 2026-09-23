@@ -49,6 +49,7 @@ Requirements v0.1's product spec (Note capture, Code Block, Topic, Category, AI 
 - [AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md) — background trigger, confidence threshold, atomic bulk-accept.
 - [User Ownership enforcement](tickets/025-feature-user-ownership.md) — cross-cutting invariant across Notes/Topic/Category/AI Categorization; blocked on all four landing.
 - [Search](tickets/026-feature-search.md) — content/Topic/Category substring search including code block bodies.
+- [Frontend login flow](tickets/027-feature-frontend-login.md) — login/register UI, token storage + refresh, Protected Route wiring; backend Auth API already built and tested, `axios` currently unused on the client.
 
 ## Not yet specified
 

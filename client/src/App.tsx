@@ -1,20 +1,10 @@
-import { Routes, Route } from "react-router-dom";
-
-function Home() {
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-50">
-      <div className="text-center">
-        <h1 className="text-3xl font-semibold text-neutral-900">Jotwai</h1>
-        <p className="mt-2 text-neutral-500">Capture first, organize later.</p>
-      </div>
-    </main>
-  );
-}
+import { AppProviders } from "./core/providers/AppProviders";
+import { AppRouter } from "./core/router/AppRouter";
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-    </Routes>
+    <AppProviders>
+      <AppRouter />
+    </AppProviders>
   );
 }
