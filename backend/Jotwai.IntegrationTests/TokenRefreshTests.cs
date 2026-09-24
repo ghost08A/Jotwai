@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Jotwai.Domain.Interfaces;
+using Jotwai.Domain.Models.Database;
 using Jotwai.Domain.RequestModels;
 using Jotwai.Domain.ViewModels;
 using Jotwai.Service;

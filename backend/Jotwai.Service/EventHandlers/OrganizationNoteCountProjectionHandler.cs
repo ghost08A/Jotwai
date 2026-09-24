@@ -1,5 +1,6 @@
 using Jotwai.Domain.Events;
 using Jotwai.Domain.Interfaces;
+using Jotwai.Domain.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace Jotwai.Service.EventHandlers;

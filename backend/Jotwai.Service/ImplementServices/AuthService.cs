@@ -1,5 +1,6 @@
 using Jotwai.Domain.Interfaces;
 using Jotwai.Domain.Models;
+using Jotwai.Domain.Models.Database;
 using Jotwai.Domain.RequestModels;
 using Jotwai.Domain.ValidateModel;
 using Jotwai.Domain.ViewModels;

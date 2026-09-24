@@ -16,7 +16,7 @@
 
 ## Architecture
 
-- ดู [../ARCHITECTURE.md](../ARCHITECTURE.md) และ [ADR-0010](../docs/adr/0010-global-three-tier-layering.md) สำหรับภาพรวมทั้งหมด
+- ดู [../ARCHITECTURE.md](../ARCHITECTURE.md), [ADR-0010](../docs/adr/0010-global-three-tier-layering.md) และ [ADR-0012](../docs/adr/0012-dbcontext-in-domain-for-mkt-loyalty-consistency.md) สำหรับภาพรวมทั้งหมด
 - Business logic อยู่ใน `Jotwai.Service` เท่านั้น
 - Controller (`Web.Jotwai`) ทำหน้าที่แค่ orchestrate request/response
 - ห้ามเข้าถึง `DbContext` ตรงๆ จาก Controller
@@ -27,28 +27,35 @@
 
 ## Project Structure
 
-ใช้ global Domain → Service → Web layering ชั้นเดียว (ADR-0010 แทนที่ ADR-0009 ที่แบ่ง layering ต่อ Module) — โฟลเดอร์จัดตาม technical layer ไม่ใช่ตาม Module:
+ใช้ global Domain → Service → Web layering ชั้นเดียว (ADR-0010 แทนที่ ADR-0009 ที่แบ่ง layering ต่อ Module) — โฟลเดอร์จัดตาม technical layer ไม่ใช่ตาม Module `DbContext`/EF configuration/Migrations อยู่ใน `Jotwai.Domain` ไม่ใช่ `Jotwai.Service` (ADR-0012 แทนที่ส่วนนี้ของ ADR-0010 เพื่อความสอดคล้องกับ mkt-loyalty):
 
 ```
 .editorconfig
-Jotwai.Domain/              # ไม่ reference project อื่นเลย
+Jotwai.Domain/              # ไม่ reference project อื่นเลย (มี PackageReference ของ EF Core/Npgsql ตรงๆ)
     Interfaces/              # interface นำหน้าด้วย I สำหรับทุก Module (เช่น IAuthService)
     Models/                  # entity/domain model
+        Database/             # DbContext + EF configuration + migration (ADR-0012)
+            <Module>DbContext.cs        # หนึ่ง DbContext ต่อหนึ่ง Module ผูกกับ schema ของตัวเอง
+            <Module>DbContextFactory.cs
+            Configurations/    # EF Core IEntityTypeConfiguration<T> ต่อ entity
+            Migrations/        # EF Core migration ต่อ Module
     RequestModels/           # request DTO
     ValidateModel/           # validation/result model
     ViewModels/               # response/view model
-Jotwai.Service/              # reference Jotwai.Domain เท่านั้น
+Jotwai.Service/              # reference Jotwai.Domain เท่านั้น (ไม่มี PackageReference ของ EF Core/Npgsql ตรงๆ — ได้ผ่าน Jotwai.Domain)
     ImplementServices/        # business logic (หนึ่ง *Service ต่อหนึ่ง interface)
+    EventHandlers/
     Helper/
-    Configurations/           # EF Core IEntityTypeConfiguration<T> ต่อ entity
-    Migrations/               # EF Core migration
-    <Module>DbContext.cs      # หนึ่ง DbContext ต่อหนึ่ง Module ผูกกับ schema ของตัวเอง
-    <Module>DbContextFactory.cs
-    <Module>ServiceRegistration.cs
 Web.Jotwai/                  # reference Jotwai.Service + Jotwai.Domain
     Controllers/
     Properties/
-    Program.cs
+    ServiceRegistrations/       # DI wiring ทุกไฟล์ที่มี IServiceCollection extension method (ย้ายจาก Jotwai.Service มาที่นี่)
+        Features/                 # ต่อ Module - รวม AddDbContext<...>() (ไม่ใช่ตัว DbContext class เอง จึงอยู่ที่นี่ได้)
+            <Module>ServiceRegistration.cs
+        CrossCutting/              # ไม่ผูกกับ Module ไหน (CORS, Domain Event mediator)
+            CorsServiceRegistration.cs
+            EventingServiceRegistration.cs
+    Program.cs                  # เรียก ServiceRegistrations/* + RegisterAutoServices (auto-DI, ดู "Auto-DI" ด้านล่าง)
 Jotwai.IntegrationTests/     # XUnit + Testcontainers.PostgreSql + WebApplicationFactory
 ```
 
@@ -58,12 +65,13 @@ Jotwai.IntegrationTests/     # XUnit + Testcontainers.PostgreSql + WebApplicatio
   ขึ้นกับ `Jotwai.Service` และ `Jotwai.Domain`; `Jotwai.Service` ขึ้นกับ
   `Jotwai.Domain` เท่านั้น; `Jotwai.Domain` ไม่ขึ้นกับอะไรที่เจาะจง project เลย
 - โค้ดใหม่ให้ใส่ในโฟลเดอร์ตาม technical layer ที่ตรงกัน (`Interfaces/`, `Models/`,
-  `RequestModels/`, `ValidateModel/`, `ViewModels/` ใน `Jotwai.Domain`;
-  `ImplementServices/`, `Configurations/` ใน `Jotwai.Service`) — ขอบเขตของ Module
-  ถูกบังคับด้วย convention ของ Domain Events และ code review ไม่ใช่ด้วยโครงสร้างโฟลเดอร์
-  ดังนั้นอย่าคิดโฟลเดอร์ย่อยแยกตาม Module ขึ้นมาเอง
+  `Models/Database/` (`DbContext`, `Configurations/`, `Migrations/`), `RequestModels/`,
+  `ValidateModel/`, `ViewModels/` ใน `Jotwai.Domain`; `ImplementServices/` ใน
+  `Jotwai.Service`) — ขอบเขตของ Module ถูกบังคับด้วย convention ของ Domain Events และ
+  code review ไม่ใช่ด้วยโครงสร้างโฟลเดอร์ ดังนั้นอย่าคิดโฟลเดอร์ย่อยแยกตาม Module ขึ้นมาเอง
 - แต่ละ Module มี `DbContext` ของตัวเอง (เช่น `IdentityDbContext`) ผูกกับ
-  schema PostgreSQL ของตัวเอง — ห้ามใช้ `AppDbContext` ร่วมกัน
+  schema PostgreSQL ของตัวเอง — ห้ามใช้ `AppDbContext` ร่วมกัน (ADR-0012:
+  `DbContext` อยู่ใน `Jotwai.Domain/Models/Database/` ไม่ใช่ `Jotwai.Service`)
 
 ## Coding Convention
 
@@ -80,6 +88,27 @@ Jotwai.IntegrationTests/     # XUnit + Testcontainers.PostgreSql + WebApplicatio
 | `Is`/`Has`/`Can` prefix | Boolean property/variable (เช่น `IsActive`, `HasRefreshToken`) |
 
 ใช้คำศัพท์ของ Jotwai จาก [../GLOSSARY.md](../GLOSSARY.md) ก่อนแหล่งอื่นเสมอ
+
+### Auto-DI (`IXxxService` / `XxxService`)
+
+`RegisterAutoServices(builder)` (`private static` method ท้าย `Web.Jotwai/Program.cs`
+โดยตรง — ตาม pattern ของ mkt-loyalty ที่เขียน logic นี้ไว้ใน host โดยตรง ไม่ห่อเป็น
+extension method แยกใน `*.Service`, เรียกครั้งเดียวก่อน `builder.Build()`) ใช้ reflection
+ผูก DI ให้อัตโนมัติสำหรับ interface/class ที่ตั้งชื่อตรงตาม pattern นี้เท่านั้น — **ห้าม**
+`AddScoped<IXxxService, XxxService>()` มือใน `<Module>ServiceRegistration.cs` อีกถ้าเข้าเงื่อนไขข้อ 1-3:
+
+1. Interface อยู่ใน `Jotwai.Domain/Interfaces/` ชื่อ `I<Name>Service` (ลงท้ายด้วย `Service` ตัว S ใหญ่)
+2. Class อยู่ใน `Jotwai.Service/ImplementServices/` ชื่อ `<Name>Service` — ตัด `I` ออกจากชื่อ interface แล้วต้องตรงกับชื่อ class **เป๊ะ** (case-sensitive, ห้ามมีคำต่อท้าย/นำหน้าเพิ่ม)
+3. ตั้งใจให้ lifetime เป็น **Scoped** เท่านั้น — ถ้าต้องการ Singleton/Transient หรือ implementation ที่ไม่ได้ inject ตรงๆ (เช่นผ่าน `AddHttpClient<TInterface, TImplementation>`) ต้องประกาศมือใน `<Module>ServiceRegistration.cs` เหมือนเดิม ห้ามใช้ auto-DI
+
+ตัวที่ **ไม่เข้าเงื่อนไข** และยังต้องประกาศมือเหมือนเดิม: `DbContext`, `IEventHandler<T>`
+(ชื่อไม่ลงท้าย `Service`), `IAiProvider`/`GeminiAiProvider` (ผูกผ่าน `AddHttpClient`, ชื่อ
+implementation ไม่ลงท้าย `Service`), singleton อย่าง `IEventPublisher`/`InProcessEventPublisher`
+
+ถ้าตั้งชื่อ interface/class ไม่ตรง pattern (เช่นสะกดผิด, เว้นคำนำหน้า) auto-DI จะ **เงียบๆ
+ไม่ผูกให้** (ไม่มี exception ตอน build) แล้วจะไป fail ตอน runtime ด้วย
+`InvalidOperationException: Unable to resolve service` แทน — เวลาสร้าง service ใหม่ตาม
+pattern นี้ ให้เช็คชื่อให้ตรงเป๊ะก่อนเสมอ
 
 ### Coding Rules
 

@@ -1,9 +1,11 @@
+using Jotwai.Domain.Interfaces;
+using Jotwai.Domain.Models.Database;
 using Jotwai.Service;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 
 namespace Jotwai.IntegrationTests;
@@ -43,6 +45,17 @@ public sealed class JotwaiApiFactory : WebApplicationFactory<Program>, IAsyncLif
             services.AddDbContext<NotesDbContext>(options =>
                 options.UseNpgsql(_postgres.GetConnectionString(),
                     npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "notes")));
+
+            services.RemoveAll<DbContextOptions<AiCategorizationDbContext>>();
+            services.AddDbContext<AiCategorizationDbContext>(options =>
+                options.UseNpgsql(_postgres.GetConnectionString(),
+                    npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "ai_categorization")));
+
+            // Fast poll so tests don't wait out the 5s production default, and a fake
+            // provider so tests never make a real Gemini API call.
+            services.Configure<AiCategorizationWorkerOptions>(o => o.PollIntervalSeconds = 1);
+            services.RemoveAll<IAiProvider>();
+            services.AddSingleton<IAiProvider, FakeAiProvider>();
         });
     }
 
