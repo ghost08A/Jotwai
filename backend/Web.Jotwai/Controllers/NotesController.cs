@@ -77,6 +77,28 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
             };
     }
 
+    [HttpPost("{id:guid}/categories/{categoryId:guid}")]
+    public async Task<IActionResult> AttachCategory(Guid id, Guid categoryId, CancellationToken cancellationToken)
+    {
+        var result = await notesService.AttachCategoryAsync(CurrentUserId(), id, categoryId, cancellationToken);
+
+        return result.Succeeded
+            ? Ok(result.Note)
+            : result.FailureReason switch
+            {
+                NoteCategoryAttachFailureReason.NoteNotFound => NotFound(),
+                NoteCategoryAttachFailureReason.CategoryNotFound => BadRequest(new { error = "Category not found." }),
+                _ => StatusCode(StatusCodes.Status500InternalServerError),
+            };
+    }
+
+    [HttpDelete("{id:guid}/categories/{categoryId:guid}")]
+    public async Task<IActionResult> DetachCategory(Guid id, Guid categoryId, CancellationToken cancellationToken)
+    {
+        var note = await notesService.DetachCategoryAsync(CurrentUserId(), id, categoryId, cancellationToken);
+        return note is null ? NotFound() : Ok(note);
+    }
+
     // [Authorize] already guarantees a valid, signed token with a "sub" claim (see
     // AuthController.Me) - Guid.Parse here can only throw on a token-format change,
     // which should fail loudly rather than silently scope a query to the wrong user.

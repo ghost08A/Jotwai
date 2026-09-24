@@ -4,6 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Lets `dotnet user-secrets` store the Gemini API key outside the repo for local dev
+         (appsettings.Development.json is tracked in git - never put a real secret there). -->
+    <UserSecretsId>jotwai-web-a1e6f9c2-6b3f-4e6e-9d2a-6f2b5b6e6a3f</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

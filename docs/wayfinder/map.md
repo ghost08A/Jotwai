@@ -29,6 +29,9 @@ Spec ที่ตัดสินใจแล้วและพร้อมให
 - [Note capture & CRUD](tickets/020-feature-note-capture-crud.md): build เสร็จและ verify ครบวงจรจริงแล้วฝั่ง backend (2026-09-23) — `NotesDbContext`/service/controller ครบ, 8 integration test ใหม่ผ่าน (รวม 27/27), พร้อม mediator infra ของ ADR-0002 ที่สร้างขึ้นครั้งแรกในคราวนี้ ทำให้ [ADR-0001 audit](tickets/011-audit-adr-0001.md) และ [ADR-0002 audit](tickets/012-audit-adr-0002.md) ปิดตามไปด้วย client UI ยังไม่ทำ
 - [การย้าย Note ไป Topic ต้องมี Topic อยู่ก่อนไหม](tickets/036-topic-must-exist-before-note-move.md): ต้องมีอยู่ก่อนเท่านั้น — endpoint ย้าย Note ไม่รองรับสร้าง Topic แบบ inline
 - [Topic hierarchy](tickets/022-feature-topic-hierarchy.md): build เสร็จและ verify ครบวงจรจริงแล้วฝั่ง backend (2026-09-24) — `OrganizationDbContext`/service/controller ครบ, sibling-uniqueness แบบ case-insensitive, delete guard ทั้ง child topics และ notes, 13 integration test ใหม่ผ่าน (รวม 39/39) พิสูจน์ cross-module read model จริงเป็นครั้งแรกของ repo (Notes↔Organization ผ่าน `KnownTopic`/`NoteCount`) ทำให้ [ADR-0003 audit](tickets/013-audit-adr-0003.md) ปิดตามไปด้วย client UI ยังไม่ทำ
+- [Category flat structure](tickets/023-feature-category-flat.md): build เสร็จและ verify ครบวงจรจริงแล้วฝั่ง backend (2026-09-24) — reuse pattern ของ Topic ตัด hierarchy/delete-guard ออก, many-to-many join `NoteCategories` เป็นของ Notes เอง, auto-detach ตอน Category ถูกลบผ่าน event, 11 integration test ใหม่ผ่าน (รวม 50/50) client UI ยังไม่ทำ
+- [AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md): build เสร็จและ verify ครบวงจรจริงแล้วฝั่ง backend (2026-09-24) — module `ai_categorization` ใหม่ทั้งหมด: outbox + `BackgroundService` (ADR-0004), `GeminiAiProvider` อยู่หลัง `IAiProvider`, confidence threshold แบบ DB-backed (ticket 035), bulk-accept แบบ atomic transaction ข้าม 3 schema จริง (ticket 010) เป็นครั้งแรกของ repo, พบและแก้ gap เรื่อง on-demand re-trigger ระหว่าง audit ticket 025, 9 integration test ใหม่ผ่าน (รวม 59/59) ด้วย fake AI provider ไม่มี network call จริงใน test client UI ยังไม่ทำ
+- [User Ownership enforcement](tickets/025-feature-user-ownership.md): audit เสร็จแล้ว (2026-09-24) — ยืนยันว่า invariant ถูกบังคับใช้อยู่แล้วโดยการออกแบบของ 020/022/023/024 ไม่ต้องสร้าง subsystem ใหม่ ตามที่ ticket ระบุไว้เอง พบ gap เดียว (on-demand re-trigger) ซึ่งแก้ไปพร้อมกับ ticket 024 แล้ว
 
 ## Open implementation-debt tickets (audited, not yet built)
 
@@ -37,7 +40,7 @@ Audit แต่ละ ADR พบว่าสิ่งเหล่านี้ย
 - ~~[ADR-0001 modular monolith](tickets/011-audit-adr-0001.md)~~ — ปิดแล้ว 2026-09-23 (module Notes พิสูจน์ pattern เป็นครั้งที่สองต่อจาก Identity)
 - ~~[ADR-0002 in-process event communication](tickets/012-audit-adr-0002.md)~~ — ปิดแล้ว 2026-09-23 (mediator infra สร้างแล้ว, `NoteCreated`/`NoteUpdated`/`NoteDeleted` publish จริง ยังไม่มี handler subscribe ตามที่คาด)
 - ~~[ADR-0003 schema-per-module + read models](tickets/013-audit-adr-0003.md)~~ — ปิดแล้ว 2026-09-24 (Organization schema สร้างแล้ว, read-model ข้าม module พิสูจน์แล้วทั้งสองทิศทางผ่าน ticket 022)
-- [ADR-0004 outbox + AI Categorization background job](tickets/014-audit-adr-0004.md) — ยังไม่ได้ build อะไรเลย
+- ~~[ADR-0004 outbox + AI Categorization background job](tickets/014-audit-adr-0004.md)~~ — ปิดแล้ว 2026-09-24 (build ครบผ่าน ticket 024: outbox + BackgroundService + Gemini provider)
 - [ADR-0006 Postgres substring search](tickets/015-audit-adr-0006.md) — ยังไม่ได้ build อะไรเลย
 - [ADR-0007 API-only backend, separate SPA deploy](tickets/016-audit-adr-0007.md) — รูปแบบโค้ดแบบ API-only ถูกต้องแล้ว แต่ยังไม่มี CORS config และยังไม่มี deployment artifact (Dockerfile/CI) มาพิสูจน์ว่า deploy แยกกันได้จริง
 - [ADR-0008 frontend stack and editor](tickets/017-audit-adr-0008.md) — scaffolding ของ React/Vite/router/TanStack Query/Tailwind มีอยู่แล้ว; Tiptap, component สไตล์ shadcn/ui, การใช้ axios และ feature code ทั้งหมดยังขาดอยู่
@@ -49,9 +52,9 @@ Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Categ
 - ~~[Note capture & CRUD](tickets/020-feature-note-capture-crud.md)~~ — ปิดแล้ว 2026-09-23 (ดู Decisions so far)
 - [Code Block with language metadata](tickets/021-feature-code-block.md) — ถูก block ด้วย base editor (Tiptap, ADR-0008 audit ticket 017)
 - ~~[Topic hierarchy](tickets/022-feature-topic-hierarchy.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
-- [Category flat structure](tickets/023-feature-category-flat.md) — ความ unique ทั้งระบบ, หนึ่ง Note มีได้หลาย Category
-- [AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md) — background trigger, confidence threshold, bulk-accept แบบ atomic
-- [User Ownership enforcement](tickets/025-feature-user-ownership.md) — invariant แบบ cross-cutting ครอบคลุม Notes/Topic/Category/AI Categorization; ถูก block จนกว่าทั้ง 4 อย่างจะเสร็จ
+- ~~[Category flat structure](tickets/023-feature-category-flat.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
+- ~~[AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
+- ~~[User Ownership enforcement](tickets/025-feature-user-ownership.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
 - [Search](tickets/026-feature-search.md) — search แบบ substring บนเนื้อหา/Topic/Category รวมถึงเนื้อหาใน code block
 
 ## Open grilling tickets (database schema — not yet decided)

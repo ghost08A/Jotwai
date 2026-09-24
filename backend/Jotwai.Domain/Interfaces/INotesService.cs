@@ -26,4 +26,19 @@ public interface INotesService
     /// <summary>Moves the Note into a Topic, or clears it when <paramref name="topicId"/> is null.
     /// The Topic must already exist (ticket 036) - this never creates one.</summary>
     Task<AssignNoteTopicResult> AssignTopicAsync(Guid userId, Guid noteId, Guid? topicId, CancellationToken cancellationToken = default);
+
+    /// <summary>Attaches a Category to the Note (idempotent - already attached is still a success).
+    /// The Category must already exist.</summary>
+    Task<NoteCategoryAttachResult> AttachCategoryAsync(Guid userId, Guid noteId, Guid categoryId, CancellationToken cancellationToken = default);
+
+    /// <summary>Detaches a Category from the Note (idempotent - not attached is still a success).
+    /// Returns null if the Note isn't found/owned.</summary>
+    Task<NoteResponse?> DetachCategoryAsync(Guid userId, Guid noteId, Guid categoryId, CancellationToken cancellationToken = default);
+
+    /// <summary>Explicit user action to (re-)run AI Categorization on demand (GLOSSARY.md
+    /// "AI Categorization") - unlike the automatic path, this ignores
+    /// <c>AiCategorizationTriggeredAt</c> and can be called any number of times; it doesn't
+    /// count as the one automatic trigger and doesn't affect it. Returns false if the Note
+    /// isn't found/owned or is in the Trash.</summary>
+    Task<bool> TriggerCategorizationAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default);
 }

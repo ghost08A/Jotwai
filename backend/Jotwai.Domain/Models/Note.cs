@@ -14,4 +14,9 @@ public sealed class Note
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset UpdatedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
+
+    /// <summary>Set the first time this Note is saved with non-empty Content - never again
+    /// after that (User Ownership, ticket 025). Owned by Notes itself (ticket 033) so it can
+    /// decide, on its own, whether to publish <see cref="Events.NoteReadyForCategorization"/>.</summary>
+    public DateTimeOffset? AiCategorizationTriggeredAt { get; set; }
 }

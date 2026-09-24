@@ -2,7 +2,7 @@
 id: 14
 title: "ตรวจสอบการ implement: ADR-0004 Outbox + background worker for AI Categorization, using Gemini"
 type: wayfinder:research
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -20,3 +20,7 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/14
 **ขาด**: module Notes (entity `Note`, domain event `NoteCreated`), ตาราง outbox พร้อมการเขียนข้อมูลแบบธุรกรรมเดียวกันตอนสร้าง note, ตัว poller แบบ `BackgroundService`/`IHostedService`, interface ของ AI provider พร้อม client ของ Gemini (2.5 Flash-Lite), domain model และการเก็บข้อมูลของ Category/Suggestion, การเชื่อมต่อ hosted service ใน `Program.cs`
 
 ยังคงเปิดไว้ — หนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่
+
+## Resolution
+
+ปิดแล้ว (2026-09-24) — build ครบผ่าน [ticket 024](024-feature-ai-categorization-flow.md): module `AiCategorization` (schema `ai_categorization`), ตาราง `OutboxEntries` เขียนแบบ transactional จาก domain event handler, `AiCategorizationOutboxWorker : BackgroundService` poll ทุก 5 วินาที, `GeminiAiProvider` implement `IAiProvider` เรียก Gemini 2.5 Flash-Lite REST API จริง, entity `Suggestion`/`SuggestionCandidate` ครบ ทุกอย่างตรงตาม decision ของ ADR-0004 เป๊ะ

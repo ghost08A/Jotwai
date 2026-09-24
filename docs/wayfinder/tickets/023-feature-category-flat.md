@@ -2,7 +2,7 @@
 id: 23
 title: "สร้าง: โครงสร้าง Category แบบเรียบ (สร้าง, ความไม่ซ้ำกันทั่วทั้งระบบ, หลาย Category ต่อหนึ่ง Note)"
 type: wayfinder:task
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -15,3 +15,14 @@ Product spec (Requirements v0.1 §5; GLOSSARY.md "Category"; BR-005, BR-006) ต
 ## Finding
 
 ยังไม่เริ่มดำเนินการ ไม่มีเอนทิตี Category, DbContext หรือ UI อยู่ที่ใดในโปรเจกต์เลย
+
+## Resolution
+
+Build เสร็จและ verify ครบวงจรแล้ว (2026-09-24) — เฉพาะฝั่ง backend (client UI ยังไม่ทำ ไม่อยู่ใน scope ของ ticket นี้) reuse pattern เดียวกับ [ticket 022 (Topic)](022-feature-topic-hierarchy.md) แต่ตัดส่วนที่ Category ไม่มี (ไม่มี hierarchy, ไม่มี delete guard เพราะ spec ไม่ได้ขอ):
+
+- `Jotwai.Domain`: `Models/Category.cs` (`Id`, `UserId`, `Name`/`NormalizedName` — unique ทั่วระบบต่อ user ตาม decision 028, ไม่มี `ParentId`/`NoteCount` เพราะไม่ต้อง), `Events/CategoryCreated.cs`/`CategoryRenamed.cs`/`CategoryDeleted.cs`, `Events/NoteCategoryAttached.cs`/`NoteCategoryDetached.cs`, `Models/KnownCategory.cs` (read model ของ Notes), `Models/NoteCategory.cs` (join table many-to-many ไม่เก็บที่มา ตาม decision 032), `Interfaces/ICategoriesService.cs`, extend `INotesService` ด้วย `AttachCategoryAsync`/`DetachCategoryAsync`, extend `NoteResponse` ด้วย `CategoryIds`
+- **Cross-module read model ทิศทางเดียว** (ต่างจาก Topic ที่ต้องมีสองทิศทางเพราะมี delete-guard): Notes subscribe `CategoryCreated`/`CategoryDeleted` เพื่อรักษา `KnownCategories` ใช้ validate ตอน attach — Organization ไม่ต้องรู้จำนวน Note ต่อ Category เพราะไม่มี delete-guard ให้บังคับ; เมื่อ Category ถูกลบ handler ฝั่ง Notes (`NotesKnownCategoriesProjectionHandler`) จะลบแถว `NoteCategories` ที่ค้างอยู่เองด้วย (auto-detach) เพราะ Organization มองไม่เห็น join table นี้เลย
+- `Jotwai.Service`: `Categories` DbSet ใน `OrganizationDbContext` (schema เดิม, migration ใหม่), `CategoriesService` (create/list/get/rename/delete — delete ไม่มี guard ลบได้แม้มี Note ติดอยู่), `NotesService.AttachCategoryAsync`/`DetachCategoryAsync` (แบบ idempotent — attach/detach ซ้ำไม่ error), แก้ N+1 โดย batch query `NoteCategories` ตอน list หลาย Note พร้อมกัน
+- `Web.Jotwai`: `CategoriesController` (`POST/GET/PUT/DELETE /api/categories`), `NotesController` เพิ่ม `POST/DELETE /api/notes/{id}/categories/{categoryId}`
+- Integration test 11 เคสใหม่ (`CategoriesTests.cs`) ครอบคลุม duplicate-name, cross-user ชื่อซ้ำได้, rename ชนชื่อ, delete แม้มี note ติดอยู่, attach หลายอัน, attach ซ้ำ idempotent, attach ของไม่มีจริง 400, detach, และ auto-detach ตอน category ถูกลบ — รวม test เดิมผ่านครบ **50/50**, `dotnet format --verify-no-changes` ผ่าน
+- Verify end-to-end จริงผ่าน curl: duplicate 409, attach หลาย category, attach ของไม่มีจริง 400, ลบ category ที่มี note ติดอยู่สำเร็จ (204) แล้ว note นั้น auto-detach เอง, detach เอง — ครบทุก use case
