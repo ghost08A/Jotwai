@@ -2,7 +2,7 @@
 id: 28
 title: ตัดสินใจว่า Topic/Category ผูกกับ User หรือไม่ (multi-tenancy ของ schema organization/notes)
 type: wayfinder:grilling
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -19,3 +19,7 @@ GLOSSARY.md เขียนไว้ว่า "Category names are globally uniqu
 2. Global จริงๆ ข้าม User ทั้งระบบ (unique constraint เป็น column เดียว ไม่มี `UserId` ร่วม)
 
 **คำแนะนำ**: ตัวเลือก 1 — แอปนี้เป็นสมุดโน้ตส่วนตัว ไม่มีที่ไหนพูดถึงการแชร์ข้อมูลข้าม User เลย (เป็น explicit non-goal ด้วยซ้ำ) การให้ User คนอื่นชนชื่อ Category กันจะแปลกมาก
+
+## Resolution
+
+เลือกตัวเลือก 1 — ผูกกับ User ทั้งหมด `Notes`/`Topics`/`Categories` ทุกตารางมีคอลัมน์ `UserId`; unique constraint ของ `Categories.Name` และ Topic sibling name เป็น composite `(UserId, Name)` / `(UserId, ParentId, Name)` ไม่ใช่ column เดียว "Globally unique" ใน GLOSSARY.md หมายถึง unique ภายใน scope ของ User คนนั้น ไม่ใช่ข้าม User

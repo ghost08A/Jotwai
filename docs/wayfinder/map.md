@@ -26,14 +26,17 @@ Spec ที่ตัดสินใจแล้วและพร้อมให
 - [Audit implementation: ADR-0010 Global three-tier project structure](tickets/018-audit-adr-0010.md): ยืนยันว่า implement แล้ว — project reference และ folder layout ตรงกันเป๊ะสำหรับ Identity module (module เดียวที่ build แล้วตอนนี้)
 - [Audit implementation: ADR-0011 Custom Identity entities with password hashing](tickets/019-audit-adr-0011.md): ยืนยันว่า implement แล้ว — `User`/`RefreshToken` POCO แบบ custom, hashing ผ่าน `IPasswordHasher` เท่านั้นพร้อม constant-time handling สำหรับ email ที่ไม่มีในระบบ, JWT ที่ออกเอง, และ refresh-token rotation แบบ atomic compare-and-swap ทั้งหมดมีอยู่จริงและมี test ครบ
 - [Frontend login flow](tickets/027-feature-frontend-login.md): build เสร็จและ verify ครบวงจรจริงแล้ว (register → me → logout → login ผ่าน Docker Postgres + API + browser click-through) ระหว่างทางเจอและแก้บั๊ก CORS preflight ที่โดน `UseHttpsRedirection()` ขวางไว้ ด้วยการลบ https redirect ออกและเรียง middleware ใหม่เป็น `UseRouting → UseCors → UseAuthentication → UseAuthorization`
+- [Note capture & CRUD](tickets/020-feature-note-capture-crud.md): build เสร็จและ verify ครบวงจรจริงแล้วฝั่ง backend (2026-09-23) — `NotesDbContext`/service/controller ครบ, 8 integration test ใหม่ผ่าน (รวม 27/27), พร้อม mediator infra ของ ADR-0002 ที่สร้างขึ้นครั้งแรกในคราวนี้ ทำให้ [ADR-0001 audit](tickets/011-audit-adr-0001.md) และ [ADR-0002 audit](tickets/012-audit-adr-0002.md) ปิดตามไปด้วย client UI ยังไม่ทำ
+- [การย้าย Note ไป Topic ต้องมี Topic อยู่ก่อนไหม](tickets/036-topic-must-exist-before-note-move.md): ต้องมีอยู่ก่อนเท่านั้น — endpoint ย้าย Note ไม่รองรับสร้าง Topic แบบ inline
+- [Topic hierarchy](tickets/022-feature-topic-hierarchy.md): build เสร็จและ verify ครบวงจรจริงแล้วฝั่ง backend (2026-09-24) — `OrganizationDbContext`/service/controller ครบ, sibling-uniqueness แบบ case-insensitive, delete guard ทั้ง child topics และ notes, 13 integration test ใหม่ผ่าน (รวม 39/39) พิสูจน์ cross-module read model จริงเป็นครั้งแรกของ repo (Notes↔Organization ผ่าน `KnownTopic`/`NoteCount`) ทำให้ [ADR-0003 audit](tickets/013-audit-adr-0003.md) ปิดตามไปด้วย client UI ยังไม่ทำ
 
 ## Open implementation-debt tickets (audited, not yet built)
 
 Audit แต่ละ ADR พบว่าสิ่งเหล่านี้ยังล้าหลังกว่า decision ที่บันทึกไว้ — ปล่อยเปิดไว้เป็น tracked backlog ไม่ใช่ decision ที่ต้องตัดสินใจเพิ่ม:
 
-- [ADR-0001 modular monolith](tickets/011-audit-adr-0001.md) — มีแค่ Identity module เท่านั้นที่มีอยู่; Notes/Organization/AI Categorization/Search ยังไม่ได้ build
-- [ADR-0002 in-process event communication](tickets/012-audit-adr-0002.md) — ยังไม่มี mediator/event infrastructure เลย
-- [ADR-0003 schema-per-module + read models](tickets/013-audit-adr-0003.md) — มีแค่ schema/DbContext ของ `identity` เท่านั้น; pattern พิสูจน์แล้วว่าใช้ได้ แต่ยังไม่ถูกขยายไปที่อื่น
+- ~~[ADR-0001 modular monolith](tickets/011-audit-adr-0001.md)~~ — ปิดแล้ว 2026-09-23 (module Notes พิสูจน์ pattern เป็นครั้งที่สองต่อจาก Identity)
+- ~~[ADR-0002 in-process event communication](tickets/012-audit-adr-0002.md)~~ — ปิดแล้ว 2026-09-23 (mediator infra สร้างแล้ว, `NoteCreated`/`NoteUpdated`/`NoteDeleted` publish จริง ยังไม่มี handler subscribe ตามที่คาด)
+- ~~[ADR-0003 schema-per-module + read models](tickets/013-audit-adr-0003.md)~~ — ปิดแล้ว 2026-09-24 (Organization schema สร้างแล้ว, read-model ข้าม module พิสูจน์แล้วทั้งสองทิศทางผ่าน ticket 022)
 - [ADR-0004 outbox + AI Categorization background job](tickets/014-audit-adr-0004.md) — ยังไม่ได้ build อะไรเลย
 - [ADR-0006 Postgres substring search](tickets/015-audit-adr-0006.md) — ยังไม่ได้ build อะไรเลย
 - [ADR-0007 API-only backend, separate SPA deploy](tickets/016-audit-adr-0007.md) — รูปแบบโค้ดแบบ API-only ถูกต้องแล้ว แต่ยังไม่มี CORS config และยังไม่มี deployment artifact (Dockerfile/CI) มาพิสูจน์ว่า deploy แยกกันได้จริง
@@ -43,9 +46,9 @@ Audit แต่ละ ADR พบว่าสิ่งเหล่านี้ย
 
 Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Category, AI Categorization, User Ownership, Search) ถูกตัดสินใจครบถ้วนแล้วระหว่างเอกสาร requirements, GLOSSARY.md และ decision ของแผนผังนี้เอง — แต่ยังไม่มีอะไรอยู่ในโค้ดเลย ยืนยันได้จากการ grep `backend/` และ `client/src` หา `Note`/`Topic`/`Category`/Tiptap (มีแค่ Identity ที่ build แล้ว) เปิดไว้ล่วงหน้าเป็น backlog ตาม convention เดียวกับ ADR audit ticket ด้านบน:
 
-- [Note capture & CRUD](tickets/020-feature-note-capture-crud.md) — สร้างได้โดยไม่ต้องมี Topic/Category, แก้ไขแบบ overwrite, soft delete + Trash
+- ~~[Note capture & CRUD](tickets/020-feature-note-capture-crud.md)~~ — ปิดแล้ว 2026-09-23 (ดู Decisions so far)
 - [Code Block with language metadata](tickets/021-feature-code-block.md) — ถูก block ด้วย base editor (Tiptap, ADR-0008 audit ticket 017)
-- [Topic hierarchy](tickets/022-feature-topic-hierarchy.md) — การซ้อนชั้น, ความ unique ของพี่น้อง, หนึ่ง Note มีได้หนึ่ง Topic, guard ป้องกันลบ Topic ที่ยังไม่ว่าง
+- ~~[Topic hierarchy](tickets/022-feature-topic-hierarchy.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
 - [Category flat structure](tickets/023-feature-category-flat.md) — ความ unique ทั้งระบบ, หนึ่ง Note มีได้หลาย Category
 - [AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md) — background trigger, confidence threshold, bulk-accept แบบ atomic
 - [User Ownership enforcement](tickets/025-feature-user-ownership.md) — invariant แบบ cross-cutting ครอบคลุม Notes/Topic/Category/AI Categorization; ถูก block จนกว่าทั้ง 4 อย่างจะเสร็จ
@@ -53,20 +56,24 @@ Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Categ
 
 ## Open grilling tickets (database schema — not yet decided)
 
-เปิดขึ้นระหว่าง `/grill-with-docs` session เมื่อผู้ใช้ถามว่า DB มีตารางอะไรบ้าง/วางแผนไว้ยังไง (2026-09-23) — พบว่า schema `identity` เท่านั้นที่ build จริง (`Users`, `RefreshTokens`) ส่วน `notes`/`organization`/`ai_categorization`/`search` ยังไม่มี DbContext/migration ใดๆ เลย และเอกสารที่มีอยู่ตัดสินใจแค่ระดับพฤติกรรม/คำศัพท์ domain เท่านั้น ไม่เคยตัดสินใจรูปร่างตารางจริง ticket ด้านล่างคือ Round 1 ของคำถาม (ถามแล้ว ยังไม่ได้รับคำตอบจากผู้ใช้ ณ ตอนที่เขียนนี้) — module Search ยังไม่ถูก grill เพราะ design ของมันขึ้นกับคำตอบ ticket 029 (Topic hierarchy) โดยตรง รอ Round ถัดไป:
+module Search ยังไม่ถูก grill เพราะ design ของมันขึ้นกับคำตอบ ticket 029 (Topic hierarchy) โดยตรง — ตอนนี้ 029 ตอบแล้ว (adjacency list) รอ Round ถัดไปเพื่อ grill schema ของ Search ต่อ:
 
-- [User-scoping ของ Topic/Category](tickets/028-db-user-scoping.md) — ผูกกับ User ไหม (ขัดกับ GLOSSARY.md "globally unique" หรือเปล่า)
-- [Topic hierarchy storage](tickets/029-db-topic-hierarchy-storage.md) — adjacency list vs closure table vs materialized path (บล็อก schema ของ Search)
-- [Note มี Title แยกไหม](tickets/030-db-note-title.md)
-- [Soft-delete shape ของ Note](tickets/031-db-note-soft-delete-shape.md) — `DeletedAt` เดี่ยวๆ vs คู่กับ `IsDeleted`
-- [Note-Category join table เก็บที่มาไหม](tickets/032-db-note-category-join-provenance.md) — manual vs AI-suggested
-- [AI Categorization "รันแล้วครั้งเดียว" เช็คจากไหน](tickets/033-db-ai-categorization-trigger-tracking.md) — flag บน Notes vs infer จาก ai_categorization เอง
-- [Suggestion เก็บ Category ใหม่ยังไง](tickets/034-db-suggestion-new-category-shape.md) — ยืนยันว่าเป็น string ดิบๆ ไม่สร้างแถวจริงจนกว่าจะ accept
-- [Confidence threshold เก็บที่ไหน](tickets/035-db-confidence-threshold-storage.md) — app config vs DB-backed vs per-user
+(Round 1 ของคำถาม database schema ทั้งหมดตอบครบแล้วเมื่อ 2026-09-23 — ดู Decisions so far ด้านบน)
+
+## Decisions so far (database schema, Round 1 — 2026-09-23)
+
+- [User-scoping ของ Topic/Category](tickets/028-db-user-scoping.md): ผูกกับ User — ทุกตาราง (`Notes`/`Topics`/`Categories`) มี `UserId`, unique constraint เป็น composite `(UserId, Name)`
+- [Topic hierarchy storage](tickets/029-db-topic-hierarchy-storage.md): Adjacency list (`Topics.ParentId` self-FK nullable)
+- [Note มี Title แยกไหม](tickets/030-db-note-title.md): ไม่มี — list แสดง preview ของ `Content` แทน
+- [Soft-delete shape ของ Note](tickets/031-db-note-soft-delete-shape.md): `Notes.DeletedAt` (timestamp, nullable) เดี่ยวๆ
+- [Note-Category join table เก็บที่มาไหม](tickets/032-db-note-category-join-provenance.md): ไม่เก็บ — มีแค่ `NoteId + CategoryId`
+- [AI Categorization "รันแล้วครั้งเดียว" เช็คจากไหน](tickets/033-db-ai-categorization-trigger-tracking.md): เก็บ flag บนตาราง `Notes` เอง (`AiCategorizationTriggeredAt`) — **ขัดกับคำแนะนำเดิม** (แนะนำ infer จาก `ai_categorization` schema) ผู้ใช้เลือกให้ query ตรงไปตรงมากว่าแทน
+- [Suggestion เก็บ Category ใหม่ยังไง](tickets/034-db-suggestion-new-category-shape.md): ยืนยันเป็น nullable `CategoryId` FK + string `NewCategoryName` (exclusive กัน) ไม่สร้างแถว Category จริงจนกว่าจะ accept
+- [Confidence threshold เก็บที่ไหน](tickets/035-db-confidence-threshold-storage.md): DB-backed global setting ใน schema `ai_categorization` — **ขัดกับคำแนะนำเดิม** (แนะนำ app config) ผู้ใช้เลือกให้แก้ค่าได้โดยไม่ต้อง deploy ใหม่
 
 ## Not yet specified
 
-- การ "ย้าย" Note ไปยัง Topic รวมถึงการสร้าง Topic ที่ยังไม่มีอยู่แบบ inline ในการกระทำเดียวกันหรือไม่ หรือต้องให้ Topic มีอยู่ก่อนแล้ว (ผุดขึ้นมาระหว่างการเจาะจง destination ให้แคบลง ยังไม่คมพอที่จะตั้งเป็น ticket)
+(ว่างในตอนนี้ — ประเด็นเดิมเรื่องการย้าย Note ไป Topic แบบ inline ถูกตอบแล้วที่ [ticket 036](tickets/036-topic-must-exist-before-note-move.md))
 
 ## Out of scope
 

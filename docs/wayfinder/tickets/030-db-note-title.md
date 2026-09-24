@@ -2,7 +2,7 @@
 id: 30
 title: ตัดสินใจว่า Note มี Title แยกเป็นคอลัมน์หรือไม่
 type: wayfinder:grilling
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -17,3 +17,7 @@ blocked_by: []
 2. **ไม่มี Title เลย** — list แสดงตัวอย่างข้อความต้นๆ ของ `Content` แทน (เหมือน Apple Notes/Google Keep)
 
 **คำแนะนำ**: ตัวเลือก 2 (ไม่มี Title แยก ใช้ preview ของ content แทน) — "capture first" คือหัวใจของ product นี้ การบังคับ/แนะนำให้ตั้งชื่อจะขัดกับ flow "จดเร็วๆ" แต่นี่เป็นการเดาจาก product philosophy เท่านั้น ไม่ใช่สิ่งที่มีคนตัดสินใจไว้แล้ว
+
+## Resolution
+
+เลือกตัวเลือก 2 — Note ไม่มีคอลัมน์ `Title` แยก list "All Notes" แสดง preview ของ `Content` (Markdown) แทน

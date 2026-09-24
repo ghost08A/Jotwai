@@ -2,7 +2,7 @@
 id: 11
 title: "ตรวจสอบการ implement: ADR-0001 Modular monolith with extractable module boundaries"
 type: wayfinder:research
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -20,3 +20,7 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/11
 **ขาด**: module Notes, Organization, AI Categorization, และ Search (ไม่มี models/DbContext/service/controller สำหรับ module ใดเลย); กลไก Domain Event เอง (ติดตามแยกต่างหากในการตรวจสอบของ ADR-0002 ticket 012)
 
 ยังคงเปิดไว้ — นี่คือหนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่ กลับมาดูอีกครั้งเมื่อ module Notes เสร็จสมบูรณ์
+
+## Resolution
+
+ปิดแล้ว (2026-09-23) — module Notes ถูก build ตาม ticket 020: มี Domain model, `NotesDbContext` ผูก schema `notes` ของตัวเอง, service, controller ครบ เป็น module ที่สองถัดจาก Identity ที่พิสูจน์ขอบเขตนี้จริง ยังเหลือ Organization/AI Categorization/Search ที่ยังไม่ build — ติดตามต่อที่ ticket 022/023/024/026 (feature tasks) ไม่ใช่ ticket audit นี้อีกต่อไป เพราะ ADR-0001 (การมี module แบบมีขอบเขต) ตัวมันเองได้รับการพิสูจน์แล้วว่า pattern ใช้งานได้จริง

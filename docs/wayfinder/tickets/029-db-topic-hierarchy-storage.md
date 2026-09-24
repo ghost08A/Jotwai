@@ -2,7 +2,7 @@
 id: 29
 title: ตัดสินใจกลยุทธ์เก็บ Topic hierarchy ใน schema organization
 type: wayfinder:grilling
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -20,3 +20,7 @@ Topic ซ้อนชั้นได้ไม่จำกัด และต้�
 **คำแนะนำ**: ตัวเลือก 1 (Adjacency list) — scope ตอนนี้ยังไม่มี requirement เรื่อง performance ที่ต้อง optimize ขนาดนั้น (โน้ตส่วนตัว ไม่ใช่ enterprise-scale) และ `ParentId` เขียน/แก้ง่ายที่สุดตอนย้าย Topic — เพิ่ม closure table ทีหลังได้ถ้าจำเป็นจริงๆ
 
 **หมายเหตุ**: คำตอบของ ticket นี้กำหนดว่า module Search จะ implement การ filter ตาม Topic-ลูกหลานยังไง — ต้อง resolve ticket นี้ก่อนถึงจะ grill รายละเอียด schema ของ Search ต่อได้
+
+## Resolution
+
+เลือกตัวเลือก 1 — Adjacency list `Topics.ParentId` เป็น self-FK nullable (root topic มี `ParentId = null`) การ query "ลูกหลานทั้งหมด" ใช้ recursive CTE ตอน implement module Search/filter ไม่ต้องมี closure table หรือ `ltree` เพิ่มความซับซ้อนตอนนี้

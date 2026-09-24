@@ -2,7 +2,7 @@
 id: 32
 title: ตัดสินใจว่าตารางเชื่อม Note-Category ต้องเก็บที่มาไหม
 type: wayfinder:grilling
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -17,3 +17,7 @@ Category ผูกกับ Note แบบ many-to-many แน่นอน (ต�
 2. **ไม่เก็บ** — join table มีแค่ `NoteId + CategoryId` เพียวๆ
 
 **คำแนะนำ**: ตัวเลือก 2 (ไม่เก็บตอนนี้) — ไม่มี requirement ไหนขอ feature "แสดงที่มาของ Category" เลย เพิ่มทีหลังได้ถ้ามีคนต้องการจริงๆ (ตรงกับกฎ "อย่า over-engineer" ใน `docs/agents/backend.md`)
+
+## Resolution
+
+เลือกตัวเลือก 2 — join table `NoteCategories` มีแค่ `NoteId + CategoryId` ไม่เก็บ `Source`
