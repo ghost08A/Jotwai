@@ -33,6 +33,16 @@ public sealed class JotwaiApiFactory : WebApplicationFactory<Program>, IAsyncLif
             services.AddDbContext<IdentityDbContext>(options =>
                 options.UseNpgsql(_postgres.GetConnectionString(),
                     npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "identity")));
+
+            services.RemoveAll<DbContextOptions<OrganizationDbContext>>();
+            services.AddDbContext<OrganizationDbContext>(options =>
+                options.UseNpgsql(_postgres.GetConnectionString(),
+                    npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "organization")));
+
+            services.RemoveAll<DbContextOptions<NotesDbContext>>();
+            services.AddDbContext<NotesDbContext>(options =>
+                options.UseNpgsql(_postgres.GetConnectionString(),
+                    npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "notes")));
         });
     }
 

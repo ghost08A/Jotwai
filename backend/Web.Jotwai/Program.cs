@@ -28,17 +28,24 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.AddDomainEventing();
 builder.Services.AddIdentityFeature(builder.Configuration);
+builder.Services.AddOrganizationFeature(builder.Configuration);
+builder.Services.AddNotesFeature(builder.Configuration);
 builder.Services.AddCustomCors(builder.Configuration);
 
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<IdentityDbContext>();
+    .AddDbContextCheck<IdentityDbContext>()
+    .AddDbContextCheck<OrganizationDbContext>()
+    .AddDbContextCheck<NotesDbContext>();
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<OrganizationDbContext>().Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<NotesDbContext>().Database.Migrate();
 }
 
 // Configure the HTTP request pipeline.
