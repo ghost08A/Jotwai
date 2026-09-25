@@ -1,8 +1,13 @@
-# Issue tracker: GitHub
+# Issue tracker: local-markdown (ไม่ใช้ GitHub Issues อีกต่อไป)
 
-Issue และ spec ของ repo นี้อยู่ในรูปแบบ GitHub issue ใช้ `gh` CLI สำหรับทุก operation
+**Override ตัดสินใจเมื่อ 2026-09-25**: ผู้ใช้สั่งให้หยุดทำงาน issue/ticket บน GitHub ทั้งหมด ทำในเครื่อง (local-markdown) เพียงอย่างเดียว — นี่ขยาย scope ของ override เดิมเมื่อ 2026-09-22 ที่เคยจำกัดแค่งาน wayfinder (ดู section "Local-markdown tracker operations" ด้านล่าง) ให้ครอบคลุมทุกประเภทงาน (bug, feature, audit, ฯลฯ) ไม่ใช่แค่ wayfinder
 
-## Conventions
+- **อย่ารัน `gh issue`/`gh pr` เพื่อสร้าง, comment, หรือแก้ label/state ใดๆ อีก** GitHub Issues ของ ghost08A/Jotwai (รวมถึง #7–#19 ที่มีอยู่แล้ว) อยู่ในฐานะ **archive เท่านั้น** ไม่ใช่ tracker ที่ใช้งานจริง
+- Tracker ที่ใช้งานจริงคือ `docs/wayfinder/` ตาม convention เดียวกับที่ section "Local-markdown tracker operations" อธิบายไว้ — ใช้โครงสร้างเดียวกันนี้สำหรับ ticket ทุกประเภทนับจากนี้ ไม่ใช่แค่ของ wayfinder เดิม
+- ถ้าพบ reference ไปยัง GitHub issue number ในเอกสารเก่า (เช่น `archived_from:` frontmatter) นั่นคือ pointer ไปยัง archive เฉยๆ ห้ามใช้เป็นแหล่งอ้างอิงที่ต้องอัปเดตต่อ — ให้ตามไปที่ local ticket file แทน
+- Section ด้านล่างที่พูดถึง `gh` CLI (การอ่าน/สร้าง issue, PR-เป็นช่องทางรับ request) เก็บไว้เป็นข้อมูลอ้างอิงในกรณีที่ต้อง **อ่าน** ของเก่าจาก archive หรือ workflow PR ภายนอกยังต้องใช้ `gh pr` จริง (PR ไม่ได้ย้ายมาเป็น local — ยังอยู่บน GitHub ตามปกติ) — เฉพาะ **issue/ticket tracking** เท่านั้นที่ย้ายมา local
+
+## Conventions (สำหรับ PR และการอ่าน archive เท่านั้น — ไม่ใช้สร้าง/แก้ issue อีก)
 
 - **สร้าง issue**: `gh issue create --title "..." --body "..."` ใช้ heredoc สำหรับ body หลายบรรทัด
 - **อ่าน issue**: `gh issue view <number> --comments` กรอง comment ด้วย `jq` และดึง label มาด้วย
@@ -27,15 +32,15 @@ GitHub ใช้ number space ร่วมกันระหว่าง issue �
 
 ## เมื่อ skill บอกว่า "publish ไปที่ issue tracker"
 
-สร้าง GitHub issue
+สร้าง ticket ใหม่ใน `docs/wayfinder/tickets/` ตาม convention ด้านล่าง (ไม่ใช่ GitHub issue อีกต่อไป)
 
 ## เมื่อ skill บอกว่า "ดึง ticket ที่เกี่ยวข้อง"
 
-รัน `gh issue view <number> --comments`
+อ่านไฟล์ `docs/wayfinder/tickets/<id>-<slug>.md` ที่เกี่ยวข้องโดยตรง (ไม่ใช่ `gh issue view` อีกต่อไป)
 
-## Wayfinding operations
+## Local-markdown tracker operations
 
-ใช้โดย `/wayfinder` **Override ตัดสินใจเมื่อ 2026-09-22**: แผนผัง/ticket ของ wayfinder สำหรับ repo นี้อยู่ใน **local-markdown tracker** ที่ `docs/wayfinder/` ไม่ใช่ GitHub Issues — นี่แคบกว่า convention ทั่วไปที่ว่า "issue อยู่ใน GitHub" ด้านบน ซึ่งยังคงใช้กับทุกอย่างอื่น (bug, feature, PR-เป็นช่องทางรับ request) แผนผังแรก (Jotwai Requirements v0.1) เดิมทีถูกสร้างเป็น GitHub issue #7–#19 (ghost08A/Jotwai) และย้ายมาเป็นไฟล์ local โดยเก็บเนื้อหาไว้ครบถ้วน GitHub issue เหล่านั้นยังคงอยู่ในฐานะ archive ไม่ใช่ copy ที่ใช้งานจริงแล้ว
+**Override ตัดสินใจเมื่อ 2026-09-22, ขยาย scope เมื่อ 2026-09-25**: ticket/issue ทุกประเภทของ repo นี้ (ไม่ใช่แค่ wayfinder) อยู่ใน **local-markdown tracker** ที่ `docs/wayfinder/` ไม่ใช่ GitHub Issues แผนผังแรก (Jotwai Requirements v0.1) เดิมทีถูกสร้างเป็น GitHub issue #7–#19 (ghost08A/Jotwai) และย้ายมาเป็นไฟล์ local โดยเก็บเนื้อหาไว้ครบถ้วน GitHub issue เหล่านั้นยังคงอยู่ในฐานะ archive ไม่ใช่ copy ที่ใช้งานจริงแล้ว
 
 - **แผนผัง (Map)**: `docs/wayfinder/map.md` Frontmatter: `title`, `label: wayfinder:map` เนื้อหามี Destination / Notes / Decisions-so-far / Not yet specified / Out of scope ตามโครงสร้างที่ skill อธิบายไว้
 - **Child ticket**: `docs/wayfinder/tickets/<id>-<slug>.md` หนึ่งไฟล์ต่อหนึ่ง ticket Frontmatter: `id` (ตัวเลข เพิ่มขึ้นเรื่อยๆ ตลอดทั้ง tracker), `title`, `type` (`wayfinder:research`/`prototype`/`grilling`/`task`), `status` (`open`/`closed`), `assignee` (`null` หรือ username — คนที่ claim), `parent` (relative path ไปยัง map), `blocked_by` (list ของ relative path ไปยังไฟล์ ticket ที่เป็นตัว block, ว่างเปล่าถ้าไม่ถูก block) เนื้อหา: `## Question` (คำถามของ ticket กำหนดไว้ตั้งแต่สร้าง) ตามด้วย `## Resolution`/`## Finding` (เพิ่มเมื่อ resolve แล้ว)
