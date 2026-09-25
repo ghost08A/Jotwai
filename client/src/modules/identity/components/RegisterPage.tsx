@@ -4,6 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useRegister } from "../hooks/useRegister";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import { ROUTES } from "../../../shared/routes/paths";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 
 export function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -29,71 +32,67 @@ export function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-50">
+    <main className="flex min-h-screen items-center justify-center bg-muted">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-lg border border-neutral-200 bg-white p-8 shadow-sm"
+        className="w-full max-w-sm space-y-4 rounded-lg border border-border bg-card p-8 shadow-sm"
       >
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">Create an account</h1>
-          <p className="mt-1 text-sm text-neutral-500">Start capturing notes with Jotwai.</p>
+          <h1 className="text-2xl font-semibold text-card-foreground">Create an account</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Start capturing notes with Jotwai.</p>
         </div>
 
-        <label className="block">
-          <span className="text-sm font-medium text-neutral-700">Email</span>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="register-email">Email</Label>
+          <Input
+            id="register-email"
             type="email"
             required
             autoComplete="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 focus:border-neutral-500 focus:outline-none"
           />
-        </label>
+        </div>
 
-        <label className="block">
-          <span className="text-sm font-medium text-neutral-700">Password</span>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="register-password">Password</Label>
+          <Input
+            id="register-password"
             type="password"
             required
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 focus:border-neutral-500 focus:outline-none"
           />
-          <span className="mt-1 block text-xs text-neutral-400">
+          <p className="text-xs text-muted-foreground">
             At least 6 characters, with an uppercase, a lowercase, a digit, and a symbol.
-          </span>
-        </label>
+          </p>
+        </div>
 
-        <label className="block">
-          <span className="text-sm font-medium text-neutral-700">Confirm password</span>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="register-confirm-password">Confirm password</Label>
+          <Input
+            id="register-confirm-password"
             type="password"
             required
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 focus:border-neutral-500 focus:outline-none"
           />
-        </label>
+        </div>
 
-        {mismatchError && <p className="text-sm text-red-600">Passwords do not match.</p>}
+        {mismatchError && <p className="text-sm text-destructive">Passwords do not match.</p>}
         {register.isError && (
-          <p className="text-sm text-red-600">{getErrorMessage(register.error, "Failed to register")}</p>
+          <p className="text-sm text-destructive">{getErrorMessage(register.error, "Failed to register")}</p>
         )}
 
-        <button
-          type="submit"
-          disabled={register.isPending}
-          className="w-full cursor-pointer rounded-md bg-neutral-900 px-4 py-2 font-medium text-white hover:bg-neutral-800 active:bg-neutral-950 disabled:cursor-not-allowed disabled:bg-neutral-400"
-        >
+        <Button type="submit" disabled={register.isPending} className="w-full">
           {register.isPending ? "Creating account…" : "Create account"}
-        </button>
+        </Button>
 
-        <p className="text-center text-sm text-neutral-500">
+        <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link to={ROUTES.login} className="font-medium text-neutral-900 hover:underline">
+          <Link to={ROUTES.login} className="font-medium text-foreground hover:underline">
             Log in
           </Link>
         </p>
