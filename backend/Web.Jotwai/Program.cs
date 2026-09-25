@@ -39,13 +39,15 @@ builder.Services.AddIdentityFeature(builder.Configuration);
 builder.Services.AddOrganizationFeature(builder.Configuration);
 builder.Services.AddNotesFeature(builder.Configuration);
 builder.Services.AddAiCategorizationFeature(builder.Configuration);
+builder.Services.AddSearchFeature(builder.Configuration);
 builder.Services.AddCustomCors(builder.Configuration);
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<IdentityDbContext>()
     .AddDbContextCheck<OrganizationDbContext>()
     .AddDbContextCheck<NotesDbContext>()
-    .AddDbContextCheck<AiCategorizationDbContext>();
+    .AddDbContextCheck<AiCategorizationDbContext>()
+    .AddDbContextCheck<SearchDbContext>();
 
 var app = builder.Build();
 
@@ -55,6 +57,7 @@ using (var scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<OrganizationDbContext>().Database.Migrate();
     scope.ServiceProvider.GetRequiredService<NotesDbContext>().Database.Migrate();
     scope.ServiceProvider.GetRequiredService<AiCategorizationDbContext>().Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<SearchDbContext>().Database.Migrate();
 }
 
 // Configure the HTTP request pipeline.

@@ -51,6 +51,11 @@ public sealed class JotwaiApiFactory : WebApplicationFactory<Program>, IAsyncLif
                 options.UseNpgsql(_postgres.GetConnectionString(),
                     npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "ai_categorization")));
 
+            services.RemoveAll<DbContextOptions<SearchDbContext>>();
+            services.AddDbContext<SearchDbContext>(options =>
+                options.UseNpgsql(_postgres.GetConnectionString(),
+                    npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "search")));
+
             // Fast poll so tests don't wait out the 5s production default, and a fake
             // provider so tests never make a real Gemini API call.
             services.Configure<AiCategorizationWorkerOptions>(o => o.PollIntervalSeconds = 1);

@@ -133,6 +133,8 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         note.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
 
+        await eventPublisher.PublishAsync(new NoteRestored(note.Id, note.UserId, note.UpdatedAt), cancellationToken);
+
         return true;
     }
 
