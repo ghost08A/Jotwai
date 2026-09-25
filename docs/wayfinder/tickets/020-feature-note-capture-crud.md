@@ -34,3 +34,12 @@ Build เสร็จและ verify ครบวงจรแล้ว (2026-09
 - ทำให้ ticket 011/012/013 (audit ADR-0001/0002/0003) ปิดตามไปด้วยในฐานะผลพลอยได้ — ดู Resolution ของแต่ละ ticket
 
 **ไม่ได้ทำใน scope นี้ (ตั้งใจ)**: `AiCategorizationTriggeredAt` บน `Notes` (decision ของ ticket 033 — จะเพิ่มตอน build ticket 024 จริง), Topic/Category FK บน Note (ticket 022/023 ยังไม่ build), client UI
+
+**Client UI (2026-09-25)**: build เสร็จและ verify ครบวงจรจริงแล้วผ่าน browser ต่อ backend จริง (register → capture → save → edit (overwrite) → delete → trash → restore → กลับมาอยู่ใน active list) —
+
+- `modules/notes/types`, `services/notesService.ts` (เรียก `/api/notes`, `/api/notes/trash`, `/api/notes/{id}`, `/api/notes/{id}/restore` ตรงตาม `NotesController` ที่มีอยู่แล้ว), `hooks/` (`useNotes`/`useTrash`/`useCreateNote`/`useUpdateNote`/`useDeleteNote`/`useRestoreNote` ห่อ TanStack Query, invalidate query key ที่เกี่ยวข้องหลัง mutation)
+- `components/NotesPage.tsx` (composer แบบ capture-first ด้านบนด้วย `NoteEditor` เดียวกับ base editor ticket 017 + list ของ Note ที่ยัง active), `NoteCard.tsx` (คลิกเพื่อขยายเป็นแก้ไข ใช้ `NoteEditor` เดียวกัน แก้แบบเขียนทับ), `TrashPage.tsx` (list ถังขยะ read-only + ปุ่มกู้คืนต่อรายการ ตาม decision ตั๋ว 008), `NoteCardSkeleton.tsx` (skeleton ระหว่าง fetch ตามกฎ Loading Indicator ของ client/CLAUDE.md)
+- เพิ่ม `core/layouts/PrivateLayout.tsx` (header + nav Notes/Trash + สถานะผู้ใช้ + logout ใช้ร่วมกันทุกหน้า protected) แทนที่ placeholder `core/pages/Home.tsx` เดิม (ลบทิ้ง) — route `/` = Notes list, `/trash` = Trash ใหม่ (`ROUTES.trash`)
+- ใช้ component จาก headless library ที่เพิ่งตั้ง (`Button`) และ design token (`bg-card`, `text-muted-foreground`, `text-destructive` ฯลฯ) ตาม ADR-0008 audit ticket 017 รอบล่าสุด ไม่ได้เพิ่ม component ใหม่ (ใช้ `Button` เดิมพอ)
+- `npm run lint` + `npm run build` ผ่านสะอาด verify ผ่าน browser จริงกับ backend ที่รันจริง (ไม่ใช่ mock) รวมถึงยืนยันว่า restore ทำให้ note กลับมาแสดงถูกต้อง (พิสูจน์ทางอ้อมว่า `NoteRestored` event ที่เพิ่มระหว่าง build Search module ทำงานถูกต้องแล้ว)
+- ยังไม่ทำ: การกำหนด Topic/Category ให้ Note จาก UI (ticket 022/023 ฝั่ง client), Code Block ในบริบทของ Note จริง (ticket 021 — editor รองรับแล้วแต่ยังไม่มี test เจาะจงจาก flow นี้), AI Categorization suggestion UI (ticket 024 ฝั่ง client)

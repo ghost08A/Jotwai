@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ROUTES } from "../../shared/routes/paths";
-import { Home } from "../pages/Home";
+import { PrivateLayout } from "../layouts/PrivateLayout";
+import { NotesPage } from "../../modules/notes/components/NotesPage";
+import { TrashPage } from "../../modules/notes/components/TrashPage";
 import { LoginPage } from "../../modules/identity/components/LoginPage";
 import { RegisterPage } from "../../modules/identity/components/RegisterPage";
 import { ProtectedRoute } from "./ProtectedRoute";
@@ -15,7 +17,10 @@ export function AppRouter() {
           <Route path={ROUTES.register} element={<RegisterPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
-          <Route path={ROUTES.home} element={<Home />} />
+          <Route element={<PrivateLayout />}>
+            <Route path={ROUTES.home} element={<NotesPage />} />
+            <Route path={ROUTES.trash} element={<TrashPage />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
