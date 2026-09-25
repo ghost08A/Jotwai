@@ -15,8 +15,10 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/16
 
 ## Finding (implement บางส่วนแล้ว)
 
-`Program.cs` ไม่มีการเชื่อมต่อ `UseStaticFiles`/`UseSpaStaticFiles`/SPA-fallback ใดๆ และ `AuthController` เป็น `[ApiController]` แบบบริสุทธิ์ที่คืนค่า JSON — ครึ่งหนึ่งของการตัดสินใจที่ว่า "เป็น API เท่านั้น ไม่ serve SPA" นั้นได้รับการปฏิบัติตามแล้ว แต่ไม่มี `.github/workflows/`, ไม่มี `Dockerfile` อยู่ที่ไหนเลย และ `docker-compose.yml` รันเพียง Postgres/pgAdmin เท่านั้น — ยังไม่มีสิ่งใดแสดงให้เห็นว่าทั้งสองส่วนถูก deploy แยกกันอย่างเป็นอิสระ นอกจากนี้ยังไม่มีการตั้งค่า CORS ซึ่ง ADR ระบุว่าเป็นผลลัพธ์ที่จำเป็นด้วย
+**Re-audit 2026-09-25** (commit c87243b): `Program.cs` ไม่มีการเชื่อมต่อ `UseStaticFiles`/`UseSpaStaticFiles`/SPA-fallback ใดๆ ทุก controller (`AuthController`, `NotesController`, `TopicsController`, `CategoriesController`, `SuggestionsController`) เป็น `[ApiController]` แบบบริสุทธิ์ที่คืนค่า JSON — "เป็น API เท่านั้น ไม่ serve SPA" ยังคงเป็นจริง **CORS ถูกเพิ่มแล้ว** ระหว่าง [ticket 027 (frontend login flow)](027-feature-frontend-login.md): `Web.Jotwai/ServiceRegistrations/CrossCutting/CorsServiceRegistration.cs` + `AddCustomCors()` เรียกใน `Program.cs`, ต่อ middleware เป็น `UseRouting → UseCors → UseAuthentication → UseAuthorization` (ตั้งใจไม่ใช้ `UseHttpsRedirection` เพราะ preflight response redirect ไม่ได้ — มีคอมเมนต์อธิบายไว้ในโค้ด) gap เดิมเรื่อง CORS ปิดแล้ว
 
-**ขาด**: การตั้งค่า deployment (Dockerfile/CI) ที่แสดงให้เห็นจริงว่า SPA และ API เป็น artifact แยกกัน และการตั้งค่า CORS สำหรับ origin ของ SPA
+ยังไม่มี `.github/workflows/`, ไม่มี `Dockerfile` อยู่ที่ไหนเลย และ `docker-compose.yml` รันเพียง Postgres/pgAdmin เท่านั้น (ไม่มี service สำหรับ backend หรือ client) — ยังไม่มีสิ่งใดแสดงให้เห็นว่า SPA กับ API ถูก deploy แยกกันอย่างเป็นอิสระจริง
+
+**ขาด**: การตั้งค่า deployment (Dockerfile/CI) ที่แสดงให้เห็นจริงว่า SPA และ API เป็น artifact แยกกัน
 
 ยังคงเปิดไว้ — หนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่
