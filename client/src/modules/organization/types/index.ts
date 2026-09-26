@@ -14,3 +14,18 @@ export interface CreateTopicRequest {
 export interface RenameTopicRequest {
   name: string;
 }
+
+export interface CategoryResponse {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+}
+
+export interface RenameCategoryRequest {
+  name: string;
+}

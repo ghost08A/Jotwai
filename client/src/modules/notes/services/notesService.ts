@@ -33,3 +33,13 @@ export async function assignNoteTopic(id: string, topicId: string | null): Promi
   const { data } = await httpClient.put<NoteResponse>(`/api/notes/${id}/topic`, { topicId });
   return data;
 }
+
+export async function attachCategory(noteId: string, categoryId: string): Promise<NoteResponse> {
+  const { data } = await httpClient.post<NoteResponse>(`/api/notes/${noteId}/categories/${categoryId}`);
+  return data;
+}
+
+export async function detachCategory(noteId: string, categoryId: string): Promise<NoteResponse> {
+  const { data } = await httpClient.delete<NoteResponse>(`/api/notes/${noteId}/categories/${categoryId}`);
+  return data;
+}

@@ -7,6 +7,7 @@ import { useAssignNoteTopic } from "../hooks/useAssignNoteTopic";
 import { useTopics } from "../../organization/hooks/useTopics";
 import { flattenTopicsForSelect } from "../../organization/utils/flattenTopicsForSelect";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
+import { NoteCategoryChips } from "./NoteCategoryChips";
 import type { NoteResponse } from "../types";
 
 interface NoteCardProps {
@@ -56,6 +57,8 @@ export function NoteCard({ note }: NoteCardProps) {
       {assignTopic.isError && (
         <p className="mb-2 text-sm text-destructive">{getErrorMessage(assignTopic.error, "Failed to move note")}</p>
       )}
+
+      <NoteCategoryChips noteId={note.id} categoryIds={note.categoryIds} />
 
       {isEditing ? (
         <>

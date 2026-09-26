@@ -20,6 +20,9 @@ export function PrivateLayout() {
             <Link to={ROUTES.topics} className="hover:text-foreground">
               Topics
             </Link>
+            <Link to={ROUTES.categories} className="hover:text-foreground">
+              Categories
+            </Link>
             <Link to={ROUTES.trash} className="hover:text-foreground">
               Trash
             </Link>

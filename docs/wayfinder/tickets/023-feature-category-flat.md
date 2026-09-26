@@ -26,3 +26,11 @@ Build เสร็จและ verify ครบวงจรแล้ว (2026-09
 - `Web.Jotwai`: `CategoriesController` (`POST/GET/PUT/DELETE /api/categories`), `NotesController` เพิ่ม `POST/DELETE /api/notes/{id}/categories/{categoryId}`
 - Integration test 11 เคสใหม่ (`CategoriesTests.cs`) ครอบคลุม duplicate-name, cross-user ชื่อซ้ำได้, rename ชนชื่อ, delete แม้มี note ติดอยู่, attach หลายอัน, attach ซ้ำ idempotent, attach ของไม่มีจริง 400, detach, และ auto-detach ตอน category ถูกลบ — รวม test เดิมผ่านครบ **50/50**, `dotnet format --verify-no-changes` ผ่าน
 - Verify end-to-end จริงผ่าน curl: duplicate 409, attach หลาย category, attach ของไม่มีจริง 400, ลบ category ที่มี note ติดอยู่สำเร็จ (204) แล้ว note นั้น auto-detach เอง, detach เอง — ครบทุก use case
+
+**Client UI (2026-09-25)**: build เสร็จและ verify ครบวงจรจริงแล้วผ่าน browser ต่อ backend จริง —
+
+- `modules/organization/components/CategoriesPage.tsx` + `CategoryRow.tsx` (list แบบเรียบ ไม่มี hierarchy, create/rename/delete) เพิ่ม route `/categories` + nav link ใหม่ใน `PrivateLayout`
+- `modules/notes/components/NoteCategoryChips.tsx` — chip toggle ต่อ Category (ไม่ใช่ multi-select) เพราะ Category ผูกกับ Note แบบ many-to-many ต่างจาก Topic ที่เป็น single-value คลิกเพื่อ attach/detach ทันที ใช้งานได้บนมือถือ (ไม่ต้อง ctrl/cmd-click แบบ native multi-select)
+- `modules/notes/hooks/useAttachCategory.ts`/`useDetachCategory.ts` เพิ่ม `attachCategory`/`detachCategory` ใน `modules/notes/services/notesService.ts`, `useDeleteCategory` invalidate query ของ Notes ด้วย (เพราะลบ category จะ auto-detach ฝั่ง backend)
+- Verify ผ่าน browser จริงกับ backend จริงครบ: สร้าง 2 category, attach เข้า note, reload ยืนยัน persist, detach สำเร็จ
+- `npm run lint` + `npm run build` ผ่านสะอาด
