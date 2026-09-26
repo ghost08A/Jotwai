@@ -32,7 +32,7 @@
 - Module ใน `backend/` สื่อสารกันผ่าน in-process Domain Events เท่านั้น โดยเป็น convention — ห้ามเรียกกันโดยตรงหรือ query ข้าม schema ระหว่าง module (ดู ADR 0001–0003, ADR-0010) แต่ละ Module ยังคงมี `DbContext` ของตัวเองที่ผูกกับ schema ของตัวเองภายใน `Jotwai.Service` แม้ project จะถูกแบ่งแบบ global ก็ตาม
 - เนื้อหา Note เป็น Markdown; editor (Tiptap) เป็นเพียง view ของข้อมูลนั้น ไม่ใช่ source of truth
 - ห้ามเพิ่ม real-time/push infrastructure, semantic search, การแชร์โน้ต หรือ version history โดยไม่ปรึกษาผู้ใช้ก่อน — สิ่งเหล่านี้เป็น non-goal ที่ระบุไว้ชัดเจนสำหรับ scope ปัจจุบัน (ดู ARCHITECTURE.md)
-- ห้ามรัน `git commit` แทนผู้ใช้เด็ดขาด แม้ skill/workflow (เช่น `/implement`) จะบอกให้ commit เป็นหนึ่งในขั้นตอนก็ตาม ให้ implement, verify (build, tests) แล้วหยุด — ผู้ใช้เป็นคน commit เอง
+- ห้ามรัน `git commit` เองโดยไม่ได้รับอนุญาตชัดเจน แม้ skill/workflow (เช่น `/implement`) จะบอกให้ commit เป็นหนึ่งในขั้นตอนก็ตาม ให้ implement, verify (build, tests) แล้วหยุดรอผู้ใช้รีวิวก่อนเสมอ — commit ให้ได้ต่อเมื่อผู้ใช้บอกชัดเจนหลังรีวิวแล้วว่าอนุญาตให้ commit (เช่น "รีวิวแล้ว commit ได้เลย") เท่านั้น ห้ามสมมติเอาเองว่าได้รับอนุญาตแล้วจากบริบทอื่น
 
 ## Security Rules
 
