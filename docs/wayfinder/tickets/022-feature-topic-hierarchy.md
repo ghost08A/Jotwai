@@ -36,3 +36,12 @@ Implementation:
 - `Web.Jotwai`: `TopicsController` (`POST/GET/PUT/DELETE /api/topics`), `NotesController` เพิ่ม `PUT /api/notes/{id}/topic`
 - Integration test 13 เคสใหม่ (`TopicsTests.cs`) ครอบคลุม hierarchy, sibling uniqueness (รวมชื่อซ้ำข้าม parent ต่างกันที่อนุญาต), parent ไม่พบ, rename ชนชื่อ, delete guard ทั้งสองแบบ (child topics / notes), assign ข้าม user ไม่ได้, unauthorized — รวม test เดิมผ่านครบ **39/39**, `dotnet format --verify-no-changes` ผ่าน
 - Verify end-to-end จริงผ่าน curl: nested topic, duplicate-sibling 409, cross-parent เดียวกันชื่อซ้ำได้, delete-with-children 409, assign note→topic, delete-with-notes 409, assign ไป topic ที่ไม่มี 400, clear แล้ว delete สำเร็จ — ครบทุก use case
+
+**Client UI (2026-09-25)**: build เสร็จและ verify ครบวงจรจริงแล้วผ่าน browser ต่อ backend จริง —
+
+- `modules/organization/` ใหม่ทั้งหมด (types, `services/topicsService.ts`, hooks `useTopics`/`useCreateTopic`/`useRenameTopic`/`useDeleteTopic`), `utils/buildTopicTree.ts` (flat list → tree แบบ pure function ไม่มี side effect, sort ตามชื่อ), `utils/flattenTopicsForSelect.ts` (tree → option list แบบ indent สำหรับ `<select>`)
+- `components/TopicsPage.tsx` + `TopicNode.tsx` (แสดงเป็น tree แบบ recursive, indent ด้วย Tailwind step ที่ fix ไว้ล่วงหน้าแทน inline style ตามกฎ client/CLAUDE.md, ปุ่ม "+ Subtopic"/Rename/Delete ต่อ node) + `CreateTopicForm.tsx` (ใช้ร่วมกันทั้ง root และ subtopic ผ่าน `parentId` prop) เพิ่ม route `/topics` + nav link ใหม่ใน `PrivateLayout`
+- ผูก Note↔Topic จาก `NoteCard.tsx`: เพิ่ม `assignNoteTopic` ใน `modules/notes/services/notesService.ts` + `useAssignNoteTopic` hook, การ์ดของ Note ทุกใบมี `<select>` เลือก Topic (แสดงลำดับชั้นด้วย indent จาก `flattenTopicsForSelect`) เปลี่ยนแล้ว save ทันที แยกจาก action แก้เนื้อหา ตรงตามที่ backend ออกแบบ `AssignTopicAsync` ไว้เป็นคนละ action
+- Verify ผ่าน browser จริงกับ backend จริงครบ: สร้าง root topic, สร้าง subtopic ซ้อนใน UI เห็น indent ถูกต้อง, assign note ไปยัง subtopic แล้ว reload หน้าเว็บยืนยันว่า persist จริง (ไม่ใช่ optimistic state ค้าง), พยายามลบ Topic ที่ยังมี Note อยู่เห็น error message จริงจาก backend ("Topic still has Notes.") แสดงผลถูกต้อง, rename ทำงานถูกต้อง
+- `npm run lint` + `npm run build` ผ่านสะอาด
+- ยังไม่ทำ: drag-and-drop ย้าย Topic/reparent จาก UI (ไม่เคยอยู่ใน scope ของ product spec), การแสดง Note count ต่อ Topic ใน UI (backend ไม่ได้ expose `NoteCount` ใน `TopicResponse` — เป็น internal read model ของ Organization เอง ไม่ใช่ API field)

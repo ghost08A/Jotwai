@@ -28,3 +28,8 @@ export async function deleteNote(id: string): Promise<void> {
 export async function restoreNote(id: string): Promise<void> {
   await httpClient.post(`/api/notes/${id}/restore`);
 }
+
+export async function assignNoteTopic(id: string, topicId: string | null): Promise<NoteResponse> {
+  const { data } = await httpClient.put<NoteResponse>(`/api/notes/${id}/topic`, { topicId });
+  return data;
+}

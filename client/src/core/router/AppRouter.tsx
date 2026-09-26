@@ -3,6 +3,7 @@ import { ROUTES } from "../../shared/routes/paths";
 import { PrivateLayout } from "../layouts/PrivateLayout";
 import { NotesPage } from "../../modules/notes/components/NotesPage";
 import { TrashPage } from "../../modules/notes/components/TrashPage";
+import { TopicsPage } from "../../modules/organization/components/TopicsPage";
 import { LoginPage } from "../../modules/identity/components/LoginPage";
 import { RegisterPage } from "../../modules/identity/components/RegisterPage";
 import { ProtectedRoute } from "./ProtectedRoute";
@@ -20,6 +21,7 @@ export function AppRouter() {
           <Route element={<PrivateLayout />}>
             <Route path={ROUTES.home} element={<NotesPage />} />
             <Route path={ROUTES.trash} element={<TrashPage />} />
+            <Route path={ROUTES.topics} element={<TopicsPage />} />
           </Route>
         </Route>
       </Routes>

@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NoteEditor } from "./NoteEditor";
 import { Button } from "@/shared/components/ui/button";
 import { useUpdateNote } from "../hooks/useUpdateNote";
 import { useDeleteNote } from "../hooks/useDeleteNote";
+import { useAssignNoteTopic } from "../hooks/useAssignNoteTopic";
+import { useTopics } from "../../organization/hooks/useTopics";
+import { flattenTopicsForSelect } from "../../organization/utils/flattenTopicsForSelect";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import type { NoteResponse } from "../types";
 
@@ -15,6 +18,9 @@ export function NoteCard({ note }: NoteCardProps) {
   const [draft, setDraft] = useState(note.content);
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
+  const assignTopic = useAssignNoteTopic();
+  const topics = useTopics();
+  const topicOptions = useMemo(() => flattenTopicsForSelect(topics.data ?? []), [topics.data]);
 
   function startEditing() {
     setDraft(note.content);
@@ -30,52 +36,71 @@ export function NoteCard({ note }: NoteCardProps) {
     setIsEditing(false);
   }
 
-  if (isEditing) {
-    return (
-      <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-        <NoteEditor content={draft} onChange={setDraft} />
-
-        {updateNote.isError && (
-          <p className="mt-2 text-sm text-destructive">{getErrorMessage(updateNote.error, "Failed to save note")}</p>
-        )}
-
-        <div className="mt-3 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleCancel} disabled={updateNote.isPending}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleSave} disabled={updateNote.isPending}>
-            {updateNote.isPending ? "Saving…" : "Save"}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <button
-        type="button"
-        onClick={startEditing}
-        className="line-clamp-3 block w-full cursor-pointer whitespace-pre-line text-left text-sm text-card-foreground"
+      <select
+        aria-label="Topic"
+        value={note.topicId ?? ""}
+        onChange={(event) => assignTopic.mutate({ id: note.id, topicId: event.target.value || null })}
+        disabled={assignTopic.isPending}
+        className="mb-3 cursor-pointer rounded-md border border-input bg-transparent px-2 py-1 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {note.content || <span className="text-muted-foreground">Empty note</span>}
-      </button>
+        <option value="">No topic</option>
+        {topicOptions.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
 
-      {deleteNote.isError && (
-        <p className="mt-2 text-sm text-destructive">{getErrorMessage(deleteNote.error, "Failed to delete note")}</p>
+      {assignTopic.isError && (
+        <p className="mb-2 text-sm text-destructive">{getErrorMessage(assignTopic.error, "Failed to move note")}</p>
       )}
 
-      <div className="mt-3 flex justify-end">
-        <Button
-          type="button"
-          variant="ghost"
-          className="text-destructive hover:text-destructive"
-          onClick={() => deleteNote.mutate(note.id)}
-          disabled={deleteNote.isPending}
-        >
-          {deleteNote.isPending ? "Deleting…" : "Delete"}
-        </Button>
-      </div>
+      {isEditing ? (
+        <>
+          <NoteEditor content={draft} onChange={setDraft} />
+
+          {updateNote.isError && (
+            <p className="mt-2 text-sm text-destructive">{getErrorMessage(updateNote.error, "Failed to save note")}</p>
+          )}
+
+          <div className="mt-3 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={handleCancel} disabled={updateNote.isPending}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleSave} disabled={updateNote.isPending}>
+              {updateNote.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={startEditing}
+            className="line-clamp-3 block w-full cursor-pointer whitespace-pre-line text-left text-sm text-card-foreground"
+          >
+            {note.content || <span className="text-muted-foreground">Empty note</span>}
+          </button>
+
+          {deleteNote.isError && (
+            <p className="mt-2 text-sm text-destructive">{getErrorMessage(deleteNote.error, "Failed to delete note")}</p>
+          )}
+
+          <div className="mt-3 flex justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+              onClick={() => deleteNote.mutate(note.id)}
+              disabled={deleteNote.isPending}
+            >
+              {deleteNote.isPending ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
