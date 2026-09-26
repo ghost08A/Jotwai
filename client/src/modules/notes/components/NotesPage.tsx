@@ -18,8 +18,8 @@ export function NotesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
-      <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="w-full space-y-6 px-6 py-6 md:px-12 lg:px-24">
+      <div className="pb-4">
         <NoteEditor content={draft} onChange={setDraft} />
 
         {createNote.isError && (
@@ -33,7 +33,7 @@ export function NotesPage() {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="divide-y divide-border">
         {notes.isLoading && Array.from({ length: 3 }).map((_, index) => <NoteCardSkeleton key={index} />)}
 
         {notes.isError && (

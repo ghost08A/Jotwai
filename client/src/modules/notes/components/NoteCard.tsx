@@ -39,7 +39,7 @@ export function NoteCard({ note }: NoteCardProps) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="py-4 first:pt-0">
       <select
         aria-label="Topic"
         value={note.topicId ?? ""}

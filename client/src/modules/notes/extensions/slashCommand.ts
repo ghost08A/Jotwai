@@ -1,0 +1,112 @@
+import { Extension } from "@tiptap/core";
+import type { Editor, Range } from "@tiptap/core";
+import Suggestion from "@tiptap/suggestion";
+import { ReactRenderer } from "@tiptap/react";
+import { SlashCommandMenu } from "../components/SlashCommandMenu";
+import type { SlashCommandMenuHandle } from "../components/SlashCommandMenu";
+
+export interface SlashCommandItem {
+  title: string;
+  run: (editor: Editor, range: Range) => void;
+}
+
+// Block-level items only (Notion's own slash menu works the same way) -
+// inline marks like bold/italic go through the toolbar or markdown input
+// rules instead, not this menu.
+export const SLASH_COMMAND_ITEMS: SlashCommandItem[] = [
+  {
+    title: "Text",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).setParagraph().run(),
+  },
+  {
+    title: "Heading 1",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 1 }).run(),
+  },
+  {
+    title: "Heading 2",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 2 }).run(),
+  },
+  {
+    title: "Heading 3",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 3 }).run(),
+  },
+  {
+    title: "Bulleted list",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).toggleBulletList().run(),
+  },
+  {
+    title: "Numbered list",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
+  },
+  {
+    title: "Quote",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).setBlockquote().run(),
+  },
+  {
+    title: "Code block",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
+  },
+  {
+    title: "Divider",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).setHorizontalRule().run(),
+  },
+];
+
+export function filterSlashCommandItems(query: string): SlashCommandItem[] {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return SLASH_COMMAND_ITEMS;
+  return SLASH_COMMAND_ITEMS.filter((item) => item.title.toLowerCase().includes(normalized));
+}
+
+function positionMenu(element: HTMLElement, rect: DOMRect | null) {
+  if (!rect) return;
+  element.style.position = "fixed";
+  element.style.left = `${rect.left}px`;
+  element.style.top = `${rect.bottom + 4}px`;
+  element.style.zIndex = "50";
+}
+
+export const SlashCommand = Extension.create({
+  name: "slashCommand",
+
+  addProseMirrorPlugins() {
+    return [
+      Suggestion<SlashCommandItem>({
+        editor: this.editor,
+        char: "/",
+        items: ({ query }) => filterSlashCommandItems(query),
+        command: ({ editor, range, props }) => props.run(editor, range),
+        render: () => {
+          let component: ReactRenderer<SlashCommandMenuHandle>;
+
+          return {
+            onStart: (props) => {
+              component = new ReactRenderer(SlashCommandMenu, {
+                props,
+                editor: props.editor,
+              });
+              document.body.appendChild(component.element);
+              positionMenu(component.element as HTMLElement, props.clientRect?.() ?? null);
+            },
+            onUpdate(props) {
+              component.updateProps(props);
+              positionMenu(component.element as HTMLElement, props.clientRect?.() ?? null);
+            },
+            onKeyDown(props) {
+              if (props.event.key === "Escape") {
+                component.destroy();
+                component.element.remove();
+                return true;
+              }
+              return component.ref?.onKeyDown(props) ?? false;
+            },
+            onExit() {
+              component.element.remove();
+              component.destroy();
+            },
+          };
+        },
+      }),
+    ];
+  },
+});

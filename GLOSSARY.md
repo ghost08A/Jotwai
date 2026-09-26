@@ -5,7 +5,7 @@
 ## Product domain
 
 **Note**
-หน่วยพื้นฐานของการจดบันทึก เนื้อหาอิสระ (plain text, bulleted list, numbered list, code block) เก็บเป็น Markdown สามารถมีอยู่ได้โดยไม่มี Topic และไม่มี Category Soft-deletable ไม่มี version history — การแก้ไขจะ overwrite ทับของเดิม
+หน่วยพื้นฐานของการจดบันทึก เนื้อหาอิสระ (plain text, heading ระดับ 1-3, blockquote, bulleted list, numbered list, code block, horizontal rule, พร้อม inline mark ตัวหนา/เอียง/ขีดทับ/inline code) เก็บเป็น Markdown สามารถมีอยู่ได้โดยไม่มี Topic และไม่มี Category Soft-deletable ไม่มี version history — การแก้ไขจะ overwrite ทับของเดิม ไม่มี Title แยกเป็น field ของตัวเอง (ตั๋ว 030) แต่ block แรกสุดของเนื้อหาถูกบังคับให้เป็น heading ระดับ 1 เสมอ (ตั๋ว 037) ทำหน้าที่เป็น "หัวเรื่อง" ทางสายตาโดยไม่ต้องมี field แยก
 
 **Topic**
 การจัดหมวดหมู่แบบลำดับชั้นที่ Note สามารถเลือกอยู่ในนั้นได้ Note หนึ่งอยู่ได้อย่างมากหนึ่ง Topic Topic มี Topic ลูกได้ (ลึกไม่จำกัด) ชื่อ Topic พี่น้องกันต้อง unique (ไม่สนตัวพิมพ์เล็ก-ใหญ่) ภายใต้ parent เดียวกัน Topic ที่มี Note หรือ Topic ลูกอยู่ภายในโดยตรงจะลบไม่ได้จนกว่าจะว่างก่อน

@@ -27,18 +27,95 @@ export function NoteEditorToolbar({ editor }: NoteEditorToolbarProps) {
   // Tiptap v3's useEditor no longer re-renders on every transaction by
   // default - selection-only changes (e.g. moving the cursor into a code
   // block) wouldn't otherwise update these active/attribute reads.
-  const { isBulletListActive, isOrderedListActive, isCodeBlockActive, codeBlockLanguage } = useEditorState({
+  const {
+    isBulletListActive,
+    isOrderedListActive,
+    isCodeBlockActive,
+    codeBlockLanguage,
+    isHeading2Active,
+    isHeading3Active,
+    isBoldActive,
+    isItalicActive,
+    isStrikeActive,
+    isCodeActive,
+    isBlockquoteActive,
+  } = useEditorState({
     editor,
     selector: ({ editor: currentEditor }) => ({
       isBulletListActive: currentEditor.isActive("bulletList"),
       isOrderedListActive: currentEditor.isActive("orderedList"),
       isCodeBlockActive: currentEditor.isActive("codeBlock"),
       codeBlockLanguage: (currentEditor.getAttributes("codeBlock").language as string | null) ?? "",
+      isHeading2Active: currentEditor.isActive("heading", { level: 2 }),
+      isHeading3Active: currentEditor.isActive("heading", { level: 3 }),
+      isBoldActive: currentEditor.isActive("bold"),
+      isItalicActive: currentEditor.isActive("italic"),
+      isStrikeActive: currentEditor.isActive("strike"),
+      isCodeActive: currentEditor.isActive("code"),
+      isBlockquoteActive: currentEditor.isActive("blockquote"),
     }),
   });
 
   return (
     <div className="flex flex-wrap items-center gap-1 rounded-md border border-neutral-200 bg-neutral-50 p-1">
+      {/* The note's first block is always a level-1 heading (ticket 037) -
+          only levels 2/3 are offered here as body-content subheadings. */}
+      <ToolbarButton
+        label="Heading 2"
+        active={isHeading2Active}
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+      >
+        H2
+      </ToolbarButton>
+
+      <ToolbarButton
+        label="Heading 3"
+        active={isHeading3Active}
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+      >
+        H3
+      </ToolbarButton>
+
+      <ToolbarButton label="Bold" active={isBoldActive} onClick={() => editor.chain().focus().toggleBold().run()}>
+        B
+      </ToolbarButton>
+
+      <ToolbarButton
+        label="Italic"
+        active={isItalicActive}
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+      >
+        I
+      </ToolbarButton>
+
+      <ToolbarButton
+        label="Strikethrough"
+        active={isStrikeActive}
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+      >
+        S
+      </ToolbarButton>
+
+      <ToolbarButton label="Inline code" active={isCodeActive} onClick={() => editor.chain().focus().toggleCode().run()}>
+        {"<>"}
+      </ToolbarButton>
+
+      <ToolbarButton
+        label="Quote"
+        active={isBlockquoteActive}
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+      >
+        "
+      </ToolbarButton>
+
+      <ToolbarButton
+        label="Divider"
+        active={false}
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+      >
+        ―
+      </ToolbarButton>
+
       <ToolbarButton
         label="Bulleted list"
         active={isBulletListActive}
