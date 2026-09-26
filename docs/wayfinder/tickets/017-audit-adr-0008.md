@@ -2,7 +2,7 @@
 id: 17
 title: "ตรวจสอบการ implement: ADR-0008 Frontend stack, styling, and note editor"
 type: wayfinder:research
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -29,6 +29,12 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/17
 
 พิสูจน์ว่าใช้งานจริงไม่ใช่ abstraction ที่ไม่มีคนเรียก: refactor `LoginPage`/`RegisterPage`/`Home` ให้ใช้ `Button`/`Input`/`Label` + design token แทน raw `neutral-*` Tailwind class เดิมทั้งหมด verify ผ่าน browser จริง (login/register page render ถูกต้อง, validation error `text-destructive` แสดงผลถูกต้อง, พฤติกรรมเดิมไม่เปลี่ยน) `npm run lint`/`npm run build` ผ่านสะอาด
 
-**ยังขาด**: component เพิ่มเติมที่ feature อื่นจะต้องใช้ (เช่น Select/Dialog/Textarea สำหรับ Topic/Category/Suggestion UI — ยังไม่สร้างเพราะยังไม่มี consumer จริง), โค้ดฟีเจอร์ Note/Topic/Category/AI Categorization/Search จริงที่เรียก backend API ยังไม่ได้ทำ
+**ยังขาด (ตอนนั้น)**: component เพิ่มเติมที่ feature อื่นจะต้องใช้ (เช่น Select/Dialog/Textarea สำหรับ Topic/Category/Suggestion UI — ยังไม่สร้างเพราะยังไม่มี consumer จริง), โค้ดฟีเจอร์ Note/Topic/Category/AI Categorization/Search จริงที่เรียก backend API ยังไม่ได้ทำ
 
-ยังคงเปิดไว้ — หนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่ เหลือแค่ feature code ที่ต้องต่อ (base editor + component library พื้นฐานพร้อมแล้วทั้งคู่)
+## Resolution
+
+Re-audit 2026-09-26: gap ที่เหลือเมื่อรอบก่อนคือฟีเจอร์ Note/Topic/Category/AI Categorization ฝั่ง client — ทั้งหมดถูก build และ verify ผ่าน browser จริงไปแล้วระหว่าง 2026-09-24 ถึง 2026-09-25 (ดู "Decisions so far" ใน map.md ticket 020/022/023/024) เหลือเพียงจุดเดียว: **Search feature UI** ที่ backend เสร็จตั้งแต่ ticket 026 (2026-09-25) แต่ client ยังไม่มี
+
+ปิด gap นั้นวันนี้ — เพิ่ม module ใหม่ `client/src/modules/search/` ครบตาม convention เดิม (`types/`, `services/searchService.ts`, `hooks/useSearch.ts` ห่อ TanStack Query, `components/SearchPage.tsx` + `SearchResultCard.tsx`/`SearchResultCardSkeleton.tsx`) — search box (debounce 300ms ผ่าน `shared/hooks/useDebouncedValue.ts` ใหม่) + topic filter `<select>` (reuse `flattenTopicsForSelect` เดิมจาก organization module) เรียก `GET /api/search?q=&topicId=` ตรงตาม `SearchController` ที่มีอยู่แล้ว ไม่ต้องเพิ่ม component ใหม่ใน headless library (ใช้ `Input` เดิมพอ, topic filter ใช้ raw `<select>` ตาม pattern เดียวกับ `NoteCard`) เพิ่ม route `/search` และลิงก์ nav ใน `PrivateLayout` `npm run lint` + `npm run build` ผ่านสะอาด verify ผ่าน browser จริงกับ backend จริง (default แสดง note ทั้งหมด, พิมพ์คำค้นกรองผลถูกต้องรวมถึงเนื้อหาใน code block, แสดงผลถูกต้องทั้ง light/dark mode)
+
+ไม่มี gap เหลือสำหรับ ADR-0008 อีก — ปิด ticket

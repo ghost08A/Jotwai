@@ -3,6 +3,7 @@ export const ROUTES = {
   trash: "/trash",
   topics: "/topics",
   categories: "/categories",
+  search: "/search",
   login: "/login",
   register: "/register",
 } as const;
