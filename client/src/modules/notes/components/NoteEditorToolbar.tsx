@@ -16,6 +16,7 @@ const CODE_BLOCK_LANGUAGES = [
   { value: "typescript", label: "TypeScript" },
   { value: "python", label: "Python" },
   { value: "csharp", label: "C#" },
+  { value: "java", label: "Java" },
   { value: "sql", label: "SQL" },
   { value: "bash", label: "Bash" },
   { value: "json", label: "JSON" },

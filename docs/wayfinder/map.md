@@ -56,7 +56,7 @@ Audit แต่ละ ADR พบว่าสิ่งเหล่านี้ย
 Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Category, AI Categorization, User Ownership, Search) ถูกตัดสินใจครบถ้วนแล้วระหว่างเอกสาร requirements, GLOSSARY.md และ decision ของแผนผังนี้เอง — แต่ยังไม่มีอะไรอยู่ในโค้ดเลย ยืนยันได้จากการ grep `backend/` และ `client/src` หา `Note`/`Topic`/`Category`/Tiptap (มีแค่ Identity ที่ build แล้ว) เปิดไว้ล่วงหน้าเป็น backlog ตาม convention เดียวกับ ADR audit ticket ด้านบน:
 
 - ~~[Note capture & CRUD](tickets/020-feature-note-capture-crud.md)~~ — ปิดแล้ว 2026-09-23 (ดู Decisions so far)
-- [Code Block with language metadata](tickets/021-feature-code-block.md) — ถูก block ด้วย base editor (Tiptap, ADR-0008 audit ticket 017)
+- ~~[Code Block with language metadata](tickets/021-feature-code-block.md)~~ — ปิดแล้ว 2026-09-26 (พบว่า build เสร็จแล้วเป็นผลพลอยได้จาก base editor + Note capture; เพิ่ม Java เข้า language list แล้วปิด — ดู ticket 021 Resolution)
 - ~~[Topic hierarchy](tickets/022-feature-topic-hierarchy.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
 - ~~[Category flat structure](tickets/023-feature-category-flat.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
 - ~~[AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
