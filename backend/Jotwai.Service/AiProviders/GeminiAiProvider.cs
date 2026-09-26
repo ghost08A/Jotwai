@@ -8,7 +8,8 @@ using Microsoft.Extensions.Options;
 namespace Jotwai.Service.AiProviders;
 
 /// <summary>
-/// Google Gemini (2.5 Flash-Lite) implementation of <see cref="IAiProvider"/> (ADR-0004).
+/// Google Gemini (model configurable via <see cref="GeminiOptions.Model"/>) implementation of
+/// <see cref="IAiProvider"/> (ADR-0004).
 /// Talks to the plain REST `generateContent` endpoint with structured JSON output, so
 /// parsing the result doesn't depend on the model formatting free text consistently.
 /// </summary>

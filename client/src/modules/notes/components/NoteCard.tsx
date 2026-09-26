@@ -8,6 +8,7 @@ import { useTopics } from "../../organization/hooks/useTopics";
 import { flattenTopicsForSelect } from "../../organization/utils/flattenTopicsForSelect";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import { NoteCategoryChips } from "./NoteCategoryChips";
+import { NoteAiSuggestionPanel } from "../../ai-categorization/components/NoteAiSuggestionPanel";
 import type { NoteResponse } from "../types";
 
 interface NoteCardProps {
@@ -59,6 +60,8 @@ export function NoteCard({ note }: NoteCardProps) {
       )}
 
       <NoteCategoryChips noteId={note.id} categoryIds={note.categoryIds} />
+
+      <NoteAiSuggestionPanel noteId={note.id} />
 
       {isEditing ? (
         <>
