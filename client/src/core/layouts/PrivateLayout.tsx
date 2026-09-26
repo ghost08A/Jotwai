@@ -2,6 +2,7 @@ import { Link, Outlet } from "react-router-dom";
 import { useCurrentUser } from "../../modules/identity/hooks/useCurrentUser";
 import { useLogout } from "../../modules/identity/hooks/useLogout";
 import { Button } from "@/shared/components/ui/button";
+import { ThemeToggle } from "../../shared/components/ThemeToggle";
 import { ROUTES } from "../../shared/routes/paths";
 
 export function PrivateLayout() {
@@ -10,7 +11,7 @@ export function PrivateLayout() {
 
   return (
     <div className="min-h-screen bg-muted">
-      <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+      <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4 shadow-sm">
         <div className="flex items-center gap-6">
           <span className="text-lg font-semibold text-card-foreground">Jotwai</span>
           <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
@@ -33,6 +34,7 @@ export function PrivateLayout() {
           {currentUser && (
             <span className="text-sm text-muted-foreground">Signed in as {currentUser.userId}</span>
           )}
+          <ThemeToggle />
           <Button type="button" variant="outline" onClick={() => logout.mutate()} disabled={logout.isPending}>
             {logout.isPending ? "Logging out…" : "Log out"}
           </Button>

@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jotwai</title>
+    <script>
+      // Applies the theme before first paint to avoid a flash of the wrong
+      // theme - ThemeContext (shared/context/ThemeContext.tsx) is the single
+      // source of truth afterward and keeps this in sync on toggle.
+      (function () {
+        var stored = localStorage.getItem("jotwai.theme");
+        var isDark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.classList.toggle("dark", isDark);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

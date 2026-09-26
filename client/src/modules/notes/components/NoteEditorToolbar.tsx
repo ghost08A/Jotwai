@@ -57,7 +57,7 @@ export function NoteEditorToolbar({ editor }: NoteEditorToolbarProps) {
   });
 
   return (
-    <div className="flex flex-wrap items-center gap-1 rounded-md border border-neutral-200 bg-neutral-50 p-1">
+    <div className="flex flex-wrap items-center gap-1 rounded-md border border-border bg-muted p-1">
       {/* The note's first block is always a level-1 heading (ticket 037) -
           only levels 2/3 are offered here as body-content subheadings. */}
       <ToolbarButton
@@ -147,7 +147,7 @@ export function NoteEditorToolbar({ editor }: NoteEditorToolbarProps) {
           onChange={(event) =>
             editor.chain().focus().updateAttributes("codeBlock", { language: event.target.value }).run()
           }
-          className="cursor-pointer rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm focus:border-neutral-500 focus:outline-none"
+          className="cursor-pointer rounded-md border border-input bg-background px-2 py-1 text-sm focus:border-ring focus:outline-none"
         >
           {CODE_BLOCK_LANGUAGES.map((language) => (
             <option key={language.value} value={language.value}>
@@ -175,8 +175,8 @@ function ToolbarButton({ label, active, onClick, children }: ToolbarButtonProps)
       aria-pressed={active}
       title={label}
       onClick={onClick}
-      className={`cursor-pointer rounded-md px-2 py-1 text-sm font-medium hover:bg-neutral-200 active:bg-neutral-300 ${
-        active ? "bg-neutral-200 text-neutral-900" : "text-neutral-600"
+      className={`cursor-pointer rounded-md px-2 py-1 text-sm font-medium hover:bg-accent active:bg-accent/70 ${
+        active ? "bg-accent text-accent-foreground" : "text-muted-foreground"
       }`}
     >
       {children}
