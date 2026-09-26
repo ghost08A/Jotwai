@@ -79,6 +79,12 @@ project.assets.json
 *.env
 !*.env.example
 
+# appsettings — only the base template files are tracked, per-environment
+# config (may hold local secrets) stays untracked on each machine
+appsettings.*.json
+!appsettings.json
+!appsettings.Example.json
+
 # Logs
 *.log
 logs/
