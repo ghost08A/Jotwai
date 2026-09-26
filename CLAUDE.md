@@ -36,7 +36,8 @@
 
 ## Security Rules
 
-- ห้าม hardcode API key, token, password หรือ credential ใดๆ ในซอร์สโค้ด
+- ห้าม hardcode API key, token, password หรือ credential ใดๆ ในซอร์สโค้ด — ค่าจริงต้องมาจาก config เท่านั้น: อ่านผ่าน `IConfiguration`/`IOptions<T>` โดยค่าจริงตั้งไว้ที่ `appsettings.Development.json` (เครื่อง dev, ไฟล์นี้ไม่ commit) หรือ environment variable / `dotnet user-secrets` (environment อื่นๆ) — ดูตัวอย่างจริงที่ `Jotwai.Service/GeminiOptions.cs`
+- ไฟล์หรือรูปแบบไฟล์ใดๆ ที่ตามมาตรฐานทั่วไปมักใช้เก็บข้อมูลอ่อนไหว/ความลับ (เช่น per-environment config อย่าง `appsettings.<Environment>.json`, ไฟล์ credential, keystore, certificate) ต้องเพิ่มเข้า `.gitignore` เสมอตั้งแต่สร้างไฟล์ครั้งแรก แม้ตอนนั้นจะยังไม่มี secret จริงอยู่ในไฟล์ก็ตาม — ยกเว้นไฟล์ template ที่ระบุไว้ชัดเจนแล้วเท่านั้น (`.env.example`, `appsettings.Example.json`, `appsettings.json` เอง)
 - ห้าม log ข้อมูลอ่อนไหว (password, token, secret, connection string)
 - ห้าม commit `.env`, `.env.local` หรือไฟล์ใดๆ ที่มี secret หรือ credential
 - `.env.example` เป็นไฟล์ env เดียวที่อนุญาตให้อยู่ใน version control — ใช้ค่า placeholder เท่านั้น
