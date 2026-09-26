@@ -2,7 +2,7 @@
 id: 16
 title: "ตรวจสอบการ implement: ADR-0007 API-only backend, separately deployed static SPA"
 type: wayfinder:research
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -21,4 +21,15 @@ archived_from: https://github.com/ghost08A/Jotwai/issues/16
 
 **ขาด**: การตั้งค่า deployment (Dockerfile/CI) ที่แสดงให้เห็นจริงว่า SPA และ API เป็น artifact แยกกัน
 
-ยังคงเปิดไว้ — หนี้ทางการ implement ไม่ใช่การทบทวนการตัดสินใจใหม่
+## Resolution
+
+ปิด gap วันนี้ (2026-09-26) ด้วย deployment artifact ที่พิสูจน์ว่า build/deploy แยกกันได้จริง ไม่ใช่แค่โค้ดหน้าตาเป็น API-only เฉยๆ:
+
+- `backend/Dockerfile`: multi-stage build ที่ publish เฉพาะ `Web.Jotwai` (ไม่รวม test project) เป็น runtime image ของตัวเอง
+- `client/Dockerfile` + `client/nginx.conf`: multi-stage build ที่ `npm run build` แล้ว serve static output ด้วย nginx พร้อม SPA fallback (`try_files ... /index.html`) สำหรับ react-router
+- `.github/workflows/ci.yml`: สอง job อิสระต่อกัน (`backend`, `client`) — job ละ checkout/build/test/lint ของตัวเองแล้วจบด้วย `docker build` ของ Dockerfile ของตัวเอง พิสูจน์ทั้ง CI และ deployment artifact ว่าแยกจากกันจริง ไม่ใช่ pipeline เดียวที่ build ทั้งคู่พร้อมกัน
+- Verify ในเครื่องจริง (ไม่ใช่แค่อ่านโค้ด): `docker build` ทั้งสอง image ผ่าน, รัน container ของ client image แล้วยิง request เข้า `/` และ route ฝั่ง client อย่าง `/notes` ได้ 200 ทั้งคู่ (ยืนยัน SPA fallback ทำงานถูกต้อง)
+
+`docker-compose.yml` เดิม (Postgres/pgAdmin สำหรับ local dev) ไม่ได้แตะ — ไม่ใช่ deployment manifest ตาม scope ของ ADR-0007
+
+ไม่มี gap เหลือสำหรับ ADR-0007 อีก — ปิด ticket
