@@ -39,7 +39,6 @@ public sealed class TopicsService(OrganizationDbContext db, IEventPublisher even
             NormalizedName = normalizedName,
             CreatedAt = now,
             UpdatedAt = now,
-            NoteCount = 0,
         };
 
         db.Topics.Add(topic);
@@ -154,9 +153,6 @@ public sealed class TopicsService(OrganizationDbContext db, IEventPublisher even
         var topic = await db.Topics.SingleOrDefaultAsync(t => t.Id == topicId && t.UserId == userId, cancellationToken);
         if (topic is null)
             return TopicDeleteOutcome.NotFound;
-
-        if (topic.NoteCount > 0)
-            return TopicDeleteOutcome.HasNotes;
 
         var hasChildTopics = await db.Topics.AnyAsync(t => t.ParentId == topicId, cancellationToken);
         if (hasChildTopics)

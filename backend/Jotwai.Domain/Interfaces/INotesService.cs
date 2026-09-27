@@ -17,6 +17,17 @@ public interface INotesService
     /// <summary>Overwrites the Note's content - Notes have no version history (GLOSSARY.md).</summary>
     Task<NoteResponse?> UpdateAsync(Guid userId, Guid noteId, UpdateNoteRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>The Topic's one active Note (a Topic has at most one - see
+    /// <c>NoteConfiguration</c>'s unique filtered index), or null if the Topic has no
+    /// content yet.</summary>
+    Task<NoteResponse?> GetByTopicAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates the Topic's Note on first call, overwrites its content (like
+    /// <see cref="UpdateAsync"/>) on every call after that - the continuous-document backing
+    /// for the Topic Detail page. Fails with <see cref="UpsertTopicNoteFailureReason.TopicNotFound"/>
+    /// if the Topic doesn't exist.</summary>
+    Task<UpsertTopicNoteResult> UpsertByTopicAsync(Guid userId, Guid topicId, UpdateNoteRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Soft-deletes the Note into the Trash. Returns false if not found/owned or already deleted.</summary>
     Task<bool> DeleteAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default);
 

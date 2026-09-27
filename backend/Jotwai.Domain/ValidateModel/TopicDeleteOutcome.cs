@@ -5,5 +5,4 @@ public enum TopicDeleteOutcome
     Deleted,
     NotFound,
     HasChildTopics,
-    HasNotes,
 }

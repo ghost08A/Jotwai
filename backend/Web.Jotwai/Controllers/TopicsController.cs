@@ -57,7 +57,6 @@ public sealed class TopicsController(ITopicsService topicsService) : ControllerB
             TopicDeleteOutcome.Deleted => NoContent(),
             TopicDeleteOutcome.NotFound => NotFound(),
             TopicDeleteOutcome.HasChildTopics => Conflict(new { error = "Topic still has child Topics." }),
-            TopicDeleteOutcome.HasNotes => Conflict(new { error = "Topic still has Notes." }),
             _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }

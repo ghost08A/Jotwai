@@ -34,13 +34,13 @@ export function ContentPolishButton({ content, onApply }: ContentPolishButtonPro
                 title="Polish content with AI"
                 onClick={handleClick}
                 disabled={polish.isPending || !content.trim()}
-                className="absolute bottom-3 right-3 z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="fixed bottom-6 right-6 z-40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {polish.isPending ? "…" : "✨"}
             </button>
 
             {polish.isError && (
-                <p className="absolute bottom-16 right-3 z-10 max-w-xs rounded-md bg-destructive px-3 py-2 text-xs text-destructive-foreground shadow-lg">
+                <p className="fixed bottom-20 right-6 z-40 max-w-xs rounded-md bg-destructive px-3 py-2 text-xs text-destructive-foreground shadow-lg">
                     {getErrorMessage(polish.error, "Failed to polish content")}
                 </p>
             )}

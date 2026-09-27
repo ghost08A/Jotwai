@@ -6,6 +6,7 @@ public enum AssignNoteTopicFailureReason
 {
     NoteNotFound,
     TopicNotFound,
+    TopicAlreadyHasNote,
 }
 
 public sealed class AssignNoteTopicResult

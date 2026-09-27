@@ -46,9 +46,5 @@ public sealed class TopicConfiguration : IEntityTypeConfiguration<Topic>
 
         builder.Property(t => t.UpdatedAt)
             .IsRequired();
-
-        builder.Property(t => t.NoteCount)
-            .IsRequired()
-            .HasDefaultValue(0);
     }
 }

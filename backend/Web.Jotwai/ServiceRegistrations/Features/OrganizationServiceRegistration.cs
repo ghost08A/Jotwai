@@ -1,8 +1,4 @@
-using Jotwai.Domain.Events;
-using Jotwai.Domain.Interfaces;
 using Jotwai.Domain.Models.Database;
-using Jotwai.Service.EventHandlers;
-using Jotwai.Service.ImplementServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,10 +22,6 @@ public static class OrganizationServiceRegistration
 
         // ITopicsService/TopicsService and ICategoriesService/CategoriesService wired by
         // RegisterAutoServices (Web.Jotwai/Program.cs).
-
-        // Organization subscribing to the Notes Module's Topic-assignment event, to keep
-        // its own NoteCount read model in sync (ADR-0003) - see OrganizationNoteCountProjectionHandler.
-        services.AddScoped<IEventHandler<NoteTopicAssigned>, OrganizationNoteCountProjectionHandler>();
 
         return services;
     }

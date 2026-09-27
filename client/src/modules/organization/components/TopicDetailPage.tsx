@@ -1,27 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
+import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { NoteEditor } from "../../notes/components/NoteEditor";
-import { NoteCard } from "../../notes/components/NoteCard";
-import { NoteCardSkeleton } from "../../notes/components/NoteCardSkeleton";
-import { useNotes } from "../../notes/hooks/useNotes";
-import { useCreateNote } from "../../notes/hooks/useCreateNote";
-import { useAssignNoteTopic } from "../../notes/hooks/useAssignNoteTopic";
+import { useTopicNote } from "../../notes/hooks/useTopicNote";
+import { useUpsertTopicNote } from "../../notes/hooks/useUpsertTopicNote";
 import { useTopics } from "../hooks/useTopics";
 import { useRenameTopic } from "../hooks/useRenameTopic";
 import { useDeleteTopic } from "../hooks/useDeleteTopic";
 import { buildAncestorChain } from "../utils/buildAncestorChain";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import { ROUTES } from "../../../shared/routes/paths";
-import { CreateTopicForm } from "./CreateTopicForm";
 import { TopicSuggestionPanel } from "../../ai-categorization/components/TopicSuggestionPanel";
 import type { TopicResponse } from "../types";
 
 // `key={topicId}` below forces a full remount on every navigation to a
 // different Topic (react-router keeps the same element mounted across param
 // changes on the same route) - that's what resets all the local state here
-// (title draft, note composer draft, subtopic form) instead of leaking a
-// previous Topic's in-progress edits into the next one.
+// (title draft, note editor draft) instead of leaking a previous Topic's
+// in-progress edits into the next one.
 export function TopicDetailPage() {
     const { topicId } = useParams<{ topicId: string }>();
     const topics = useTopics();
@@ -57,34 +54,26 @@ interface TopicDetailPageContentProps {
 // so `nameDraft`'s initial value is always correct on first render - and
 // `key={topicId}` on the wrapper's call site forces a full remount (instead
 // of a prop update) on every navigation to a different Topic, which is what
-// resets all the local state here (title draft, note composer draft,
-// subtopic form) instead of leaking a previous Topic's in-progress edits.
+// resets all the local state here (title draft, note editor draft) instead of
+// leaking a previous Topic's in-progress edits.
 function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageContentProps) {
     const navigate = useNavigate();
-    const notes = useNotes();
     const renameTopic = useRenameTopic();
     const deleteTopic = useDeleteTopic();
-    const createNote = useCreateNote();
-    const assignTopic = useAssignNoteTopic();
+    const topicNote = useTopicNote(topicId);
+    const upsertTopicNote = useUpsertTopicNote(topicId);
 
     const [nameDraft, setNameDraft] = useState(topic.name);
-    const [draft, setDraft] = useState("");
-    const [isAddingChild, setIsAddingChild] = useState(false);
 
     const ancestorChain = useMemo(() => buildAncestorChain(allTopics, topicId), [allTopics, topicId]);
-    const directChildren = useMemo(
-        () => allTopics.filter((candidate) => candidate.parentId === topicId).sort((a, b) => a.name.localeCompare(b.name)),
-        [allTopics, topicId],
-    );
-    const directNotes = (notes.data ?? []).filter((note) => note.topicId === topicId);
 
-    function commitRename(currentTopic: TopicResponse) {
+    function commitRename() {
         const trimmed = nameDraft.trim();
         if (!trimmed) {
-            setNameDraft(currentTopic.name);
+            setNameDraft(topic.name);
             return;
         }
-        if (trimmed === currentTopic.name) return;
+        if (trimmed === topic.name) return;
         renameTopic.mutate({ id: topicId, request: { name: trimmed } });
     }
 
@@ -92,15 +81,6 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
         deleteTopic.mutate(topicId, {
             onSuccess: () => navigate(topic.parentId ? ROUTES.topicDetail(topic.parentId) : ROUTES.home),
         });
-    }
-
-    function handleCapture() {
-        if (!draft.trim()) return;
-        createNote.mutate(
-            { content: draft },
-            { onSuccess: (note) => assignTopic.mutate({ id: note.id, topicId }) },
-        );
-        setDraft("");
     }
 
     return (
@@ -130,7 +110,7 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                     aria-label="Topic name"
                     value={nameDraft}
                     onChange={(event) => setNameDraft(event.target.value)}
-                    onBlur={() => commitRename(topic)}
+                    onBlur={commitRename}
                     onKeyDown={(event) => {
                         if (event.key === "Enter") {
                             event.preventDefault();
@@ -139,16 +119,19 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                     }}
                     className="w-full bg-transparent text-3xl font-bold text-foreground outline-none focus-visible:outline-none"
                 />
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="shrink-0 text-destructive hover:text-destructive"
-                    onClick={handleDelete}
-                    disabled={deleteTopic.isPending}
-                >
-                    {deleteTopic.isPending ? "Deleting…" : "Delete"}
-                </Button>
+                <div className="flex shrink-0 items-center gap-3">
+                    <NoteSaveStatus isSaving={upsertTopicNote.isPending} />
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={handleDelete}
+                        disabled={deleteTopic.isPending}
+                    >
+                        {deleteTopic.isPending ? "Deleting…" : "Delete"}
+                    </Button>
+                </div>
             </div>
             {(renameTopic.isError || deleteTopic.isError) && (
                 <p className="text-sm text-destructive">
@@ -159,62 +142,55 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
             <TopicSuggestionPanel topicId={topicId} />
 
             <section className="space-y-3">
-                <NoteEditor content={draft} onChange={setDraft} topicId={topicId} />
-                {createNote.isError && (
-                    <p className="text-sm text-destructive">{getErrorMessage(createNote.error, "Failed to save note")}</p>
-                )}
-                <div className="flex justify-end">
-                    <Button type="button" onClick={handleCapture} disabled={createNote.isPending || !draft.trim()}>
-                        {createNote.isPending ? "Saving…" : "Save note"}
-                    </Button>
-                </div>
-
-                <div className="divide-y divide-border">
-                    {notes.isLoading && Array.from({ length: 2 }).map((_, index) => <NoteCardSkeleton key={index} />)}
-                    {notes.isError && (
-                        <p className="text-sm text-destructive">{getErrorMessage(notes.error, "Failed to load notes")}</p>
-                    )}
-                    {!notes.isLoading && directNotes.length === 0 && (
-                        <p className="py-2 text-sm text-muted-foreground">No notes in this topic yet.</p>
-                    )}
-                    {directNotes.map((note) => (
-                        <NoteCard key={note.id} note={note} />
-                    ))}
-                </div>
-            </section>
-
-            <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-medium text-muted-foreground">Subtopics</h2>
-                    {!isAddingChild && (
-                        <Button type="button" size="sm" onClick={() => setIsAddingChild(true)}>
-                            + New subtopic
-                        </Button>
-                    )}
-                </div>
-
-                {isAddingChild && (
-                    <div className="rounded-lg border border-border bg-card p-3">
-                        <CreateTopicForm parentId={topicId} onDone={() => setIsAddingChild(false)} />
-                    </div>
-                )}
-
-                {directChildren.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No subtopics yet.</p>
+                {topicNote.isLoading ? (
+                    <div className="h-40 animate-pulse rounded-md bg-muted" />
                 ) : (
-                    <div className="rounded-lg border border-border bg-card p-2">
-                        {directChildren.map((child) => (
-                            <Link
-                                key={child.id}
-                                to={ROUTES.topicDetail(child.id)}
-                                className="block rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-accent hover:underline"
-                            >
-                                {child.name}
-                            </Link>
-                        ))}
-                    </div>
+                    <TopicDocumentEditor
+                        topicId={topicId}
+                        initialContent={topicNote.data?.content ?? ""}
+                        onAutosave={(content) => upsertTopicNote.mutate({ content })}
+                    />
+                )}
+                {topicNote.isError && (
+                    <p className="text-sm text-destructive">{getErrorMessage(topicNote.error, "Failed to load note")}</p>
+                )}
+                {upsertTopicNote.isError && (
+                    <p className="text-sm text-destructive">{getErrorMessage(upsertTopicNote.error, "Failed to save note")}</p>
                 )}
             </section>
+
+            {/* No standalone "Subtopics" section - "/subtopic" inside the editor already
+                creates a child Topic and drops a Topic Reference node right where the
+                cursor was, so subtopics show up inline as part of the continuous document
+                instead of a separate list competing for attention. */}
         </div>
     );
+}
+
+function NoteSaveStatus({ isSaving }: { isSaving: boolean }) {
+    return <span className="text-xs text-muted-foreground">{isSaving ? "กำลังบันทึก…" : "บันทึกแล้ว"}</span>;
+}
+
+interface TopicDocumentEditorProps {
+    topicId: string;
+    initialContent: string;
+    onAutosave: (content: string) => void;
+}
+
+// The continuous-document composer: no Save button - types straight into the Topic's one
+// Note, debounced-autosaved via `onAutosave`. `initialContent` is only read once per mount
+// (the parent remounts this whole component via key={topicId} on navigation, so it never
+// goes stale for a *different* Topic).
+function TopicDocumentEditor({ topicId, initialContent, onAutosave }: TopicDocumentEditorProps) {
+    const [content, setContent] = useState(initialContent);
+    const debouncedContent = useDebouncedValue(content, 600);
+
+    // Only the debounced value should retrigger this - `initialContent`/`onAutosave` are
+    // stable for the lifetime of this mount (remounted per Topic via key={topicId}).
+    useEffect(() => {
+        if (debouncedContent === initialContent) return;
+        onAutosave(debouncedContent);
+    }, [debouncedContent]);
+
+    return <NoteEditor content={content} onChange={setContent} topicId={topicId} />;
 }

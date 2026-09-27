@@ -129,6 +129,17 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         if (note is null)
             return false;
 
+        // Restoring must always succeed rather than fail outright - if the Note's old Topic
+        // has since gained another active Note (only possible while this one sat in the
+        // Trash), come back unfiled instead of colliding with whoever's there now.
+        if (note.TopicId is { } topicId)
+        {
+            var topicOccupied = await db.Notes.AnyAsync(
+                n => n.TopicId == topicId && n.DeletedAt == null && n.Id != noteId, cancellationToken);
+            if (topicOccupied)
+                note.TopicId = null;
+        }
+
         note.DeletedAt = null;
         note.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
@@ -136,6 +147,71 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         await eventPublisher.PublishAsync(new NoteRestored(note.Id, note.UserId, note.UpdatedAt), cancellationToken);
 
         return true;
+    }
+
+    public async Task<NoteResponse?> GetByTopicAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default)
+    {
+        var note = await db.Notes.AsNoTracking()
+            .SingleOrDefaultAsync(n => n.TopicId == topicId && n.UserId == userId && n.DeletedAt == null, cancellationToken);
+        if (note is null)
+            return null;
+
+        var categoryIds = await CategoryIdsForAsync(note.Id, cancellationToken);
+        return ToResponse(note, categoryIds);
+    }
+
+    public async Task<UpsertTopicNoteResult> UpsertByTopicAsync(Guid userId, Guid topicId, UpdateNoteRequest request, CancellationToken cancellationToken = default)
+    {
+        var topicExists = await db.KnownTopics.AnyAsync(t => t.TopicId == topicId && t.UserId == userId, cancellationToken);
+        if (!topicExists)
+            return UpsertTopicNoteResult.Failure(UpsertTopicNoteFailureReason.TopicNotFound);
+
+        var note = await db.Notes.SingleOrDefaultAsync(n => n.TopicId == topicId && n.UserId == userId && n.DeletedAt == null, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+
+        if (note is not null)
+        {
+            // Overwrite, not append - same as UpdateAsync, Notes have no version history.
+            note.Content = request.Content;
+            note.UpdatedAt = now;
+
+            var triggersNow = note.AiCategorizationTriggeredAt is null && !string.IsNullOrWhiteSpace(note.Content);
+            if (triggersNow)
+                note.AiCategorizationTriggeredAt = now;
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            await eventPublisher.PublishAsync(new NoteUpdated(note.Id, note.UserId, note.Content, now), cancellationToken);
+            if (triggersNow)
+                await eventPublisher.PublishAsync(new NoteReadyForCategorization(note.Id, note.UserId, note.Content, now), cancellationToken);
+
+            return UpsertTopicNoteResult.Success(await ToResponseWithCategoriesAsync(note, cancellationToken));
+        }
+
+        var hasContent = !string.IsNullOrWhiteSpace(request.Content);
+        var created = new Note
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Content = request.Content,
+            TopicId = topicId,
+            CreatedAt = now,
+            UpdatedAt = now,
+            AiCategorizationTriggeredAt = hasContent ? now : null,
+        };
+
+        db.Notes.Add(created);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await eventPublisher.PublishAsync(new NoteCreated(created.Id, created.UserId, created.Content, created.CreatedAt), cancellationToken);
+        // The Note is filed under the Topic from birth, not via a separate AssignTopicAsync
+        // call - still publish NoteTopicAssigned so OrganizationNoteCountProjectionHandler's
+        // Topic.NoteCount stays correct without needing to know about this new creation path.
+        await eventPublisher.PublishAsync(new NoteTopicAssigned(created.Id, created.UserId, null, topicId, now), cancellationToken);
+        if (hasContent)
+            await eventPublisher.PublishAsync(new NoteReadyForCategorization(created.Id, created.UserId, created.Content, now), cancellationToken);
+
+        return UpsertTopicNoteResult.Success(ToResponse(created, []));
     }
 
     public async Task<AssignNoteTopicResult> AssignTopicAsync(Guid userId, Guid noteId, Guid? topicId, CancellationToken cancellationToken = default)
@@ -151,6 +227,13 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
             var topicExists = await db.KnownTopics.AnyAsync(t => t.TopicId == newTopicId && t.UserId == userId, cancellationToken);
             if (!topicExists)
                 return AssignNoteTopicResult.Failure(AssignNoteTopicFailureReason.TopicNotFound);
+
+            // A Topic can have at most one active Note (NoteConfiguration's unique filtered
+            // index) - reject rather than silently displacing whatever's already there.
+            var topicOccupied = await db.Notes.AnyAsync(
+                n => n.TopicId == newTopicId && n.DeletedAt == null && n.Id != noteId, cancellationToken);
+            if (topicOccupied)
+                return AssignNoteTopicResult.Failure(AssignNoteTopicFailureReason.TopicAlreadyHasNote);
         }
 
         var oldTopicId = note.TopicId;

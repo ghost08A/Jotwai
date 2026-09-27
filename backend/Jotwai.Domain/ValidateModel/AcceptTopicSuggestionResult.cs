@@ -4,6 +4,7 @@ public enum AcceptTopicSuggestionFailureReason
 {
     SuggestionNotFound,
     DuplicateSiblingName,
+    BothTopicsHaveNotes,
 }
 
 public sealed class AcceptTopicSuggestionResult

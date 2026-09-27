@@ -20,8 +20,13 @@ public sealed class NoteConfiguration : IEntityTypeConfiguration<Note>
         builder.HasIndex(n => n.UserId);
 
         // No FK to organization.Topics either, same reason - plain value validated against
-        // Notes' own KnownTopic read model (ADR-0003) before being set.
-        builder.HasIndex(n => n.TopicId);
+        // Notes' own KnownTopic read model (ADR-0003) before being set. Unique + filtered:
+        // a Topic can have at most one active (non-deleted) Note attached (ticket - "1 Topic
+        // = continuous document"); soft-deleted Notes and unfiled Notes (TopicId null) are
+        // excluded so they never collide with this or each other.
+        builder.HasIndex(n => n.TopicId)
+            .IsUnique()
+            .HasFilter("\"TopicId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
 
         builder.Property(n => n.Content)
             .IsRequired();

@@ -75,11 +75,6 @@ namespace Jotwai.Domain.Models.Database.Migrations.Organization
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int>("NoteCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid");
 

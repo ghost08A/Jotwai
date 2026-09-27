@@ -1,3 +1,4 @@
+import axios from "axios";
 import { httpClient } from "../../../core/http/httpClient";
 import type { CreateNoteRequest, NoteResponse, UpdateNoteRequest } from "../types";
 
@@ -18,6 +19,23 @@ export async function listTrash(): Promise<NoteResponse[]> {
 
 export async function updateNote(id: string, request: UpdateNoteRequest): Promise<NoteResponse> {
   const { data } = await httpClient.put<NoteResponse>(`/api/notes/${id}`, request);
+  return data;
+}
+
+// A Topic has at most one active Note (its continuous document) - addressed by topicId
+// instead of noteId. getNoteByTopic's 404 means the Topic has no content yet, not an error.
+export async function getNoteByTopic(topicId: string): Promise<NoteResponse | null> {
+  try {
+    const { data } = await httpClient.get<NoteResponse>(`/api/notes/by-topic/${topicId}`);
+    return data;
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 404) return null;
+    throw err;
+  }
+}
+
+export async function upsertNoteByTopic(topicId: string, request: UpdateNoteRequest): Promise<NoteResponse> {
+  const { data } = await httpClient.put<NoteResponse>(`/api/notes/by-topic/${topicId}`, request);
   return data;
 }
 

@@ -41,6 +41,30 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
         return note is null ? NotFound() : Ok(note);
     }
 
+    // The Topic Detail page's continuous-document backing (ticket - "1 Topic = continuous
+    // document") - a Topic has at most one active Note (NoteConfiguration's unique filtered
+    // index), addressed here by topicId instead of noteId.
+    [HttpGet("by-topic/{topicId:guid}")]
+    public async Task<IActionResult> GetByTopic(Guid topicId, CancellationToken cancellationToken)
+    {
+        var note = await notesService.GetByTopicAsync(CurrentUserId(), topicId, cancellationToken);
+        return note is null ? NotFound() : Ok(note);
+    }
+
+    [HttpPut("by-topic/{topicId:guid}")]
+    public async Task<IActionResult> UpsertByTopic(Guid topicId, UpdateNoteRequest request, CancellationToken cancellationToken)
+    {
+        var result = await notesService.UpsertByTopicAsync(CurrentUserId(), topicId, request, cancellationToken);
+
+        return result.Succeeded
+            ? Ok(result.Note)
+            : result.FailureReason switch
+            {
+                UpsertTopicNoteFailureReason.TopicNotFound => NotFound(),
+                _ => StatusCode(StatusCodes.Status500InternalServerError),
+            };
+    }
+
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, UpdateNoteRequest request, CancellationToken cancellationToken)
     {
@@ -73,6 +97,7 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
             {
                 AssignNoteTopicFailureReason.NoteNotFound => NotFound(),
                 AssignNoteTopicFailureReason.TopicNotFound => BadRequest(new { error = "Topic not found." }),
+                AssignNoteTopicFailureReason.TopicAlreadyHasNote => Conflict(new { error = "This topic already has a note." }),
                 _ => StatusCode(StatusCodes.Status500InternalServerError),
             };
     }

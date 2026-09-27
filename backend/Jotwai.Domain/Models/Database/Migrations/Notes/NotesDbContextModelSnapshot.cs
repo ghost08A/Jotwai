@@ -81,7 +81,9 @@ namespace Jotwai.Domain.Models.Database.Migrations.Notes
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TopicId");
+                    b.HasIndex("TopicId")
+                        .IsUnique()
+                        .HasFilter("\"TopicId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
 
                     b.HasIndex("UserId");
 

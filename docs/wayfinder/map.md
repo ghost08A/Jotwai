@@ -67,6 +67,7 @@ Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Categ
 - ~~[Topic Suggestion — AI แนะนำ merge/ย้าย Topic ใหม่](tickets/040-feature-topic-suggestion.md)~~ — ปิดแล้ว 2026-09-27 (build เสร็จและ verify ผ่าน browser จริงกับ Gemini จริงครบวงจร — ดู ticket 040 Resolution)
 - ~~[Content Polish — ปุ่ม AI ช่วยแต่งคำ/จัดรูปแบบ/แก้คำผิดใน Note](tickets/041-feature-content-polish.md)~~ — ปิดแล้ว 2026-09-27 (build เสร็จและ verify ผ่าน browser จริงกับ Gemini จริงครบวงจร — ดู ticket 041 Resolution)
 - ~~[Topic-first navigation — ตัด Notes nav, เลิกบังคับ H1 ของ Note, เพิ่ม /subtopic](tickets/042-feature-topic-first-navigation.md)~~ — ปิดแล้ว 2026-09-27 (build เสร็จและ verify ผ่าน browser จริงครบวงจร — ดู ticket 042 Resolution)
+- ~~[1 Topic = เอกสารต่อเนื่องเดียว (Notion-style autosave), เอา guard ลบ Topic ที่มี Note ออก](tickets/043-feature-topic-continuous-document.md)~~ — ปิดแล้ว 2026-09-27 (build เสร็จและ verify ผ่าน browser จริงกับ backend จริงครบวงจร รวม prototype-first validation — ดู ticket 043 Resolution)
 
 ## Open grilling tickets (database schema — not yet decided)
 

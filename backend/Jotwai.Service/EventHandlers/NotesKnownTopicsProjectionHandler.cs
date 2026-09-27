@@ -11,7 +11,7 @@ namespace Jotwai.Service.EventHandlers;
 /// the Organization Module's Topics, so Notes can validate a Note's Topic assignment
 /// without querying the `organization` schema directly.
 /// </summary>
-public sealed class NotesKnownTopicsProjectionHandler(NotesDbContext db) :
+public sealed class NotesKnownTopicsProjectionHandler(NotesDbContext db, IEventPublisher eventPublisher) :
     IEventHandler<TopicCreated>,
     IEventHandler<TopicDeleted>
 {
@@ -30,5 +30,27 @@ public sealed class NotesKnownTopicsProjectionHandler(NotesDbContext db) :
         await db.KnownTopics
             .Where(t => t.TopicId == domainEvent.TopicId)
             .ExecuteDeleteAsync(cancellationToken);
+
+        // The Topic's own document (at most one active Note - NoteConfiguration's unique
+        // filtered index) goes with it: soft-delete into Trash and unfile it, rather than
+        // leaving it dangling on a TopicId that no longer exists. Deleting a Topic no longer
+        // requires emptying its Note first (ticket - "1 Topic = continuous document").
+        var orphanedNoteIds = await db.Notes.AsNoTracking()
+            .Where(n => n.TopicId == domainEvent.TopicId && n.DeletedAt == null)
+            .Select(n => n.Id)
+            .ToListAsync(cancellationToken);
+
+        if (orphanedNoteIds.Count == 0)
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+        await db.Notes
+            .Where(n => orphanedNoteIds.Contains(n.Id))
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(n => n.DeletedAt, now).SetProperty(n => n.TopicId, (Guid?)null),
+                cancellationToken);
+
+        foreach (var noteId in orphanedNoteIds)
+            await eventPublisher.PublishAsync(new NoteDeleted(noteId, domainEvent.UserId, now), cancellationToken);
     }
 }

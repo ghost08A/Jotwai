@@ -134,27 +134,27 @@ public sealed class TopicsTests : IClassFixture<JotwaiApiFactory>
     }
 
     [Fact]
-    public async Task Assigning_a_note_to_a_topic_blocks_deleting_that_topic_until_cleared()
+    public async Task Deleting_a_topic_with_a_note_succeeds_and_soft_deletes_the_note_into_trash()
     {
         var client = await AuthenticatedClientAsync();
         var topic = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Projects" }))
             .Content.ReadFromJsonAsync<TopicResponse>();
         var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "under Projects" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
+        await client.PutAsJsonAsync($"/api/notes/{note!.Id}/topic", new AssignNoteTopicRequest { TopicId = topic!.Id });
 
-        var assign = await client.PutAsJsonAsync($"/api/notes/{note!.Id}/topic", new AssignNoteTopicRequest { TopicId = topic!.Id });
-        Assert.Equal(HttpStatusCode.OK, assign.StatusCode);
+        var deleteResponse = await client.DeleteAsync($"/api/topics/{topic.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
-        var blockedDelete = await client.DeleteAsync($"/api/topics/{topic.Id}");
-        Assert.Equal(HttpStatusCode.Conflict, blockedDelete.StatusCode);
+        var trash = await client.GetFromJsonAsync<List<NoteResponse>>("/api/notes/trash");
+        var trashedNote = trash!.Single(n => n.Id == note.Id);
+        Assert.NotNull(trashedNote.DeletedAt);
+        Assert.Null(trashedNote.TopicId);
 
-        var clear = await client.PutAsJsonAsync($"/api/notes/{note.Id}/topic", new AssignNoteTopicRequest { TopicId = null });
-        Assert.Equal(HttpStatusCode.OK, clear.StatusCode);
-        var cleared = await clear.Content.ReadFromJsonAsync<NoteResponse>();
-        Assert.Null(cleared!.TopicId);
-
-        var allowedDelete = await client.DeleteAsync($"/api/topics/{topic.Id}");
-        Assert.Equal(HttpStatusCode.NoContent, allowedDelete.StatusCode);
+        var restoreResponse = await client.PostAsync($"/api/notes/{note.Id}/restore", null);
+        Assert.Equal(HttpStatusCode.NoContent, restoreResponse.StatusCode);
+        var restored = await client.GetFromJsonAsync<NoteResponse>($"/api/notes/{note.Id}");
+        Assert.Null(restored!.TopicId);
     }
 
     [Fact]
