@@ -11,7 +11,7 @@ export function CategoriesPage() {
   const sorted = [...(categories.data ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-6">
+    <div className="w-full space-y-4 px-6 py-6 md:px-12 lg:px-24">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Categories</h1>
         {!isAdding && (

@@ -8,7 +8,7 @@ namespace Jotwai.Service.ImplementServices;
 
 public sealed class SearchService(SearchDbContext db) : ISearchService
 {
-    public async Task<IReadOnlyList<SearchResultResponse>> SearchAsync(Guid userId, string? query, Guid? topicId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SearchResultResponse>> SearchAsync(Guid userId, string? query, Guid? topicId, IReadOnlyList<Guid>? categoryIds, CancellationToken cancellationToken = default)
     {
         var documents = db.SearchDocuments.AsNoTracking()
             .Where(d => d.UserId == userId && d.DeletedAt == null);
@@ -17,6 +17,21 @@ public sealed class SearchService(SearchDbContext db) : ISearchService
         {
             var topicIds = await DescendantTopicIdsAsync(userId, filterTopicId, cancellationToken);
             documents = documents.Where(d => d.TopicId != null && topicIds.Contains(d.TopicId.Value));
+        }
+
+        if (categoryIds is { Count: > 0 } requiredCategoryIds)
+        {
+            // A Note must carry every requested Category (AND) - resolved to Note IDs up
+            // front for the same reason the category-name match below is: a per-Category
+            // "does this Note have it" check isn't expressible as a single EF join predicate.
+            var matchingNoteIds = await db.SearchDocumentCategories.AsNoTracking()
+                .Where(dc => requiredCategoryIds.Contains(dc.CategoryId))
+                .GroupBy(dc => dc.NoteId)
+                .Where(g => g.Select(dc => dc.CategoryId).Distinct().Count() == requiredCategoryIds.Count)
+                .Select(g => g.Key)
+                .ToListAsync(cancellationToken);
+
+            documents = documents.Where(d => matchingNoteIds.Contains(d.NoteId));
         }
 
         var trimmed = query?.Trim();

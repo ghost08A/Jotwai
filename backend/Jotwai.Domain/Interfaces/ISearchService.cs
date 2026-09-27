@@ -8,6 +8,8 @@ public interface ISearchService
     /// including Note content, code block content, and the names of the Note's Topic and
     /// Categories. A null/blank <paramref name="query"/> matches every Note. When
     /// <paramref name="topicId"/> is given, only Notes filed under that Topic or one of its
-    /// descendants are returned. Results are ordered most-recently-updated first.</summary>
-    Task<IReadOnlyList<SearchResultResponse>> SearchAsync(Guid userId, string? query, Guid? topicId, CancellationToken cancellationToken = default);
+    /// descendants are returned. When <paramref name="categoryIds"/> is given, only Notes
+    /// tagged with every one of those Categories are returned (AND, not OR). Results are
+    /// ordered most-recently-updated first.</summary>
+    Task<IReadOnlyList<SearchResultResponse>> SearchAsync(Guid userId, string? query, Guid? topicId, IReadOnlyList<Guid>? categoryIds, CancellationToken cancellationToken = default);
 }

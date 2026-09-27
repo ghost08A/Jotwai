@@ -9,7 +9,7 @@ export function TrashPage() {
   const trash = useTrash();
 
   return (
-    <div className="mx-auto max-w-2xl space-y-3 p-6">
+    <div className="w-full space-y-3 px-6 py-6 md:px-12 lg:px-24">
       <h1 className="text-xl font-semibold text-foreground">Trash</h1>
 
       {trash.isLoading && Array.from({ length: 3 }).map((_, index) => <NoteCardSkeleton key={index} />)}

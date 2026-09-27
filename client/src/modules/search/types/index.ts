@@ -9,5 +9,5 @@ export interface SearchResultResponse {
 
 export interface SearchParams {
     q: string;
-    topicId: string;
+    categoryIds: string[];
 }

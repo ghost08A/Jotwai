@@ -16,16 +16,13 @@ export function PrivateLayout() {
           <span className="text-lg font-semibold text-card-foreground">Jotwai</span>
           <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
             <Link to={ROUTES.home} className="hover:text-foreground">
-              Notes
+              Home
             </Link>
-            <Link to={ROUTES.topics} className="hover:text-foreground">
-              Topics
+            <Link to={ROUTES.notes} className="hover:text-foreground">
+              Notes
             </Link>
             <Link to={ROUTES.categories} className="hover:text-foreground">
               Categories
-            </Link>
-            <Link to={ROUTES.search} className="hover:text-foreground">
-              Search
             </Link>
             <Link to={ROUTES.trash} className="hover:text-foreground">
               Trash

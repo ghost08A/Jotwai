@@ -12,9 +12,9 @@ namespace Web.Jotwai.Controllers;
 public sealed class SearchController(ISearchService searchService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? topicId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] Guid? topicId, [FromQuery] List<Guid>? categoryIds, CancellationToken cancellationToken)
     {
-        var results = await searchService.SearchAsync(CurrentUserId(), q, topicId, cancellationToken);
+        var results = await searchService.SearchAsync(CurrentUserId(), q, topicId, categoryIds, cancellationToken);
         return Ok(results);
     }
 

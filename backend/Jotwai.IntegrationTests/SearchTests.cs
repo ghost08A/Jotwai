@@ -60,6 +60,31 @@ public sealed class SearchTests : IClassFixture<JotwaiApiFactory>
     }
 
     [Fact]
+    public async Task Search_filtering_by_multiple_categories_requires_every_one_to_match()
+    {
+        var client = await AuthenticatedClientAsync();
+        var work = await (await client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Work" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>();
+        var urgent = await (await client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Urgent" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>();
+
+        var both = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "tagged with both" }))
+            .Content.ReadFromJsonAsync<NoteResponse>();
+        await client.PostAsync($"/api/notes/{both!.Id}/categories/{work!.Id}", null);
+        await client.PostAsync($"/api/notes/{both.Id}/categories/{urgent!.Id}", null);
+
+        var onlyOne = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "tagged with one" }))
+            .Content.ReadFromJsonAsync<NoteResponse>();
+        await client.PostAsync($"/api/notes/{onlyOne!.Id}/categories/{work.Id}", null);
+
+        var results = await client.GetFromJsonAsync<List<SearchResultResponse>>(
+            $"/api/search?categoryIds={work.Id}&categoryIds={urgent.Id}");
+
+        Assert.Single(results!);
+        Assert.Equal(both.Id, results![0].Id);
+    }
+
+    [Fact]
     public async Task Search_filtering_by_topic_includes_descendant_topics()
     {
         var client = await AuthenticatedClientAsync();

@@ -2,6 +2,7 @@ import { useAttachCategory } from "../hooks/useAttachCategory";
 import { useDetachCategory } from "../hooks/useDetachCategory";
 import { useCategories } from "../../organization/hooks/useCategories";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
+import { CategoryChip } from "../../../shared/components/CategoryChip";
 
 interface NoteCategoryChipsProps {
   noteId: string;
@@ -33,20 +34,13 @@ export function NoteCategoryChips({ noteId, categoryIds }: NoteCategoryChipsProp
         {categories.data.map((category) => {
           const isAttached = categoryIds.includes(category.id);
           return (
-            <button
+            <CategoryChip
               key={category.id}
-              type="button"
-              aria-pressed={isAttached}
+              label={category.name}
+              isActive={isAttached}
               onClick={() => toggle(category.id, isAttached)}
               disabled={isPending}
-              className={`cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
-                isAttached
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-input bg-transparent text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              {category.name}
-            </button>
+            />
           );
         })}
       </div>

@@ -63,6 +63,7 @@ Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Categ
 - ~~[AI Categorization suggestion flow](tickets/024-feature-ai-categorization-flow.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
 - ~~[User Ownership enforcement](tickets/025-feature-user-ownership.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
 - ~~[Search](tickets/026-feature-search.md)~~ — ปิดแล้ว 2026-09-25 (ดู Decisions so far)
+- ~~[หน้าแรกใหม่แบบ Notion (topic browser + search) และหน้า detail ของ topic](tickets/039-feature-topic-browser-home.md)~~ — ปิดแล้ว 2026-09-26 (build เสร็จและ verify ครบวงจรทั้ง backend `categoryIds` AND filter ใหม่ + client หน้าแรก/หน้า detail ใหม่ทั้งคู่ ลบ `/topics`/`/search` เดิมออกแล้ว — ดู ticket 039 Resolution)
 
 ## Open grilling tickets (database schema — not yet decided)
 

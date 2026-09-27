@@ -1,9 +1,10 @@
 export const ROUTES = {
   home: "/",
+  notes: "/notes",
   trash: "/trash",
-  topics: "/topics",
   categories: "/categories",
-  search: "/search",
   login: "/login",
   register: "/register",
+  topicDetail: (topicId: string) => `/topics/${topicId}`,
+  topicDetailPattern: "/topics/:topicId",
 } as const;
