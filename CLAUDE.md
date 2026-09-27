@@ -27,6 +27,12 @@
 - `backend/` — ASP.NET Core modular monolith, global 3-tier (`Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai`) ตาม ADR-0010 แต่ละ Module (Notes, Organization, Nerd Assistant, Search, Identity) อยู่ภายใน 3 project นี้ในฐานะ feature ภายใน ไม่ใช่ project แยก
 - `docs/adr/` — architecture decision records
 
+## การสื่อสารกับผู้ใช้
+
+- คุยกับผู้ใช้เป็นภาษาไทยเสมอ (เอกสารในโปรเจกต์ก็เขียนเป็นภาษาไทยเช่นกัน ยกเว้นคำศัพท์เฉพาะทาง/โค้ด/ชื่อไฟล์ที่ต้องคงไว้เป็นภาษาอังกฤษเพื่อไม่ให้ตรงกับของจริงผิดเพี้ยน)
+- เวลาต้องใช้คำเทคนิค ให้อธิบายกำกับด้วยภาษาง่ายๆ ที่คนทั่วไปเข้าใจได้ ไม่ใช่แค่ทิ้งศัพท์ไว้เฉยๆ
+- สอน/อธิบายเพิ่มเติมระหว่างทางได้เลย ไม่ต้องตอบแค่แคบๆ ตรงคำถามอย่างเดียว — ผู้ใช้ไม่ได้เป็นสายเทคนิคลึกทุกเรื่อง
+
 ## Ground rules
 
 - Module ใน `backend/` สื่อสารกันผ่าน in-process Domain Events เท่านั้น โดยเป็น convention — ห้ามเรียกกันโดยตรงหรือ query ข้าม schema ระหว่าง module (ดู ADR 0001–0003, ADR-0010) แต่ละ Module ยังคงมี `DbContext` ของตัวเองที่ผูกกับ schema ของตัวเองภายใน `Jotwai.Service` แม้ project จะถูกแบ่งแบบ global ก็ตาม
