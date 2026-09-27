@@ -70,7 +70,15 @@ public sealed class TopicSuggestionOutboxWorker(
                 .Select(t => new AiTopicCandidate(t.TopicId, t.Name))
                 .ToListAsync(cancellationToken);
 
-            var suggestion = await aiProvider.AnalyzeTopicAsync(entry.Name, candidates, cancellationToken);
+            var suggestion = await aiProvider.AnalyzeTopicAsync(entry.Name, entry.Content, candidates, cancellationToken);
+
+            // A fresh analysis (on-demand or automatic re-trigger, ticket 044) supersedes
+            // whatever this Topic's previous unresolved suggestion said - resolve it first so
+            // there's never more than one unresolved row per Topic (GetActiveAsync/AcceptAsync
+            // rely on that via SingleOrDefaultAsync). Same pattern as SuggestionsService.AcceptAsync.
+            await db.TopicSuggestions
+                .Where(s => s.TopicId == entry.TopicId && s.ResolvedAt == null)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(s => s.ResolvedAt, DateTimeOffset.UtcNow), cancellationToken);
 
             // Below the confidence threshold means "don't show anything" (same rule as
             // Category Suggestion, ticket 009) - no row at all, not an empty one.

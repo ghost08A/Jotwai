@@ -22,6 +22,10 @@ public sealed class TopicSuggestionOutboxEntryConfiguration : IEntityTypeConfigu
             .IsRequired()
             .HasMaxLength(200);
 
+        // No HasMaxLength - Note content can be arbitrarily long Markdown; Npgsql maps an
+        // unbounded string to `text`.
+        builder.Property(e => e.Content);
+
         builder.Property(e => e.CreatedAt)
             .IsRequired();
 

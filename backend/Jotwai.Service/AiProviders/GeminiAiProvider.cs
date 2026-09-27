@@ -62,13 +62,13 @@ public sealed class GeminiAiProvider(HttpClient httpClient, IOptions<GeminiOptio
     }
 
     public async Task<AiTopicSuggestion?> AnalyzeTopicAsync(
-        string newTopicName, IReadOnlyList<AiTopicCandidate> existingTopics, CancellationToken cancellationToken = default)
+        string newTopicName, string? newTopicContent, IReadOnlyList<AiTopicCandidate> existingTopics, CancellationToken cancellationToken = default)
     {
         if (existingTopics.Count == 0)
             return null;
 
         var gemini = options.Value;
-        var prompt = BuildTopicPrompt(newTopicName, existingTopics);
+        var prompt = BuildTopicPrompt(newTopicName, newTopicContent, existingTopics);
 
         var requestBody = new GeminiRequest
         {
@@ -115,9 +115,12 @@ public sealed class GeminiAiProvider(HttpClient httpClient, IOptions<GeminiOptio
         return kind is null ? null : new AiTopicSuggestion(kind.Value, matchedTopicId, Math.Clamp(result.Confidence, 0, 1));
     }
 
-    private static string BuildTopicPrompt(string newTopicName, IReadOnlyList<AiTopicCandidate> existingTopics)
+    private static string BuildTopicPrompt(string newTopicName, string? newTopicContent, IReadOnlyList<AiTopicCandidate> existingTopics)
     {
         var existing = string.Join("\n", existingTopics.Select(t => $"- {t.TopicId}: {t.Name}"));
+        var contentSection = string.IsNullOrWhiteSpace(newTopicContent)
+            ? "(no content written yet)"
+            : newTopicContent;
 
         return $"""
             You are organizing a personal note-taking app's hierarchy of Topics (folders). A
@@ -132,7 +135,14 @@ public sealed class GeminiAiProvider(HttpClient httpClient, IOptions<GeminiOptio
             (the new Topic gets deleted) so only choose it when the name is clearly the same
             concept as an existing one.
 
+            The Topic's name may be a placeholder (e.g. "Untitled") that carries no signal on
+            its own - when that's the case, base your decision on the content written so far
+            instead.
+
             New Topic name: {newTopicName}
+
+            Content written so far under the new Topic (may be empty):
+            {contentSection}
 
             Existing Topics (id: name):
             {existing}

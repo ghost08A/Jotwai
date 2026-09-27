@@ -24,3 +24,10 @@ export async function acceptTopicSuggestion(topicId: string): Promise<void> {
 export async function ignoreTopicSuggestion(topicId: string): Promise<void> {
     await httpClient.post(`/api/topics/${topicId}/suggestion/ignore`);
 }
+
+// Unlike Category Suggestion's trigger (which re-reads the Note's content itself), Topic
+// Suggestion doesn't own Note content (cross-module, ADR-0003) - the caller passes whatever
+// content it currently has (ticket 044).
+export async function triggerTopicSuggestion(topicId: string, content: string): Promise<void> {
+    await httpClient.post(`/api/topics/${topicId}/suggestion/trigger`, { content });
+}

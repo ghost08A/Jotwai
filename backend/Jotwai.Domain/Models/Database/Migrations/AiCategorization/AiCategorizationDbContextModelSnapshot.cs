@@ -232,6 +232,9 @@ namespace Jotwai.Domain.Models.Database.Migrations.AiCategorization
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 

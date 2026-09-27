@@ -32,9 +32,11 @@ public interface IAiProvider
 
     /// <summary>
     /// Topic Suggestion (GLOSSARY.md, ticket 040) - compares a newly created Topic's name
-    /// against every existing Topic the user has, in one call, and decides whether it should
-    /// be Merged into one of them or Placed as a subtopic of one of them (never both).
+    /// (and, since ticket 044, its Note content so far - a blank/"Untitled" Topic's name
+    /// alone carries no signal) against every existing Topic the user has, in one call, and
+    /// decides whether it should be Merged into one of them or Placed as a subtopic of one
+    /// of them (never both).
     /// </summary>
     Task<AiTopicSuggestion?> AnalyzeTopicAsync(
-        string newTopicName, IReadOnlyList<AiTopicCandidate> existingTopics, CancellationToken cancellationToken = default);
+        string newTopicName, string? newTopicContent, IReadOnlyList<AiTopicCandidate> existingTopics, CancellationToken cancellationToken = default);
 }

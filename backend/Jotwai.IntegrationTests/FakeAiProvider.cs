@@ -32,24 +32,33 @@ public sealed class FakeAiProvider : IAiProvider
         => Task.FromResult(content + "\n[polished]");
 
     // Deterministic stand-in for Topic Suggestion (ticket 040): an exact case-insensitive
-    // name match is a "Merge" candidate; a name of the form "Sub of <existing name>" is a
-    // "Placement" candidate; anything else is "none" (null).
+    // name match is a "Merge" candidate; a name (or, since ticket 044, content) of the form
+    // "Sub of <existing name>" is a "Placement" candidate; anything else is "none" (null) -
+    // checking content the same way lets tests exercise the "name is a placeholder, content
+    // carries the real signal" path added in ticket 044.
     public Task<AiTopicSuggestion?> AnalyzeTopicAsync(
-        string newTopicName, IReadOnlyList<AiTopicCandidate> existingTopics, CancellationToken cancellationToken = default)
+        string newTopicName, string? newTopicContent, IReadOnlyList<AiTopicCandidate> existingTopics, CancellationToken cancellationToken = default)
     {
         var exactMatch = existingTopics.FirstOrDefault(t => string.Equals(t.Name, newTopicName, StringComparison.OrdinalIgnoreCase));
         if (exactMatch is not null)
             return Task.FromResult<AiTopicSuggestion?>(new AiTopicSuggestion(TopicSuggestionKind.Merge, exactMatch.TopicId, 0.99));
 
         const string placementPrefix = "Sub of ";
-        if (newTopicName.StartsWith(placementPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            var parentName = newTopicName[placementPrefix.Length..];
-            var parentMatch = existingTopics.FirstOrDefault(t => string.Equals(t.Name, parentName, StringComparison.OrdinalIgnoreCase));
-            if (parentMatch is not null)
-                return Task.FromResult<AiTopicSuggestion?>(new AiTopicSuggestion(TopicSuggestionKind.Placement, parentMatch.TopicId, 0.9));
-        }
+        var placement = TryFindPlacement(newTopicName, placementPrefix, existingTopics)
+            ?? TryFindPlacement(newTopicContent ?? string.Empty, placementPrefix, existingTopics);
+        if (placement is not null)
+            return Task.FromResult<AiTopicSuggestion?>(new AiTopicSuggestion(TopicSuggestionKind.Placement, placement.Value, 0.9));
 
         return Task.FromResult<AiTopicSuggestion?>(null);
+    }
+
+    private static Guid? TryFindPlacement(string text, string placementPrefix, IReadOnlyList<AiTopicCandidate> existingTopics)
+    {
+        if (!text.StartsWith(placementPrefix, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var parentName = text[placementPrefix.Length..];
+        var parentMatch = existingTopics.FirstOrDefault(t => string.Equals(t.Name, parentName, StringComparison.OrdinalIgnoreCase));
+        return parentMatch?.TopicId;
     }
 }

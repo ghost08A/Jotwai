@@ -1,24 +1,28 @@
 import { useMemo, useState } from "react";
-import { Button } from "@/shared/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/shared/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
 import { useTopics } from "../hooks/useTopics";
+import { useCreateTopic } from "../hooks/useCreateTopic";
 import { buildTopicTree } from "../utils/buildTopicTree";
 import { computeVisibleTopicIds } from "../utils/computeVisibleTopicIds";
+import { nextUntitledTopicName } from "../utils/nextUntitledTopicName";
 import { useSearch } from "../../search/hooks/useSearch";
 import { useActiveTopicSuggestions } from "../../ai-categorization/hooks/useActiveTopicSuggestions";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
+import { ROUTES } from "../../../shared/routes/paths";
 import { CategoryFilterChips } from "./CategoryFilterChips";
-import { CreateTopicForm } from "./CreateTopicForm";
 import { TopicBrowserNode } from "./TopicBrowserNode";
 
 export function TopicBrowserPage() {
+    const navigate = useNavigate();
     const [query, setQuery] = useState("");
     const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-    const [isAddingRoot, setIsAddingRoot] = useState(false);
     const debouncedQuery = useDebouncedValue(query, 300);
 
     const topics = useTopics();
+    const createTopic = useCreateTopic();
     const isFiltering = debouncedQuery.trim() !== "" || selectedCategoryIds.length > 0;
     const search = useSearch(debouncedQuery, selectedCategoryIds);
     const activeSuggestions = useActiveTopicSuggestions();
@@ -26,6 +30,19 @@ export function TopicBrowserPage() {
         () => new Set(activeSuggestions.data ?? []),
         [activeSuggestions.data],
     );
+
+    // "Capture first, organize later" (root CLAUDE.md) applied to Topic creation itself
+    // (ticket 044): no name/parent prompt upfront - create a placeholder-named root Topic
+    // immediately and jump straight into its continuous-document writing page. Topic
+    // Suggestion (name + content, see TopicSuggestionPanel) decides afterward whether it
+    // should merge into or move under an existing Topic.
+    function handleNewTopic() {
+        const rootNames = (topics.data ?? []).filter((topic) => !topic.parentId).map((topic) => topic.name);
+        createTopic.mutate(
+            { name: nextUntitledTopicName(rootNames) },
+            { onSuccess: (topic) => navigate(ROUTES.topicDetail(topic.id)) },
+        );
+    }
 
     function toggleCategory(categoryId: string) {
         setSelectedCategoryIds((current) =>
@@ -71,17 +88,13 @@ export function TopicBrowserPage() {
 
             <div className="flex items-center justify-between">
                 <h2 className="text-sm font-medium text-muted-foreground">Topics</h2>
-                {!isAddingRoot && (
-                    <Button type="button" size="sm" onClick={() => setIsAddingRoot(true)}>
-                        + New topic
-                    </Button>
-                )}
+                <Button type="button" size="sm" onClick={handleNewTopic} disabled={createTopic.isPending}>
+                    {createTopic.isPending ? "Creating…" : "+ New topic"}
+                </Button>
             </div>
 
-            {isAddingRoot && (
-                <div className="rounded-lg border border-border bg-card p-3">
-                    <CreateTopicForm onDone={() => setIsAddingRoot(false)} />
-                </div>
+            {createTopic.isError && (
+                <p className="text-sm text-destructive">{getErrorMessage(createTopic.error, "Failed to create topic")}</p>
             )}
 
             <div className="rounded-lg border border-border bg-card p-2">

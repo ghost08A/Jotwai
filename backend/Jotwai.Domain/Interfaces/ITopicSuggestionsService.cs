@@ -18,4 +18,11 @@ public interface ITopicSuggestionsService
     /// under the target). The client is responsible for its own extra confirm-dialog before
     /// calling this for a Merge (GLOSSARY.md) - this method just performs the action.</summary>
     Task<AcceptTopicSuggestionResult> AcceptAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default);
+
+    /// <summary>Explicit user action to (re-)run Topic Suggestion on demand, or automatically
+    /// when the user leaves the Topic Detail page after editing (ticket 044) - unlike the
+    /// one-time automatic trigger on Topic creation, this can be called any number of times
+    /// and always analyzes the Topic's *current* name (from <c>TopicProjections</c>) plus
+    /// whatever content is passed in. Returns false if the Topic isn't found/owned.</summary>
+    Task<bool> TriggerAsync(Guid userId, Guid topicId, string content, CancellationToken cancellationToken = default);
 }

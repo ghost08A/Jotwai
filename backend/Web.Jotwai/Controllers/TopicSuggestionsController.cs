@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Jotwai.Domain.Interfaces;
+using Jotwai.Domain.RequestModels;
 using Jotwai.Domain.ValidateModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,6 +43,7 @@ public sealed class TopicSuggestionsController(ITopicSuggestionsService topicSug
             {
                 AcceptTopicSuggestionFailureReason.SuggestionNotFound => NotFound(),
                 AcceptTopicSuggestionFailureReason.DuplicateSiblingName => Conflict(new { error = "A Topic with this name already exists under the target Topic." }),
+                AcceptTopicSuggestionFailureReason.BothTopicsHaveNotes => Conflict(new { error = "Both topics already have notes - merge the content manually first." }),
                 _ => StatusCode(StatusCodes.Status500InternalServerError),
             };
     }
@@ -51,6 +53,17 @@ public sealed class TopicSuggestionsController(ITopicSuggestionsService topicSug
     {
         var ignored = await topicSuggestionsService.IgnoreAsync(CurrentUserId(), topicId, cancellationToken);
         return ignored ? NoContent() : NotFound();
+    }
+
+    // On-demand (or automatic, on leaving the Topic Detail page - ticket 044) re-analysis,
+    // using the Topic's *current* name plus whatever content the client currently has -
+    // unlike the one-time automatic trigger on Topic creation, this can be called any number
+    // of times.
+    [HttpPost("trigger")]
+    public async Task<IActionResult> Trigger(Guid topicId, TriggerTopicSuggestionRequest request, CancellationToken cancellationToken)
+    {
+        var triggered = await topicSuggestionsService.TriggerAsync(CurrentUserId(), topicId, request.Content, cancellationToken);
+        return triggered ? NoContent() : NotFound();
     }
 
     private Guid CurrentUserId() => Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);

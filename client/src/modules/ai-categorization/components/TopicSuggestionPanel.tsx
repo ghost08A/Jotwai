@@ -1,28 +1,75 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { useTopicSuggestion } from "../hooks/useTopicSuggestion";
+import { useTriggerTopicSuggestion } from "../hooks/useTriggerTopicSuggestion";
 import { useAcceptTopicSuggestion } from "../hooks/useAcceptTopicSuggestion";
 import { useIgnoreTopicSuggestion } from "../hooks/useIgnoreTopicSuggestion";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 
+const POLL_INTERVAL_MS = 3000;
+const POLL_TIMEOUT_MS = 30000;
+
 interface TopicSuggestionPanelProps {
     topicId: string;
+    // A getter, not a plain string prop - the current draft lives in a ref one level up
+    // (TopicDetailPage) so typing in the editor doesn't re-render this panel on every
+    // keystroke; this just reads the latest value at the moment the button is clicked.
+    getContent: () => string;
 }
 
 // Topic Suggestion (GLOSSARY.md, ticket 040) - Merge and Placement share the same
 // accept/ignore actions, but Merge is destructive (deletes this Topic) so accepting it goes
-// through an extra confirm dialog first; Placement applies immediately.
-export function TopicSuggestionPanel({ topicId }: TopicSuggestionPanelProps) {
+// through an extra confirm dialog first; Placement applies immediately. Since ticket 044, a
+// Topic's name alone may be a meaningless placeholder ("Untitled") - the "Suggest placement"
+// button below re-analyzes using the Topic's current name *and* content on demand (mirrors
+// NoteAiSuggestionPanel's trigger+poll pattern for Category Suggestion).
+export function TopicSuggestionPanel({ topicId, getContent }: TopicSuggestionPanelProps) {
     const [confirmingMerge, setConfirmingMerge] = useState(false);
-    const suggestion = useTopicSuggestion(topicId);
+    const [isPolling, setIsPolling] = useState(false);
+    const suggestion = useTopicSuggestion(topicId, isPolling ? POLL_INTERVAL_MS : false);
+    const trigger = useTriggerTopicSuggestion();
     const accept = useAcceptTopicSuggestion();
     const ignore = useIgnoreTopicSuggestion();
+
+    useEffect(() => {
+        if (suggestion.data) setIsPolling(false);
+    }, [suggestion.data]);
+
+    useEffect(() => {
+        if (!isPolling) return;
+        const timeout = setTimeout(() => setIsPolling(false), POLL_TIMEOUT_MS);
+        return () => clearTimeout(timeout);
+    }, [isPolling]);
+
+    function handleTrigger() {
+        trigger.mutate({ topicId, content: getContent() }, { onSuccess: () => setIsPolling(true) });
+    }
 
     if (suggestion.isLoading) {
         return <div className="mb-4 h-16 animate-pulse rounded-md bg-muted" />;
     }
 
-    if (!suggestion.data) return null;
+    if (!suggestion.data) {
+        return (
+            <div className="mb-4">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTrigger}
+                    disabled={trigger.isPending || isPolling}
+                >
+                    {trigger.isPending ? "Requesting…" : isPolling ? "Analyzing…" : "Suggest placement"}
+                </Button>
+
+                {trigger.isError && (
+                    <p className="mt-1 text-xs text-destructive">
+                        {getErrorMessage(trigger.error, "Failed to request suggestion")}
+                    </p>
+                )}
+            </div>
+        );
+    }
 
     const isMerge = suggestion.data.kind === "Merge";
 

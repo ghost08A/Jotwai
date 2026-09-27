@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
@@ -12,6 +12,7 @@ import { buildAncestorChain } from "../utils/buildAncestorChain";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import { ROUTES } from "../../../shared/routes/paths";
 import { TopicSuggestionPanel } from "../../ai-categorization/components/TopicSuggestionPanel";
+import { useTriggerTopicSuggestion } from "../../ai-categorization/hooks/useTriggerTopicSuggestion";
 import type { TopicResponse } from "../types";
 
 // `key={topicId}` below forces a full remount on every navigation to a
@@ -62,8 +63,28 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
     const deleteTopic = useDeleteTopic();
     const topicNote = useTopicNote(topicId);
     const upsertTopicNote = useUpsertTopicNote(topicId);
+    const triggerTopicSuggestion = useTriggerTopicSuggestion();
 
     const [nameDraft, setNameDraft] = useState(topic.name);
+
+    // Ref, not state - the "Suggest placement" button and the auto-trigger-on-leave below
+    // (ticket 044) both need the *current* draft content, but reading it shouldn't
+    // re-render this whole page (title input, breadcrumb, panel, ...) on every keystroke;
+    // TopicDocumentEditor already isolates that churn to itself.
+    const contentRef = useRef("");
+    const hasEditedRef = useRef(false);
+
+    // Fires exactly once, when this Topic's page is left (navigating elsewhere, or to a
+    // different Topic - key={topicId} on the wrapper forces a remount either way) - only if
+    // the user actually edited something this visit, so just opening and leaving an
+    // already-analyzed Topic doesn't waste an AI call re-suggesting the same thing.
+    useEffect(() => {
+        return () => {
+            if (hasEditedRef.current) {
+                triggerTopicSuggestion.mutate({ topicId, content: contentRef.current });
+            }
+        };
+    }, [topicId]);
 
     const ancestorChain = useMemo(() => buildAncestorChain(allTopics, topicId), [allTopics, topicId]);
 
@@ -139,7 +160,7 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                 </p>
             )}
 
-            <TopicSuggestionPanel topicId={topicId} />
+            <TopicSuggestionPanel topicId={topicId} getContent={() => contentRef.current} />
 
             <section className="space-y-3">
                 {topicNote.isLoading ? (
@@ -149,6 +170,12 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                         topicId={topicId}
                         initialContent={topicNote.data?.content ?? ""}
                         onAutosave={(content) => upsertTopicNote.mutate({ content })}
+                        onContentChange={(content) => {
+                            contentRef.current = content;
+                        }}
+                        onEdited={() => {
+                            hasEditedRef.current = true;
+                        }}
                     />
                 )}
                 {topicNote.isError && (
@@ -175,20 +202,30 @@ interface TopicDocumentEditorProps {
     topicId: string;
     initialContent: string;
     onAutosave: (content: string) => void;
+    onContentChange: (content: string) => void;
+    onEdited: () => void;
 }
 
 // The continuous-document composer: no Save button - types straight into the Topic's one
 // Note, debounced-autosaved via `onAutosave`. `initialContent` is only read once per mount
 // (the parent remounts this whole component via key={topicId} on navigation, so it never
 // goes stale for a *different* Topic).
-function TopicDocumentEditor({ topicId, initialContent, onAutosave }: TopicDocumentEditorProps) {
+function TopicDocumentEditor({ topicId, initialContent, onAutosave, onContentChange, onEdited }: TopicDocumentEditorProps) {
     const [content, setContent] = useState(initialContent);
     const debouncedContent = useDebouncedValue(content, 600);
+
+    // Keeps the parent's contentRef in sync with every keystroke (not just the debounced
+    // value) so a trigger fired right after typing - the "Suggest placement" button, or
+    // leaving the page - never reads a stale draft.
+    useEffect(() => {
+        onContentChange(content);
+    }, [content, onContentChange]);
 
     // Only the debounced value should retrigger this - `initialContent`/`onAutosave` are
     // stable for the lifetime of this mount (remounted per Topic via key={topicId}).
     useEffect(() => {
         if (debouncedContent === initialContent) return;
+        onEdited();
         onAutosave(debouncedContent);
     }, [debouncedContent]);
 

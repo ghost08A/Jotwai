@@ -109,6 +109,18 @@ public sealed class TopicSuggestionsService(
         var doomedTopicId = suggestion.TopicId;
         var survivorTopicId = suggestion.TargetTopicId;
 
+        // A Topic can have at most one active Note (NoteConfiguration's unique filtered
+        // index) - if both sides already have one, the blind bulk-reassign below would
+        // collide. Reject rather than invent a content-merging policy nobody asked for; the
+        // user resolves it manually by copying content into one document first.
+        var doomedHasNote = await notesTx.Notes.AsNoTracking().AnyAsync(n => n.TopicId == doomedTopicId && n.DeletedAt == null, cancellationToken);
+        var survivorHasNote = await notesTx.Notes.AsNoTracking().AnyAsync(n => n.TopicId == survivorTopicId && n.DeletedAt == null, cancellationToken);
+        if (doomedHasNote && survivorHasNote)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return AcceptTopicSuggestionResult.Failure(AcceptTopicSuggestionFailureReason.BothTopicsHaveNotes);
+        }
+
         var childTopicIds = await organizationTx.Topics.AsNoTracking()
             .Where(t => t.ParentId == doomedTopicId)
             .Select(t => t.Id)
@@ -149,6 +161,27 @@ public sealed class TopicSuggestionsService(
         await eventPublisher.PublishAsync(new TopicDeleted(doomedTopicId, suggestion.UserId), cancellationToken);
 
         return AcceptTopicSuggestionResult.Success();
+    }
+
+    public async Task<bool> TriggerAsync(Guid userId, Guid topicId, string content, CancellationToken cancellationToken = default)
+    {
+        var topic = await db.TopicProjections.AsNoTracking()
+            .SingleOrDefaultAsync(t => t.TopicId == topicId && t.UserId == userId, cancellationToken);
+        if (topic is null)
+            return false;
+
+        db.TopicSuggestionOutboxEntries.Add(new TopicSuggestionOutboxEntry
+        {
+            Id = Guid.NewGuid(),
+            TopicId = topicId,
+            UserId = userId,
+            Name = topic.Name,
+            Content = content,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync(cancellationToken);
+
+        return true;
     }
 
     private static TopicSuggestionResponse ToResponse(TopicSuggestion suggestion, string targetName) => new()

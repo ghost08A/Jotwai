@@ -157,6 +157,34 @@ public sealed class TopicSuggestionTests : IClassFixture<JotwaiApiFactory>
     }
 
     [Fact]
+    public async Task Accepting_a_merge_when_both_topics_already_have_a_note_is_a_conflict()
+    {
+        var client = await AuthenticatedClientAsync();
+        var existing = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Survivor With Note" }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+        var otherContainer = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Other Container 5" }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+        var duplicate = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Survivor With Note", ParentId = otherContainer!.Id }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+
+        await client.PutAsJsonAsync($"/api/notes/by-topic/{existing!.Id}", new UpdateNoteRequest { Content = "survivor's own document" });
+        await client.PutAsJsonAsync($"/api/notes/by-topic/{duplicate!.Id}", new UpdateNoteRequest { Content = "duplicate's own document" });
+
+        var suggestion = await WaitForSuggestionAsync(client, duplicate.Id);
+        Assert.NotNull(suggestion);
+
+        var acceptResponse = await client.PostAsync($"/api/topics/{duplicate.Id}/suggestion/accept", null);
+
+        Assert.Equal(HttpStatusCode.Conflict, acceptResponse.StatusCode);
+
+        // Nothing changed - the duplicate Topic is still there with its own Note intact.
+        var stillThere = await client.GetAsync($"/api/topics/{duplicate.Id}");
+        Assert.Equal(HttpStatusCode.OK, stillThere.StatusCode);
+        var duplicateNote = await client.GetFromJsonAsync<NoteResponse>($"/api/notes/by-topic/{duplicate.Id}");
+        Assert.Equal("duplicate's own document", duplicateNote!.Content);
+    }
+
+    [Fact]
     public async Task Ignoring_a_suggestion_resolves_it_without_changing_anything()
     {
         var client = await AuthenticatedClientAsync();
@@ -209,5 +237,84 @@ public sealed class TopicSuggestionTests : IClassFixture<JotwaiApiFactory>
         var response = await anonymousClient.GetAsync($"/api/topics/{Guid.NewGuid()}/suggestion");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Triggering_with_content_produces_a_suggestion_the_name_alone_would_not()
+    {
+        var client = await AuthenticatedClientAsync();
+        var target = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Placement Target" }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+        // A name that matches nothing produces no automatic suggestion - the placeholder-name
+        // scenario from ticket 044 ("Untitled" carries no signal on its own).
+        var blank = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Untitled" }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+
+        var noAutoSuggestion = await client.GetAsync($"/api/topics/{blank!.Id}/suggestion");
+        Assert.Equal(HttpStatusCode.NotFound, noAutoSuggestion.StatusCode);
+
+        var triggerResponse = await client.PostAsJsonAsync(
+            $"/api/topics/{blank.Id}/suggestion/trigger",
+            new TriggerTopicSuggestionRequest { Content = "Sub of Placement Target" });
+        Assert.Equal(HttpStatusCode.NoContent, triggerResponse.StatusCode);
+
+        var suggestion = await WaitForSuggestionAsync(client, blank.Id);
+
+        Assert.NotNull(suggestion);
+        Assert.Equal(TopicSuggestionKind.Placement, suggestion!.Kind);
+        Assert.Equal(target!.Id, suggestion.TargetTopicId);
+    }
+
+    [Fact]
+    public async Task Triggering_again_resolves_the_previous_suggestion_instead_of_duplicating_it()
+    {
+        var client = await AuthenticatedClientAsync();
+        var firstTarget = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "First Target" }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+        var secondTarget = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Second Target" }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+        var blank = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Untitled" }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+
+        await client.PostAsJsonAsync($"/api/topics/{blank!.Id}/suggestion/trigger",
+            new TriggerTopicSuggestionRequest { Content = "Sub of First Target" });
+        var firstSuggestion = await WaitForSuggestionAsync(client, blank.Id);
+        Assert.Equal(firstTarget!.Id, firstSuggestion!.TargetTopicId);
+
+        await client.PostAsJsonAsync($"/api/topics/{blank.Id}/suggestion/trigger",
+            new TriggerTopicSuggestionRequest { Content = "Sub of Second Target" });
+
+        // Poll until the target actually changes (not just "any suggestion exists") - proves
+        // the stale one got resolved rather than a second unresolved row sitting alongside it
+        // (which would otherwise crash GetActiveAsync's SingleOrDefaultAsync).
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        TopicSuggestionResponse? secondSuggestion = null;
+        while (DateTime.UtcNow < deadline)
+        {
+            var response = await client.GetAsync($"/api/topics/{blank.Id}/suggestion");
+            Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                secondSuggestion = await response.Content.ReadFromJsonAsync<TopicSuggestionResponse>();
+                if (secondSuggestion!.TargetTopicId == secondTarget!.Id) break;
+            }
+
+            await Task.Delay(200);
+        }
+
+        Assert.NotNull(secondSuggestion);
+        Assert.Equal(secondTarget!.Id, secondSuggestion!.TargetTopicId);
+    }
+
+    [Fact]
+    public async Task Triggering_a_nonexistent_topic_returns_not_found()
+    {
+        var client = await AuthenticatedClientAsync();
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/topics/{Guid.NewGuid()}/suggestion/trigger",
+            new TriggerTopicSuggestionRequest { Content = "anything" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }
