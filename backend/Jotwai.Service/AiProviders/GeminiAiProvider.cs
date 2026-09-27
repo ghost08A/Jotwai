@@ -167,6 +167,73 @@ public sealed class GeminiAiProvider(HttpClient httpClient, IOptions<GeminiOptio
         public double Confidence { get; init; }
     }
 
+    public async Task<string> PolishNoteContentAsync(string content, CancellationToken cancellationToken = default)
+    {
+        var gemini = options.Value;
+        var prompt = BuildPolishPrompt(content);
+
+        var requestBody = new GeminiRequest
+        {
+            Contents = [new GeminiContent { Parts = [new GeminiPart { Text = prompt }] }],
+            GenerationConfig = new GeminiGenerationConfig { ResponseMimeType = "text/plain" },
+        };
+
+        using var response = await httpClient.PostAsJsonAsync(
+            $"v1beta/models/{gemini.Model}:generateContent?key={gemini.ApiKey}", requestBody, JsonOptions, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            logger.LogWarning("Gemini request failed with {StatusCode}: {Body}", response.StatusCode, body);
+            throw new InvalidOperationException($"Gemini request failed with status {response.StatusCode}.");
+        }
+
+        var payload = await response.Content.ReadFromJsonAsync<GeminiResponse>(JsonOptions, cancellationToken);
+        var text = payload?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            logger.LogWarning("Gemini response had no content candidates for Content Polish.");
+            return content;
+        }
+
+        return text;
+    }
+
+    private static string BuildPolishPrompt(string content) => $"""
+        You are helping polish a personal note written in Markdown. Improve readability
+        without changing the user's original meaning.
+
+        Rules you MUST follow exactly:
+        1. Fix typos, misspellings, and grammar mistakes DIRECTLY, in place, with NO
+           parentheses and no marking of any kind - just silently correct the spelling. These
+           are keystroke-level mistakes in ordinary words, e.g. "sentance" -> "sentence",
+           "teh" -> "the", "recieve" -> "receive", "your" used where "you're" was clearly
+           meant. A misspelled word is NEVER covered by rule 3 below, even if the correctly
+           spelled word looks different - fixing a typo does not change what the sentence
+           claims, so it never needs the original kept alongside it.
+        2. Reformat long paragraphs into bullet lists where it improves readability - do not
+           mark these either.
+        3. This rule is ONLY about numbers, dates, names, or factual/mathematical claims that
+           could plausibly be intentional even though they look wrong (e.g. "1+1=3", a date
+           like "2026-02-30", "Paris is the capital of Germany") - i.e. cases where fixing it
+           would change WHAT the sentence asserts, not just how a word is spelled. For these
+           cases only: insert your suggested correction and keep the original right after it
+           in parentheses, like this: "corrected text (เดิม: original text)". Do not apply
+           this rule to ordinary spelling mistakes - see rule 1.
+        4. If you add new sentences that elaborate on the content and were not written by the
+           user at all, mark them clearly, e.g.: "new elaboration sentence (เพิ่มโดย AI)".
+        5. Any line matching "%%JOTWAI_CODE_BLOCK_<number>%%" is a placeholder for a code
+           block - reproduce it completely unchanged, do not remove, translate, or alter it.
+        6. Preserve the Markdown structure (headings, lists, blockquotes) unless rule 2 asks
+           you to restructure a paragraph into a list.
+
+        Return ONLY the polished Markdown content, nothing else - no commentary, no code
+        fences wrapping the whole response.
+
+        Content:
+        {content}
+        """;
+
     private static string BuildPrompt(string noteContent, IReadOnlyList<string> existingCategoryNames)
     {
         var existing = existingCategoryNames.Count > 0
@@ -228,7 +295,7 @@ public sealed class GeminiAiProvider(HttpClient httpClient, IOptions<GeminiOptio
         public required string ResponseMimeType { get; init; }
 
         [JsonPropertyName("responseSchema")]
-        public required GeminiSchema ResponseSchema { get; init; }
+        public GeminiSchema? ResponseSchema { get; init; }
     }
 
     private sealed class GeminiSchema

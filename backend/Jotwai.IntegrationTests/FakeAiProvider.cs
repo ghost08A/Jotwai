@@ -26,6 +26,11 @@ public sealed class FakeAiProvider : IAiProvider
         return Task.FromResult(result);
     }
 
+    // Deterministic marker so tests can assert the endpoint round-tripped through the
+    // provider without needing to simulate real rewriting behavior.
+    public Task<string> PolishNoteContentAsync(string content, CancellationToken cancellationToken = default)
+        => Task.FromResult(content + "\n[polished]");
+
     // Deterministic stand-in for Topic Suggestion (ticket 040): an exact case-insensitive
     // name match is a "Merge" candidate; a name of the form "Sub of <existing name>" is a
     // "Placement" candidate; anything else is "none" (null).

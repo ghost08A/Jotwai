@@ -2,7 +2,7 @@
 id: 41
 title: "สร้าง: Content Polish — ปุ่ม AI ช่วยแต่งคำ/จัดรูปแบบ/แก้คำผิดใน Note"
 type: wayfinder:task
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -50,3 +50,14 @@ blocked_by: []
 ### Naming (ดู GLOSSARY.md ที่อัปเดตแล้ว)
 
 - Module เปลี่ยนชื่อในเอกสารจาก "AI Categorization" เป็น **"Nerd Assistant"** — ของจริงในโค้ด (schema `ai_categorization`, class เช่น `AiCategorizationDbContext`) **ยังไม่เปลี่ยน** จะทำเป็น ticket แยกทีหลัง ticket นี้เขียนโค้ดใหม่ในโครงเดิม (schema/namespace เดิม) ไปก่อน
+
+## Resolution
+
+Build เสร็จและ verify ผ่าน browser จริงกับ backend จริงและ Gemini จริงครบวงจร (2026-09-27):
+
+- `IAiProvider.PolishNoteContentAsync(content)` ใหม่ (คืน Markdown ที่แก้แล้วเป็น plain text ไม่ใช้ JSON schema แบบ Category Suggestion) พร้อม prompt ที่เขียนกฎทั้งหมดจาก ticket ตรงๆ (แก้คำผิด/จัดรูปแบบตรงๆ, เก็บของเดิมในวงเล็บ "(เดิม: ...)" สำหรับจุดที่อาจกระทบความหมาย, ทำเครื่องหมายส่วนที่เติมใหม่, ห้ามแตะ placeholder ของ code block)
+- `ContentPolishService` ใหม่ (stateless, ไม่มี schema/table ใดๆ) ตัด code block ออกก่อนส่งให้ AI ด้วย regex แทนที่เป็น placeholder (`%%JOTWAI_CODE_BLOCK_n%%`) แล้วแทนที่กลับหลังได้ผลลัพธ์มา — รับประกันว่า AI ไม่เห็นเนื้อหาโค้ดเลย
+- Endpoint ใหม่: `POST /api/content-polish` รับ/คืน `content` ตรงๆ ไม่ต้องมี noteId (ทำงานกับ draft ที่ยังไม่ได้ save ก็ได้)
+- Client: ปุ่มลอย "✨" มุมขวาล่างของกรอบ editor (`ContentPolishButton`, `position: absolute` ผูกกับกรอบ editor เอง ไม่ใช่ทั้งหน้าจอ) กดแล้วเรียก AI แบบ sync, โชว์ผลลัพธ์ผ่าน `<NoteEditor editable={false}>` ตัวเดิม (reuse renderer เดียวกัน) เป็น preview ใน popup มีแค่ "Confirm"/"Cancel"
+- 3 integration test ใหม่ผ่าน (รวม backend ทั้งหมด 85/85 ร่วมกับ ticket 040) — round-trip ผ่าน `FakeAiProvider`, พิสูจน์ code block ไม่ถูกส่งให้ AI เลย, และ auth guard
+- Verify ผ่าน browser จริงกับ Gemini จริง: พิมพ์ "this is a sentance with a typo and 1+1=3 also" → กด ✨ → ได้ preview "This is a sentence (เดิม: sentance) with a typo and 1=3 (เดิม: 1+1=3) also" (แก้คำผิดตรงๆ, เก็บตัวเลขที่น่าสงสัยไว้ในวงเล็บตามกฎ) → Confirm → เนื้อหาจริงถูกแทนที่

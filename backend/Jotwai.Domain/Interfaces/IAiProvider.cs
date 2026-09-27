@@ -23,6 +23,14 @@ public interface IAiProvider
         string noteContent, IReadOnlyList<string> existingCategoryNames, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Content Polish (GLOSSARY.md, ticket 041) - rewrites Markdown for readability. The
+    /// caller (ContentPolishService) has already stripped code blocks into opaque
+    /// placeholder lines before calling this; the provider is asked to reproduce those
+    /// placeholders verbatim.
+    /// </summary>
+    Task<string> PolishNoteContentAsync(string content, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Topic Suggestion (GLOSSARY.md, ticket 040) - compares a newly created Topic's name
     /// against every existing Topic the user has, in one call, and decides whether it should
     /// be Merged into one of them or Placed as a subtopic of one of them (never both).

@@ -6,6 +6,7 @@ import { Markdown } from "tiptap-markdown";
 import type { MarkdownStorage } from "tiptap-markdown";
 import { NoteEditorBubbleMenu } from "./NoteEditorBubbleMenu";
 import { CreateSubtopicDialog } from "./CreateSubtopicDialog";
+import { ContentPolishButton } from "./ContentPolishButton";
 import { SlashCommand } from "../extensions/slashCommand";
 import { TopicReference } from "../extensions/topicReference";
 import type { TopicResponse } from "../../organization/types";
@@ -108,12 +109,13 @@ export function NoteEditor({ content, onChange, editable = true, topicId }: Note
   if (!editor) return null;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="relative flex flex-col gap-2">
       {editable && <NoteEditorBubbleMenu editor={editor} />}
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className={editable ? "pb-14" : undefined} />
       {subtopicPrompt && topicId && (
         <CreateSubtopicDialog parentId={topicId} onCreated={handleSubtopicCreated} onCancel={handleSubtopicCancelled} />
       )}
+      {editable && <ContentPolishButton content={content} onApply={onChange} />}
     </div>
   );
 }

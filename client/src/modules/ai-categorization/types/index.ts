@@ -28,3 +28,11 @@ export interface TopicSuggestionResponse {
     confidence: number;
     createdAt: string;
 }
+
+export interface PolishContentRequest {
+    content: string;
+}
+
+export interface PolishContentResponse {
+    content: string;
+}
