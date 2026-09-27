@@ -5,7 +5,10 @@
 ## Product domain
 
 **Note**
-หน่วยพื้นฐานของการจดบันทึก เนื้อหาอิสระ (plain text, heading ระดับ 1-3, blockquote, bulleted list, numbered list, code block, horizontal rule, พร้อม inline mark ตัวหนา/เอียง/ขีดทับ/inline code) เก็บเป็น Markdown สามารถมีอยู่ได้โดยไม่มี Topic และไม่มี Category Soft-deletable ไม่มี version history — การแก้ไขจะ overwrite ทับของเดิม ไม่มี Title แยกเป็น field ของตัวเอง (ตั๋ว 030) แต่ block แรกสุดของเนื้อหาถูกบังคับให้เป็น heading ระดับ 1 เสมอ (ตั๋ว 037) ทำหน้าที่เป็น "หัวเรื่อง" ทางสายตาโดยไม่ต้องมี field แยก
+หน่วยพื้นฐานของการจดบันทึก เนื้อหาอิสระ (plain text, heading ระดับ 1-3, blockquote, bulleted list, numbered list, code block, horizontal rule, Topic Reference, พร้อม inline mark ตัวหนา/เอียง/ขีดทับ/inline code) เก็บเป็น Markdown สามารถมีอยู่ได้โดยไม่มี Topic และไม่มี Category ที่ระดับ data model (client ปัจจุบันบังคับให้เลือก Topic เสมอตอนสร้าง/จัดการผ่านหน้าเว็บ — ดู ticket 042) Soft-deletable ไม่มี version history — การแก้ไขจะ overwrite ทับของเดิม ไม่มี Title แยกเป็น field ของตัวเอง (ตั๋ว 030) และไม่มีกฎบังคับ heading พิเศษใดๆ (ตั๋ว 042 ย้อนกลับกฎ "block แรกต้องเป็น heading ระดับ 1" ของตั๋ว 037 — Topic ที่ Note สังกัดอยู่ทำหน้าที่เป็น "หัวเรื่อง" ทางสายตาแทน ไม่ต้องให้แต่ละ Note มีของตัวเอง)
+
+**Topic Reference**
+Block พิเศษในเนื้อหาของ Note ที่อ้างอิงไปยัง Topic หนึ่ง — แสดงเป็นการ์ดมีไอคอนกำกับ (คล้าย nested page ของ Notion) ไม่ใช่ลิงก์ข้อความธรรมดา กดแล้ว navigate ไปหน้า Topic Detail ของ Topic นั้น แทรกเข้าไปในเนื้อหาผ่าน slash command "/subtopic" ซึ่งสร้าง Topic ใหม่เป็นลูกของ Topic ปัจจุบันของ Note ที่กำลังแก้ไขอยู่ พร้อมแทรก Topic Reference ชี้ไปที่ Topic ใหม่นั้นในขั้นตอนเดียว (ผู้ใช้พิมพ์ชื่อ subtopic ผ่าน popup แยกต่างหาก ไม่ใช่พิมพ์ต่อท้ายในบรรทัดเดียวกัน) Note ที่แทรก Topic Reference นี้**ไม่ย้าย**ตัวเองไปอยู่ Topic ใหม่ — ยังคงอยู่ Topic เดิมของตัวเอง เป็นแค่ทางลัดให้กดไปดูเนื้อหาต่อ
 
 **Topic**
 การจัดหมวดหมู่แบบลำดับชั้นที่ Note สามารถเลือกอยู่ในนั้นได้ Note หนึ่งอยู่ได้อย่างมากหนึ่ง Topic Topic มี Topic ลูกได้ (ลึกไม่จำกัด) ชื่อ Topic พี่น้องกันต้อง unique (ไม่สนตัวพิมพ์เล็ก-ใหญ่) ภายใต้ parent เดียวกัน Topic ที่มี Note หรือ Topic ลูกอยู่ภายในโดยตรงจะลบไม่ได้จนกว่าจะว่างก่อน
