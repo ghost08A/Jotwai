@@ -68,6 +68,9 @@ namespace Jotwai.Domain.Models.Database.Migrations.AiCategorization
                     b.Property<double>("ConfidenceThreshold")
                         .HasColumnType("double precision");
 
+                    b.Property<double>("TopicSuggestionConfidenceThreshold")
+                        .HasColumnType("double precision");
+
                     b.HasKey("Id");
 
                     b.ToTable("Settings", "ai_categorization");
@@ -76,7 +79,8 @@ namespace Jotwai.Domain.Models.Database.Migrations.AiCategorization
                         new
                         {
                             Id = 1,
-                            ConfidenceThreshold = 0.59999999999999998
+                            ConfidenceThreshold = 0.59999999999999998,
+                            TopicSuggestionConfidenceThreshold = 0.84999999999999998
                         });
                 });
 
@@ -155,6 +159,104 @@ namespace Jotwai.Domain.Models.Database.Migrations.AiCategorization
                     b.HasIndex("SuggestionId");
 
                     b.ToTable("SuggestionCandidates", "ai_categorization");
+                });
+
+            modelBuilder.Entity("Jotwai.Domain.Models.TopicProjection", b =>
+                {
+                    b.Property<Guid>("TopicId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TopicId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TopicProjections", "ai_categorization");
+                });
+
+            modelBuilder.Entity("Jotwai.Domain.Models.TopicSuggestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("Confidence")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TargetTopicId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TopicId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TopicId")
+                        .IsUnique()
+                        .HasFilter("\"ResolvedAt\" IS NULL");
+
+                    b.ToTable("TopicSuggestions", "ai_categorization");
+                });
+
+            modelBuilder.Entity("Jotwai.Domain.Models.TopicSuggestionOutboxEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TopicId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProcessedAt");
+
+                    b.ToTable("TopicSuggestionOutboxEntries", "ai_categorization");
                 });
 
             modelBuilder.Entity("Jotwai.Domain.Models.SuggestionCandidate", b =>

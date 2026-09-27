@@ -5,6 +5,7 @@ import { useTopics } from "../hooks/useTopics";
 import { buildTopicTree } from "../utils/buildTopicTree";
 import { computeVisibleTopicIds } from "../utils/computeVisibleTopicIds";
 import { useSearch } from "../../search/hooks/useSearch";
+import { useActiveTopicSuggestions } from "../../ai-categorization/hooks/useActiveTopicSuggestions";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import { CategoryFilterChips } from "./CategoryFilterChips";
@@ -20,6 +21,11 @@ export function TopicBrowserPage() {
     const topics = useTopics();
     const isFiltering = debouncedQuery.trim() !== "" || selectedCategoryIds.length > 0;
     const search = useSearch(debouncedQuery, selectedCategoryIds);
+    const activeSuggestions = useActiveTopicSuggestions();
+    const topicIdsWithSuggestions = useMemo(
+        () => new Set(activeSuggestions.data ?? []),
+        [activeSuggestions.data],
+    );
 
     function toggleCategory(categoryId: string) {
         setSelectedCategoryIds((current) =>
@@ -100,7 +106,13 @@ export function TopicBrowserPage() {
                 )}
 
                 {tree.map((node) => (
-                    <TopicBrowserNode key={node.id} node={node} depth={0} isFiltering={isFiltering} />
+                    <TopicBrowserNode
+                        key={node.id}
+                        node={node}
+                        depth={0}
+                        isFiltering={isFiltering}
+                        topicIdsWithSuggestions={topicIdsWithSuggestions}
+                    />
                 ))}
             </div>
         </div>

@@ -8,4 +8,9 @@ public sealed class AiCategorizationSettings
 {
     public int Id { get; init; }
     public required double ConfidenceThreshold { get; set; }
+
+    /// <summary>Separate, higher-bar threshold for Topic Suggestion (ticket 040) - Merge is a
+    /// destructive action (deletes the new Topic, reassigns its Notes) so it needs more
+    /// confidence than a Category guess before it's even shown to the user.</summary>
+    public required double TopicSuggestionConfidenceThreshold { get; set; }
 }

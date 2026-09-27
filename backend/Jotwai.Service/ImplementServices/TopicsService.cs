@@ -94,6 +94,61 @@ public sealed class TopicsService(OrganizationDbContext db, IEventPublisher even
         return TopicWriteResult.Success(ToResponse(topic));
     }
 
+    public async Task<TopicWriteResult> MoveAsync(Guid userId, Guid topicId, Guid? newParentId, CancellationToken cancellationToken = default)
+    {
+        var topic = await db.Topics.SingleOrDefaultAsync(t => t.Id == topicId && t.UserId == userId, cancellationToken);
+        if (topic is null)
+            return TopicWriteResult.Failure(TopicWriteFailureReason.NotFound);
+
+        if (newParentId is { } parentId)
+        {
+            if (parentId == topicId)
+                return TopicWriteResult.Failure(TopicWriteFailureReason.CircularParent);
+
+            var parent = await db.Topics.AsNoTracking()
+                .SingleOrDefaultAsync(t => t.Id == parentId && t.UserId == userId, cancellationToken);
+            if (parent is null)
+                return TopicWriteResult.Failure(TopicWriteFailureReason.ParentNotFound);
+
+            if (await IsDescendantAsync(topicId, parentId, cancellationToken))
+                return TopicWriteResult.Failure(TopicWriteFailureReason.CircularParent);
+        }
+
+        var duplicate = await db.Topics.AnyAsync(
+            t => t.Id != topicId && t.UserId == userId && t.ParentId == newParentId && t.NormalizedName == topic.NormalizedName,
+            cancellationToken);
+        if (duplicate)
+            return TopicWriteResult.Failure(TopicWriteFailureReason.DuplicateSiblingName);
+
+        topic.ParentId = newParentId;
+        topic.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        await eventPublisher.PublishAsync(new TopicParentChanged(topic.Id, topic.UserId, topic.ParentId), cancellationToken);
+
+        return TopicWriteResult.Success(ToResponse(topic));
+    }
+
+    // Walks up from `candidateParentId` toward the root, checking it never passes through
+    // `topicId` - true means moving `topicId` under `candidateParentId` would create a cycle.
+    private async Task<bool> IsDescendantAsync(Guid topicId, Guid candidateParentId, CancellationToken cancellationToken)
+    {
+        var currentId = (Guid?)candidateParentId;
+        while (currentId is { } id)
+        {
+            if (id == topicId)
+                return true;
+
+            currentId = await db.Topics.AsNoTracking()
+                .Where(t => t.Id == id)
+                .Select(t => t.ParentId)
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+
+        return false;
+    }
+
     public async Task<TopicDeleteOutcome> DeleteAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default)
     {
         var topic = await db.Topics.SingleOrDefaultAsync(t => t.Id == topicId && t.UserId == userId, cancellationToken);

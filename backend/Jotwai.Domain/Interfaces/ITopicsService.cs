@@ -15,6 +15,10 @@ public interface ITopicsService
 
     Task<TopicWriteResult> RenameAsync(Guid userId, Guid topicId, RenameTopicRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Re-parents a Topic (null = promote to top-level). Fails with CircularParent if
+    /// <paramref name="newParentId"/> is the Topic itself or one of its own descendants.</summary>
+    Task<TopicWriteResult> MoveAsync(Guid userId, Guid topicId, Guid? newParentId, CancellationToken cancellationToken = default);
+
     /// <summary>Fails with HasChildTopics/HasNotes if the Topic isn't empty (GLOSSARY.md).</summary>
     Task<TopicDeleteOutcome> DeleteAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default);
 }

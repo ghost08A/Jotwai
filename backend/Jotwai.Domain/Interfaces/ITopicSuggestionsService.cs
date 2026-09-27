@@ -1,0 +1,21 @@
+using Jotwai.Domain.ValidateModel;
+using Jotwai.Domain.ViewModels;
+
+namespace Jotwai.Domain.Interfaces;
+
+public interface ITopicSuggestionsService
+{
+    Task<TopicSuggestionResponse?> GetActiveAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default);
+
+    /// <summary>Every Topic (by id) that currently has an active Topic Suggestion - powers
+    /// the badge indicator on the Topic Browser page (ticket 040) without an N+1 fetch.</summary>
+    Task<IReadOnlyList<Guid>> ListActiveTopicIdsAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    Task<bool> IgnoreAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default);
+
+    /// <summary>Accepts whichever active Topic Suggestion this Topic has - Merge (deletes this
+    /// Topic, reassigns its Notes and subtopics to the target) or Placement (moves this Topic
+    /// under the target). The client is responsible for its own extra confirm-dialog before
+    /// calling this for a Merge (GLOSSARY.md) - this method just performs the action.</summary>
+    Task<AcceptTopicSuggestionResult> AcceptAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default);
+}

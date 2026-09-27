@@ -7,6 +7,7 @@ public enum TopicWriteFailureReason
     ParentNotFound,
     DuplicateSiblingName,
     NotFound,
+    CircularParent,
 }
 
 public sealed class TopicWriteResult

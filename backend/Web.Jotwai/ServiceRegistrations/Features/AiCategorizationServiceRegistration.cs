@@ -57,6 +57,23 @@ public static class AiCategorizationServiceRegistration
         services.AddScoped<IEventHandler<CategoryRenamed>, AiCategorizationCategoryProjectionHandler>();
         services.AddScoped<IEventHandler<CategoryDeleted>, AiCategorizationCategoryProjectionHandler>();
 
+        // Nerd Assistant subscribing to the Organization Module's Topic hierarchy, to keep
+        // its own TopicProjection read model in sync (ADR-0003, ticket 040) - see
+        // TopicProjectionHandler.
+        services.AddScoped<IEventHandler<TopicCreated>, TopicProjectionHandler>();
+        services.AddScoped<IEventHandler<TopicRenamed>, TopicProjectionHandler>();
+        services.AddScoped<IEventHandler<TopicDeleted>, TopicProjectionHandler>();
+        services.AddScoped<IEventHandler<TopicParentChanged>, TopicProjectionHandler>();
+
+        // Topic Suggestion (ticket 040): writes its own outbox row when a Topic is created,
+        // then TopicSuggestionOutboxWorker analyzes it in the background - the Topic
+        // analogue of the Note flow above.
+        services.AddScoped<IEventHandler<TopicCreated>, TopicSuggestionOutboxWriterHandler>();
+        services.AddHostedService<TopicSuggestionOutboxWorker>();
+
+        // ITopicSuggestionsService/TopicSuggestionsService wired by RegisterAutoServices
+        // (Web.Jotwai/Program.cs).
+
         return services;
     }
 }

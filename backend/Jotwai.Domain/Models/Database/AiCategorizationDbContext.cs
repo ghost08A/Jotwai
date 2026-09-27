@@ -10,6 +10,9 @@ public sealed class AiCategorizationDbContext(DbContextOptions<AiCategorizationD
     public DbSet<SuggestionCandidate> SuggestionCandidates => Set<SuggestionCandidate>();
     public DbSet<AiCategorizationSettings> Settings => Set<AiCategorizationSettings>();
     public DbSet<CategoryProjection> CategoryProjections => Set<CategoryProjection>();
+    public DbSet<TopicProjection> TopicProjections => Set<TopicProjection>();
+    public DbSet<TopicSuggestion> TopicSuggestions => Set<TopicSuggestion>();
+    public DbSet<TopicSuggestionOutboxEntry> TopicSuggestionOutboxEntries => Set<TopicSuggestionOutboxEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,5 +26,8 @@ public sealed class AiCategorizationDbContext(DbContextOptions<AiCategorizationD
         modelBuilder.ApplyConfiguration(new Configurations.SuggestionCandidateConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.AiCategorizationSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.CategoryProjectionConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.TopicProjectionConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.TopicSuggestionConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.TopicSuggestionOutboxEntryConfiguration());
     }
 }

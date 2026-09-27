@@ -14,6 +14,7 @@ import { buildAncestorChain } from "../utils/buildAncestorChain";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import { ROUTES } from "../../../shared/routes/paths";
 import { CreateTopicForm } from "./CreateTopicForm";
+import { TopicSuggestionPanel } from "../../ai-categorization/components/TopicSuggestionPanel";
 import type { TopicResponse } from "../types";
 
 // `key={topicId}` below forces a full remount on every navigation to a
@@ -154,6 +155,8 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                     {getErrorMessage(renameTopic.error ?? deleteTopic.error, "Failed to update topic")}
                 </p>
             )}
+
+            <TopicSuggestionPanel topicId={topicId} />
 
             <section className="space-y-3">
                 <NoteEditor content={draft} onChange={setDraft} topicId={topicId} />

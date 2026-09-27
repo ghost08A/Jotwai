@@ -2,7 +2,7 @@
 id: 40
 title: "สร้าง: Topic Suggestion — AI แนะนำ merge/ย้าย Topic ใหม่"
 type: wayfinder:task
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -48,3 +48,18 @@ blocked_by: []
 ### Naming (ดู GLOSSARY.md ที่อัปเดตแล้ว)
 
 - Module เปลี่ยนชื่อในเอกสารจาก "AI Categorization" เป็น **"Nerd Assistant"** — ของจริงในโค้ด (schema `ai_categorization`, class เช่น `AiCategorizationDbContext`) **ยังไม่เปลี่ยน** จะทำเป็น ticket แยกทีหลัง ticket นี้เขียนโค้ดใหม่ในโครงเดิม (schema/namespace เดิม) ไปก่อน
+
+## Resolution
+
+Build เสร็จและ verify ผ่าน browser จริงกับ backend จริงและ Gemini จริงครบวงจร (2026-09-27):
+
+- Read model ใหม่ `TopicProjection` (Id/UserId/ParentId/Name) sync ผ่าน `TopicCreated`/`TopicRenamed`/`TopicDeleted`/`TopicParentChanged` (event ใหม่ที่เพิ่มสำหรับ reparent — Search Module ก็ subscribe ด้วยเพื่อรักษาความถูกต้องของ descendant filter เดิม)
+- `ITopicsService.MoveAsync` ใหม่ (reparent Topic พร้อม cycle guard + duplicate-sibling-name guard) — ใช้เฉพาะภายใน (ไม่มี endpoint HTTP แยก เพราะยังไม่มี use case อื่นนอกจาก Placement)
+- Outbox + `TopicSuggestionOutboxWorker` (pattern เดียวกับ AI Categorization เดิม) เรียก `IAiProvider.AnalyzeTopicAsync` ครั้งเดียวต่อ Topic ใหม่ 1 ตัว เทียบกับ Topic ทั้งหมดของ user ให้ผลเป็น Merge/Placement/none พร้อม threshold แยก (`TopicSuggestionConfidenceThreshold`, default 0.85) เก็บใน table `Settings` เดิม (เพิ่ม column)
+- Merge accept: cross-schema atomic transaction (pattern เดียวกับ `SuggestionsService.AcceptAsync`) — ย้าย subtopic ลูกและ Note ทั้งหมดไปที่ Topic เดิม แล้วลบ Topic ใหม่ทิ้ง publish event ให้ read model อื่น (`NoteTopicAssigned`/`TopicParentChanged`/`TopicDeleted`) sync ตามหลัง commit
+- Placement accept: เรียก `MoveAsync` ตรงๆ (single-schema)
+- Endpoint ใหม่: `GET/POST /api/topics/{topicId}/suggestion`, `/accept`, `/ignore`, และ `GET /api/topics/suggestions` (list แบบ absolute route สำหรับ badge)
+- Client: badge จุดเล็กๆ ใน Topic Browser tree (`useActiveTopicSuggestions`, ดึงครั้งเดียวไม่ยิงต่อ node), `TopicSuggestionPanel` ในหน้า Topic Detail พร้อม dialog ยืนยันซ้ำสำหรับ Merge
+- 8 integration test ใหม่ผ่าน (รวม backend ทั้งหมด 85/85) ด้วย `FakeAiProvider` ที่ขยายมาให้ deterministic (exact-name-match → Merge, "Sub of X" prefix → Placement)
+- Verify ผ่าน browser จริงกับ Gemini จริง: สร้าง Topic ชื่อซ้ำ (คนละ parent) → Gemini เสนอ Merge 100% confidence → badge โผล่ในหน้าแรก → กด Merge → dialog ยืนยันซ้ำ → confirm → Topic ใหม่ถูกลบ, Topic เดิมรอด
+- `dotnet format --verify-no-changes` ผ่าน (ต้อง `dotnet format` ครั้งแรกเพื่อแก้ line-ending ของไฟล์ migration ที่ `dotnet ef` scaffold มาเป็น CRLF)

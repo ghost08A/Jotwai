@@ -16,3 +16,15 @@ export interface SuggestionResponse {
 export interface AcceptSuggestionRequest {
     candidateIds: string[];
 }
+
+export type TopicSuggestionKind = "Merge" | "Placement";
+
+export interface TopicSuggestionResponse {
+    id: string;
+    topicId: string;
+    kind: TopicSuggestionKind;
+    targetTopicId: string;
+    targetTopicName: string;
+    confidence: number;
+    createdAt: string;
+}

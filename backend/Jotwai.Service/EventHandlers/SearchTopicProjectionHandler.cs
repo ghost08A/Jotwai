@@ -15,7 +15,8 @@ namespace Jotwai.Service.EventHandlers;
 public sealed class SearchTopicProjectionHandler(SearchDbContext db) :
     IEventHandler<TopicCreated>,
     IEventHandler<TopicRenamed>,
-    IEventHandler<TopicDeleted>
+    IEventHandler<TopicDeleted>,
+    IEventHandler<TopicParentChanged>
 {
     public async Task HandleAsync(TopicCreated domainEvent, CancellationToken cancellationToken = default)
     {
@@ -51,5 +52,12 @@ public sealed class SearchTopicProjectionHandler(SearchDbContext db) :
         await db.SearchTopics
             .Where(t => t.TopicId == domainEvent.TopicId)
             .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task HandleAsync(TopicParentChanged domainEvent, CancellationToken cancellationToken = default)
+    {
+        await db.SearchTopics
+            .Where(t => t.TopicId == domainEvent.TopicId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.ParentId, domainEvent.NewParentId), cancellationToken);
     }
 }

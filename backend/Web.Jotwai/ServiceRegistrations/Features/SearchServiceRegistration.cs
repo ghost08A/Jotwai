@@ -40,6 +40,7 @@ public static class SearchServiceRegistration
         services.AddScoped<IEventHandler<TopicCreated>, SearchTopicProjectionHandler>();
         services.AddScoped<IEventHandler<TopicRenamed>, SearchTopicProjectionHandler>();
         services.AddScoped<IEventHandler<TopicDeleted>, SearchTopicProjectionHandler>();
+        services.AddScoped<IEventHandler<TopicParentChanged>, SearchTopicProjectionHandler>();
 
         // Search subscribing to the Organization Module's Categories, to keep its own
         // SearchCategory read model in sync (ADR-0003) - see SearchCategoryProjectionHandler.
