@@ -20,7 +20,7 @@ Monorepo เดียว:
 |---|---|---|
 | **Notes** | schema `notes` | Note CRUD, เนื้อหา Markdown, soft delete |
 | **Organization** | schema `organization` | Topics (แบบลำดับชั้น), Categories (แบบแบน), กฎการตั้งชื่อ |
-| **AI Categorization** | schema `ai_categorization` | สร้าง Suggestion แบบ background, สถานะของ suggestion, outbox |
+| **Nerd Assistant** (เดิมชื่อ "AI Categorization" — เปลี่ยนแค่ชื่อในเอกสาร, schema/class ในโค้ดยังไม่เปลี่ยน ดู GLOSSARY.md) | schema `ai_categorization` | เรียก AI (Gemini) ทำ 3 เรื่อง: AI Categorization (เสนอ Category ให้ Note แบบ background), Topic Suggestion (เสนอ merge/ย้าย Topic แบบ background), Content Polish (แต่งเนื้อหา Note แบบ on-demand) |
 | **Search** | schema `search` | Search แบบ cross-cutting ครอบคลุมเนื้อหา/Topic/Category ผ่าน read model ของตัวเอง |
 | **Identity** | schema `identity` | Account, login, session |
 
@@ -32,7 +32,7 @@ Monorepo เดียว:
 - **`Jotwai.Service`** — reference `Jotwai.Domain` เท่านั้น มี business logic (`ImplementServices/`), helper (`Helper/`) และ `DbContext` + EF Core configuration ของแต่ละ Module
 - **`Web.Jotwai`** — reference ทั้ง `Jotwai.Service` และ `Jotwai.Domain` มี Controller, `Program.cs`, middleware/configuration, `ExceptionHandler.cs`
 
-Module (Identity และต่อไปคือ Notes/Organization/AI Categorization/Search) อยู่ภายใน 3 project นี้ในฐานะ feature ภายใน ไม่ใช่คู่ project แยกกัน ขอบเขตของ Module ถูกบังคับด้วยวินัยเรื่องโฟลเดอร์, code review และ convention การสื่อสารผ่าน event ด้านล่าง — ไม่ใช่ด้วย compiler
+Module (Identity และต่อไปคือ Notes/Organization/Nerd Assistant/Search) อยู่ภายใน 3 project นี้ในฐานะ feature ภายใน ไม่ใช่คู่ project แยกกัน ขอบเขตของ Module ถูกบังคับด้วยวินัยเรื่องโฟลเดอร์, code review และ convention การสื่อสารผ่าน event ด้านล่าง — ไม่ใช่ด้วย compiler
 
 ### Module communication
 
@@ -40,22 +40,40 @@ Module ไม่เรียกโค้ดของกันหรือ query 
 
 ### Cross-module reads: Read Model ไม่ใช่ join
 
-ถ้า Module หนึ่งต้องการข้อมูลที่ Module อื่นเป็นเจ้าของ (Search ต้องการเนื้อหา Note และชื่อ Topic/Category; AI Categorization ต้องการ Category list ปัจจุบัน) มันจะเก็บ **Read Model ของตัวเองแบบ denormalized** ที่อัปเดตให้ทันสมัยด้วยการ subscribe Domain Events ที่เกี่ยวข้อง ไม่มี Module ไหน join SQL ข้าม schema ของ Module อื่น แม้ในทางกายภาพทุก Module จะแชร์ PostgreSQL database เดียวกันก็ตาม นี่คือสิ่งที่ทำให้ขอบเขตนี้เป็นของจริงและพร้อมสำหรับการแยกในอนาคต
+ถ้า Module หนึ่งต้องการข้อมูลที่ Module อื่นเป็นเจ้าของ (Search ต้องการเนื้อหา Note และชื่อ Topic/Category; Nerd Assistant ต้องการ Category list ปัจจุบันและ Topic list ปัจจุบัน) มันจะเก็บ **Read Model ของตัวเองแบบ denormalized** ที่อัปเดตให้ทันสมัยด้วยการ subscribe Domain Events ที่เกี่ยวข้อง ไม่มี Module ไหน join SQL ข้าม schema ของ Module อื่น แม้ในทางกายภาพทุก Module จะแชร์ PostgreSQL database เดียวกันก็ตาม นี่คือสิ่งที่ทำให้ขอบเขตนี้เป็นของจริงและพร้อมสำหรับการแยกในอนาคต
 
 ### Database
 
 PostgreSQL database เดียว แบ่งแบบ **schema-per-module** (`notes`, `organization`, `ai_categorization`, `search`, `identity`) แต่ละ Module มี EF Core `DbContext` ของตัวเองผูกกับ schema ของตัวเอง (เช่น `IdentityDbContext`); `DbContext` เหล่านี้ทั้งหมดอยู่ใน project `Jotwai.Service` ที่ใช้ร่วมกัน (ADR-0010) — ไม่มี `AppDbContext` ที่ใช้ร่วมกัน
 
-### AI Categorization flow
+### AI Categorization flow (เสนอ Category ให้ Note)
 
 1. Notes Module บันทึก Note ใหม่ แล้ว publish `NoteCreated`
-2. AI Categorization Module เขียนแถว **outbox** แบบ transactional เพื่อตอบสนอง (durable — รอดจากการ restart)
+2. Nerd Assistant Module เขียนแถว **outbox** แบบ transactional เพื่อตอบสนอง (durable — รอดจากการ restart)
 3. `BackgroundService` poll outbox แล้วเรียก AI provider เพื่อสร้าง Suggestion แบบจัดอันดับ (Category ที่เป็นตัวเลือก อาจรวมถึงชื่อใหม่ที่ยังไม่เคยมี)
 4. สถานะของ Suggestion แสดงให้ client เห็นเป็น indicator ในแอปแบบไม่ real-time — ผู้ใช้จะเห็นในครั้งถัดไปที่เปิดดู Note หรือเปิดแอป ไม่มี push/websocket infrastructure
 5. ผู้ใช้ดำเนินการ (accept บางส่วน / แก้ไข / เพิกเฉย) — สิ่งนี้ resolve ชุด suggestion; candidate ที่ไม่ได้ถูก accept จะถูกทิ้ง ไม่ใช่ค้างไว้
 6. ตามกฎ **User Ownership**: flow นี้ทำงานแค่ครั้งเดียวโดยอัตโนมัติ ตอน save ครั้งแรกที่มีเนื้อหา การแก้ไข Note จะไม่ trigger ซ้ำ ผู้ใช้สามารถเรียก action "Suggest Category" ด้วยตัวเองได้ทุกเมื่อ
 
-**AI provider**: Google Gemini (tier 2.5 Flash-Lite) — งาน classification ที่เบาแบบนี้ไม่จำเป็นต้องใช้โมเดลใหญ่/แพง Provider อยู่หลัง interface ภายใน AI Categorization Module เพื่อให้สลับได้ผ่าน config
+### Topic Suggestion flow (เสนอ merge/ย้าย Topic)
+
+1. Organization Module สร้าง Topic ใหม่ แล้ว publish `TopicCreated` (event ที่มีอยู่แล้วสำหรับ read model อื่นๆ)
+2. Nerd Assistant Module เขียนแถว outbox แบบเดียวกับ AI Categorization flow (durable, ไม่บล็อก UI)
+3. Nerd Assistant มี read model ของตัวเอง (Id/Name/ParentId ของทุก Topic ของ user) sync ผ่าน `TopicCreated`/`TopicRenamed`/`TopicDeleted` — ไม่ query schema `organization` ตรงๆ
+4. `BackgroundService` เรียก AI provider ครั้งเดียว เทียบชื่อ Topic ใหม่กับ Topic ที่มีอยู่ทั้งหมด (ทุก branch/ทุกระดับ) ให้ตอบกลับมาเป็นอย่างใดอย่างหนึ่ง: **Merge**, **Placement** หรือไม่เข้าเงื่อนไขไหนเลย (ถ้าเข้าเงื่อนไข Merge ให้ Merge ชนะเสมอ ไม่เสนอ Placement ซ้อน) — ใช้ confidence threshold ของตัวเอง แยกจาก AI Categorization flow (เกณฑ์สูงกว่า เพราะ Merge ทำลายข้อมูลจริง)
+5. Topic Suggestion แสดงเป็น indicator ที่หน้า Topic Browser และรายละเอียด/ปุ่มยืนยันอยู่ที่หน้า Topic Detail (แบบไม่ real-time เหมือน AI Categorization flow)
+6. ผู้ใช้ยืนยัน **Placement**: ย้าย Topic ใหม่ไปเป็นลูกของ Topic ที่แนะนำทันที ไม่ต้องยืนยันซ้ำ
+7. ผู้ใช้ยืนยัน **Merge** (ต้องผ่าน dialog ยืนยันซ้ำก่อน เพราะทำลายข้อมูล กู้คืนไม่ได้): cross-schema transaction เดียวกับที่ใช้ตอน accept Category Suggestion (สร้าง connection/transaction ของตัวเอง ผูก `NotesDbContext`/`OrganizationDbContext`/Nerd Assistant's DbContext เข้าด้วยกัน แทน Domain Event แบบ fire-and-forget) — ย้าย Note ทั้งหมดใต้ Topic ใหม่ไปอยู่ใต้ Topic เดิม, ย้าย subtopic ลูก (ถ้ามี) ไปเป็นลูกของ Topic เดิมด้วย, ลบ Topic ใหม่ทิ้ง
+8. ตามกฎ **User Ownership**: resolve ครั้งเดียวจบ ไม่ trigger ซ้ำอัตโนมัติอีก แม้จะ rename Topic ทีหลัง
+
+### Content Polish flow (แต่งเนื้อหา Note)
+
+1. ผู้ใช้กดปุ่ม (floating button มุมขวาล่างของ editor) — เรียก Nerd Assistant แบบ **sync** ตรงๆ ไม่ผ่าน outbox/background (ผู้ใช้รอผลสดๆ หน้าจอ)
+2. AI จัดรูปแบบเนื้อหาทั้ง Note (รวม heading แรกสุดที่ทำหน้าที่ Title) ให้อ่านง่ายขึ้น — แก้คำผิด, จัดย่อหน้าเป็นข้อย่อย, ขยายคำอธิบาย — ไม่แตะเนื้อหาใน code block เด็ดขาด
+3. ส่วนที่เป็นการแก้ตรงๆ (คำผิด/รูปแบบ) มาตรงๆ ในผลลัพธ์ ส่วนที่อาจกระทบความหมายเดิม (ตัวเลข/ข้อเท็จจริง/ประโยคที่ AI เดาเติมใหม่) จะมีข้อความเดิมกำกับไว้ในวงเล็บให้เห็นทั้งคู่
+4. Client โชว์ผลลัพธ์เป็น popup preview — ผู้ใช้กด "ยืนยัน" (overwrite เนื้อหาจริงทั้งฉบับทีเดียว) หรือ "ยกเลิก" (ไม่มีอะไรเปลี่ยน) ไม่มี state ค้างในระบบเลยถ้าไม่กดยืนยัน (ไม่มี entity/table เก็บผลลัพธ์นี้)
+
+**AI provider**: Google Gemini (tier 2.5 Flash-Lite) — งาน classification ที่เบาแบบนี้ไม่จำเป็นต้องใช้โมเดลใหญ่/แพง เริ่มต้นใช้ tier เดียวกันนี้ทั้ง 3 flow ข้างบน Provider อยู่หลัง interface ภายใน Nerd Assistant Module เพื่อให้สลับ tier/provider ได้ผ่าน config โดยไม่ต้องแก้โค้ด
 
 ### Search implementation
 
@@ -67,7 +85,7 @@ ASP.NET Core Identity (email/password สำหรับ MVP, OAuth เป็น
 
 ### Background jobs
 
-`BackgroundService` แบบ in-process ที่ consume ตาราง outbox ที่อธิบายไว้ข้างบน ไม่มี external message broker (RabbitMQ/Azure Service Bus) สำหรับ MVP — นี่คือจุดที่จะใส่ message broker ถ้า AI Categorization ถูกแยกออกเป็น service ของตัวเองในอนาคต
+`BackgroundService` แบบ in-process ที่ consume ตาราง outbox ที่อธิบายไว้ข้างบน ไม่มี external message broker (RabbitMQ/Azure Service Bus) สำหรับ MVP — นี่คือจุดที่จะใส่ message broker ถ้า Nerd Assistant ถูกแยกออกเป็น service ของตัวเองในอนาคต
 
 ## Frontend
 

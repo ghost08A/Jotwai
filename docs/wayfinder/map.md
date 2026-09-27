@@ -64,6 +64,8 @@ Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Categ
 - ~~[User Ownership enforcement](tickets/025-feature-user-ownership.md)~~ — ปิดแล้ว 2026-09-24 (ดู Decisions so far)
 - ~~[Search](tickets/026-feature-search.md)~~ — ปิดแล้ว 2026-09-25 (ดู Decisions so far)
 - ~~[หน้าแรกใหม่แบบ Notion (topic browser + search) และหน้า detail ของ topic](tickets/039-feature-topic-browser-home.md)~~ — ปิดแล้ว 2026-09-26 (build เสร็จและ verify ครบวงจรทั้ง backend `categoryIds` AND filter ใหม่ + client หน้าแรก/หน้า detail ใหม่ทั้งคู่ ลบ `/topics`/`/search` เดิมออกแล้ว — ดู ticket 039 Resolution)
+- [Topic Suggestion — AI แนะนำ merge/ย้าย Topic ใหม่](tickets/040-feature-topic-suggestion.md): grill เสร็จแล้ว (2026-09-27) ยังไม่ build — เพิ่มความสามารถใหม่ให้ Nerd Assistant (เดิมชื่อ AI Categorization ดู GLOSSARY.md) วิเคราะห์ Topic ที่เพิ่งสร้างใหม่แล้วเสนอ Merge หรือ Placement
+- [Content Polish — ปุ่ม AI ช่วยแต่งคำ/จัดรูปแบบ/แก้คำผิดใน Note](tickets/041-feature-content-polish.md): grill เสร็จแล้ว (2026-09-27) ยังไม่ build — ปุ่ม on-demand ให้ Nerd Assistant ช่วยจัดเนื้อหา Note ให้อ่านง่ายขึ้นโดยไม่เปลี่ยนความหมายเดิมเงียบๆ
 
 ## Open grilling tickets (database schema — not yet decided)
 

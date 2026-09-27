@@ -22,7 +22,7 @@
 - ห้ามเข้าถึง `DbContext` ตรงๆ จาก Controller
 - นำ service ที่มีอยู่แล้วกลับมาใช้ก่อนสร้างใหม่
 - คง dependency direction `Domain` → `Service` → `Web` ไว้เสมอ
-- Module (Notes, Organization, AI Categorization, Search, Identity) สื่อสารกันผ่าน in-process Domain Events เท่านั้น โดยเป็น convention — ห้ามเรียกกันโดยตรงหรือ query ข้าม schema ระหว่าง module (ADR 0001–0003, ADR-0010)
+- Module (Notes, Organization, Nerd Assistant, Search, Identity) สื่อสารกันผ่าน in-process Domain Events เท่านั้น โดยเป็น convention — ห้ามเรียกกันโดยตรงหรือ query ข้าม schema ระหว่าง module (ADR 0001–0003, ADR-0010)
 - การอ่านข้อมูลข้าม module ต้องผ่าน Read Model ของ module นั้นเองที่ denormalize ไว้ และอัปเดตผ่านการ subscribe Domain Events — ห้าม join ข้าม schema ของ module อื่นด้วย SQL แม้ทุก schema จะอยู่ใน PostgreSQL database เดียวกันก็ตาม
 
 ## Project Structure
