@@ -4,7 +4,7 @@ import type { Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import type { MarkdownStorage } from "tiptap-markdown";
-import { NoteEditorToolbar } from "./NoteEditorToolbar";
+import { NoteEditorBubbleMenu } from "./NoteEditorBubbleMenu";
 import { TitleDocument } from "../extensions/titleDocument";
 import { TitleLevelGuard } from "../extensions/titleLevelGuard";
 import { SlashCommand } from "../extensions/slashCommand";
@@ -86,7 +86,7 @@ export function NoteEditor({ content, onChange, editable = true }: NoteEditorPro
 
   return (
     <div className="flex flex-col gap-2">
-      {editable && <NoteEditorToolbar editor={editor} />}
+      {editable && <NoteEditorBubbleMenu editor={editor} />}
       <EditorContent editor={editor} />
     </div>
   );
