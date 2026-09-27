@@ -47,7 +47,6 @@ export function NoteCard({ note }: NoteCardProps) {
         disabled={assignTopic.isPending}
         className="mb-3 cursor-pointer rounded-md border border-input bg-transparent px-2 py-1 text-xs text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <option value="">No topic</option>
         {topicOptions.map((option) => (
           <option key={option.id} value={option.id}>
             {option.label}
@@ -65,7 +64,7 @@ export function NoteCard({ note }: NoteCardProps) {
 
       {isEditing ? (
         <>
-          <NoteEditor content={draft} onChange={setDraft} />
+          <NoteEditor content={draft} onChange={setDraft} topicId={note.topicId ?? undefined} />
 
           {updateNote.isError && (
             <p className="mt-2 text-sm text-destructive">{getErrorMessage(updateNote.error, "Failed to save note")}</p>

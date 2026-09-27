@@ -1,14 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import type { Editor } from "@tiptap/react";
+import type { Editor, Range } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import type { MarkdownStorage } from "tiptap-markdown";
 import { NoteEditorBubbleMenu } from "./NoteEditorBubbleMenu";
-import { TitleDocument } from "../extensions/titleDocument";
-import { TitleLevelGuard } from "../extensions/titleLevelGuard";
+import { CreateSubtopicDialog } from "./CreateSubtopicDialog";
 import { SlashCommand } from "../extensions/slashCommand";
-import { ensureLeadingHeading } from "../utils/ensureLeadingHeading";
+import { TopicReference } from "../extensions/topicReference";
+import type { TopicResponse } from "../../organization/types";
 
 // tiptap-markdown doesn't ship a `@tiptap/core` Storage module augmentation,
 // so `editor.storage.markdown` isn't visible to the type checker on its own.
@@ -20,37 +20,43 @@ interface NoteEditorProps {
   content: string;
   onChange: (markdown: string) => void;
   editable?: boolean;
+  // The Topic this Note currently belongs to - lets "/subtopic" (ticket 042)
+  // create its new Topic as a child of this one. The item is hidden from the
+  // slash menu entirely when this is undefined (nothing to attach it under).
+  topicId?: string;
 }
 
 // Note content types (GLOSSARY.md "Note"): plain text, heading (levels 1-3),
-// blockquote, bulleted list, numbered list, code block, horizontal rule, plus
-// bold/italic/strike/inline-code marks (ticket 037 - Notion-like editor).
-// `link`/`underline` stay disabled - not part of the confirmed scope.
-// `document` is disabled too: TitleDocument replaces it so the Note's first
-// block is always a level-1 heading.
-export function NoteEditor({ content, onChange, editable = true }: NoteEditorProps) {
+// blockquote, bulleted list, numbered list, code block, horizontal rule,
+// Topic Reference, plus bold/italic/strike/inline-code marks (ticket 037 -
+// Notion-like editor). `link`/`underline` stay disabled - not part of the
+// confirmed scope; Topic Reference has its own dedicated node instead of the
+// generic link mark (ticket 042).
+export function NoteEditor({ content, onChange, editable = true, topicId }: NoteEditorProps) {
+  const [subtopicPrompt, setSubtopicPrompt] = useState<{ insertPos: number } | null>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        document: false,
         link: false,
         underline: false,
-        // StarterKit's TrailingNode extension picks its node type from the
-        // schema's default content match, which for TitleDocument's `heading
-        // block*` resolves to "heading" (the required first type) instead of
-        // "paragraph" - force it explicitly so the trailing node isn't
-        // another empty heading.
-        trailingNode: { node: "paragraph" },
       }),
-      TitleDocument,
-      TitleLevelGuard,
-      SlashCommand,
+      TopicReference,
+      SlashCommand.configure({
+        onCreateSubtopic: topicId
+          ? (editorInstance: Editor, range: Range) => {
+              editorInstance.chain().focus().deleteRange(range).run();
+              editorInstance.setEditable(false);
+              setSubtopicPrompt({ insertPos: editorInstance.state.selection.from });
+            }
+          : undefined,
+      }),
       // Markdown is the Note's source of truth (ARCHITECTURE.md) - the editor
       // is only a view onto it. html: false so nothing but Markdown ever
       // round-trips through the editor.
       Markdown.configure({ html: false }),
     ],
-    content: ensureLeadingHeading(content),
+    content,
     editable,
     onUpdate: ({ editor: updatedEditor }) => onChange(getMarkdown(updatedEditor)),
     editorProps: {
@@ -78,9 +84,26 @@ export function NoteEditor({ content, onChange, editable = true }: NoteEditorPro
     // avoids fighting the user's cursor on every local keystroke.
     const currentMarkdown = getMarkdown(editor);
     if (content !== currentMarkdown) {
-      editor.commands.setContent(ensureLeadingHeading(content), { emitUpdate: false });
+      editor.commands.setContent(content, { emitUpdate: false });
     }
   }, [content, editor]);
+
+  function handleSubtopicCreated(topic: TopicResponse) {
+    if (!editor || !subtopicPrompt) return;
+
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(subtopicPrompt.insertPos, { type: "topicReference", attrs: { topicId: topic.id, name: topic.name } })
+      .run();
+    editor.setEditable(editable);
+    setSubtopicPrompt(null);
+  }
+
+  function handleSubtopicCancelled() {
+    editor?.setEditable(editable);
+    setSubtopicPrompt(null);
+  }
 
   if (!editor) return null;
 
@@ -88,6 +111,9 @@ export function NoteEditor({ content, onChange, editable = true }: NoteEditorPro
     <div className="flex flex-col gap-2">
       {editable && <NoteEditorBubbleMenu editor={editor} />}
       <EditorContent editor={editor} />
+      {subtopicPrompt && topicId && (
+        <CreateSubtopicDialog parentId={topicId} onCreated={handleSubtopicCreated} onCancel={handleSubtopicCancelled} />
+      )}
     </div>
   );
 }

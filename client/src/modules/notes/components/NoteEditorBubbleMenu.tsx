@@ -83,8 +83,8 @@ export function NoteEditorBubbleMenu({ editor }: NoteEditorBubbleMenuProps) {
         </select>
       ) : (
         <>
-          {/* The note's first block is always a level-1 heading (ticket 037) -
-              only levels 2/3 are offered here as body-content subheadings. */}
+          {/* Heading 1 is only offered via the "/" slash menu (consistent with
+              every other block-type change) - only levels 2/3 are reformatted here. */}
           <BubbleMenuButton
             label="Heading 2"
             active={isHeading2Active}

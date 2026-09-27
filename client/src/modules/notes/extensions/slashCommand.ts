@@ -52,10 +52,10 @@ export const SLASH_COMMAND_ITEMS: SlashCommandItem[] = [
   },
 ];
 
-export function filterSlashCommandItems(query: string): SlashCommandItem[] {
+export function filterSlashCommandItems(query: string, items: SlashCommandItem[] = SLASH_COMMAND_ITEMS): SlashCommandItem[] {
   const normalized = query.trim().toLowerCase();
-  if (!normalized) return SLASH_COMMAND_ITEMS;
-  return SLASH_COMMAND_ITEMS.filter((item) => item.title.toLowerCase().includes(normalized));
+  if (!normalized) return items;
+  return items.filter((item) => item.title.toLowerCase().includes(normalized));
 }
 
 function positionMenu(element: HTMLElement, rect: DOMRect | null) {
@@ -66,15 +66,33 @@ function positionMenu(element: HTMLElement, rect: DOMRect | null) {
   element.style.zIndex = "50";
 }
 
-export const SlashCommand = Extension.create({
+export interface SlashCommandOptions {
+  // Only offered when a parent Topic is known (ticket 042/GLOSSARY.md "Topic
+  // Reference") - creating a subtopic needs somewhere to attach it.
+  onCreateSubtopic?: (editor: Editor, range: Range) => void;
+}
+
+export const SlashCommand = Extension.create<SlashCommandOptions>({
   name: "slashCommand",
 
+  addOptions() {
+    return { onCreateSubtopic: undefined };
+  },
+
   addProseMirrorPlugins() {
+    const { onCreateSubtopic } = this.options;
+    const items = (query: string): SlashCommandItem[] => {
+      const allItems: SlashCommandItem[] = onCreateSubtopic
+        ? [...SLASH_COMMAND_ITEMS, { title: "Subtopic", run: (editor, range) => onCreateSubtopic(editor, range) }]
+        : SLASH_COMMAND_ITEMS;
+      return filterSlashCommandItems(query, allItems);
+    };
+
     return [
       Suggestion<SlashCommandItem>({
         editor: this.editor,
         char: "/",
-        items: ({ query }) => filterSlashCommandItems(query),
+        items: ({ query }) => items(query),
         command: ({ editor, range, props }) => props.run(editor, range),
         render: () => {
           let component: ReactRenderer<SlashCommandMenuHandle>;

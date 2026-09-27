@@ -2,7 +2,7 @@
 id: 42
 title: "สร้าง: Topic-first navigation — ตัด Notes nav, เลิกบังคับ H1 ของ Note, เพิ่ม /subtopic"
 type: wayfinder:task
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
@@ -37,3 +37,15 @@ blocked_by: []
 - Note ที่พิมพ์อยู่**ไม่ย้าย**ไปอยู่ Topic ใหม่ ยังคงอยู่ Topic เดิมของตัวเองเหมือนเดิม — Topic Reference เป็นแค่ทางลัดให้กดไปดูเนื้อหาต่อ (อ่านมาถึงจุดนี้ ไปดู subtopic ต่อได้)
 - **ขยาย scope ของ Note ใน GLOSSARY.md**: เพิ่มความสามารถเก็บ Topic Reference เป็น content type ใหม่ (เดิม `link: false` ถูกปิดไว้ตั้งใจตาม comment ใน `NoteEditor.tsx` — ตอนนี้เปิดใช้เฉพาะสำหรับ Topic Reference นี้เท่านั้น ไม่ใช่ลิงก์ทั่วไป)
 - **ยังไม่ตัดสินใจในตั๋วนี้ (implementer ต้องออกแบบตอนเขียนโค้ด)**: วิธี serialize Topic Reference เป็น Markdown ให้ round-trip ผ่าน `tiptap-markdown` ได้ถูกต้อง (ต้องมีทั้งชื่อ Topic ที่แสดงและ Topic ID ที่อ้างอิงอยู่ในนั้น) — ถ้าเป็นการตัดสินใจที่ยาก reverse และมี trade-off จริง ให้พิจารณาเขียน ADR ประกอบตอน implement
+
+## Resolution
+
+Build เสร็จและ verify ผ่าน browser จริงกับ backend จริงครบวงจร (2026-09-27):
+
+- เอาลิงก์ "Notes" ออกจาก `PrivateLayout`, ลบ route `/notes` + `NotesPage.tsx`, ลบ route constant `ROUTES.notes`, เอาตัวเลือก "No topic" ออกจาก dropdown ใน `NoteCard`
+- เอา `TitleDocument`/`TitleLevelGuard`/`ensureLeadingHeading` ออกทั้งหมด (ลบไฟล์ทิ้ง) — `NoteEditor` กลับไปใช้ default document schema ของ StarterKit เฉยๆ ไม่บังคับ heading แรกอีกต่อไป
+- เพิ่ม node ใหม่ `TopicReference` (`extensions/topicReference.ts` + `components/TopicReferenceView.tsx`) — แสดงเป็นการ์ด "📄 ชื่อ Topic" กดแล้ว navigate ไปหน้า Topic Detail เก็บใน Markdown เป็น standard CommonMark link รูปแบบ `[ชื่อ](topic-ref:<topicId>)` (round-trip ผ่าน `tiptap-markdown` ได้โดยไม่ต้องเขียน markdown-it plugin เอง — แค่ post-process `<a href="topic-ref:...">` ที่ parse ออกมาให้เป็น HTML ของ node นี้แทนผ่าน hook `parse.updateDOM`)
+- เพิ่ม slash command `/subtopic` ใน `SlashCommand` extension (เห็นเฉพาะตอน `NoteEditor` ได้รับ prop `topicId`) เลือกแล้วลบ trigger text + ปิด editable ชั่วคราว เปิด `CreateSubtopicDialog` (popup ถามชื่อแยกต่างหาก) ยืนยันแล้วเรียก `useCreateTopic` (มีอยู่แล้ว) โดย `parentId` = topic ปัจจุบัน แล้วแทรก `TopicReference` ที่ตำแหน่ง cursor เดิม
+- `TopicDetailPage`/`NoteCard` ส่ง `topicId` ของตัวเองเข้า `NoteEditor` แล้ว
+- Verify ผ่าน browser จริง: พิมพ์ `/subtopic` → เห็นตัวเลือกในเมนู → กรอกชื่อ → สร้าง Topic ใหม่จริงผ่าน `POST /api/topics` → การ์ดถูกแทรก → กด "Save note" → reload หน้า/เข้าโหมดแก้ไขใหม่ → Markdown parse กลับมาเป็นการ์ดถูกต้อง (ไม่ใช่ข้อความดิบ) → Topic ใหม่โผล่ใน "Subtopics" list ด้วย
+- `npm run lint` และ `npm run build` ผ่านทั้งคู่

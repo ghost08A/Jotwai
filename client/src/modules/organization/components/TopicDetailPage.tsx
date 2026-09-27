@@ -156,7 +156,7 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
             )}
 
             <section className="space-y-3">
-                <NoteEditor content={draft} onChange={setDraft} />
+                <NoteEditor content={draft} onChange={setDraft} topicId={topicId} />
                 {createNote.isError && (
                     <p className="text-sm text-destructive">{getErrorMessage(createNote.error, "Failed to save note")}</p>
                 )}
