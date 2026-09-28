@@ -45,7 +45,7 @@ export function TopicBrowserNode({ node, depth, isFiltering, topicIdsWithSuggest
                     <span className="h-5 w-5 shrink-0" />
                 )}
 
-                <Link to={ROUTES.topicDetail(node.id)} className="flex flex-1 items-center gap-1.5 text-sm text-foreground hover:underline">
+                <Link to={ROUTES.topicDetail(node.id)} className="flex flex-1 items-center gap-1.5 text-base text-foreground hover:underline">
                     {node.name}
                     {topicIdsWithSuggestions.has(node.id) && (
                         <span

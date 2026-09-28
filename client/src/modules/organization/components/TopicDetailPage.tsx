@@ -27,15 +27,15 @@ export function TopicDetailPage() {
     if (!topicId) return <Navigate to={ROUTES.home} replace />;
 
     if (topics.isLoading) {
-        return <div className="w-full px-6 py-6 text-sm text-muted-foreground md:px-12 lg:px-24">Loading…</div>;
+        return <div className="w-full px-6 py-6 text-base text-muted-foreground md:px-12 lg:px-24">Loading…</div>;
     }
 
     const topic = topics.data?.find((candidate) => candidate.id === topicId);
     if (!topic) {
         return (
             <div className="w-full space-y-2 px-6 py-6 md:px-12 lg:px-24">
-                <p className="text-sm text-destructive">Topic not found.</p>
-                <Link to={ROUTES.home} className="text-sm text-primary hover:underline">
+                <p className="text-base text-destructive">Topic not found.</p>
+                <Link to={ROUTES.home} className="text-base text-primary hover:underline">
                     Back to home
                 </Link>
             </div>
@@ -106,7 +106,7 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
 
     return (
         <div className="w-full space-y-6 px-6 py-6 md:px-12 lg:px-24">
-            <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+            <nav className="flex flex-wrap items-center gap-1 text-base text-muted-foreground">
                 <Link to={ROUTES.home} className="hover:text-foreground hover:underline">
                     Home
                 </Link>
@@ -155,7 +155,7 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                 </div>
             </div>
             {(renameTopic.isError || deleteTopic.isError) && (
-                <p className="text-sm text-destructive">
+                <p className="text-base text-destructive">
                     {getErrorMessage(renameTopic.error ?? deleteTopic.error, "Failed to update topic")}
                 </p>
             )}
@@ -179,10 +179,10 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                     />
                 )}
                 {topicNote.isError && (
-                    <p className="text-sm text-destructive">{getErrorMessage(topicNote.error, "Failed to load note")}</p>
+                    <p className="text-base text-destructive">{getErrorMessage(topicNote.error, "Failed to load note")}</p>
                 )}
                 {upsertTopicNote.isError && (
-                    <p className="text-sm text-destructive">{getErrorMessage(upsertTopicNote.error, "Failed to save note")}</p>
+                    <p className="text-base text-destructive">{getErrorMessage(upsertTopicNote.error, "Failed to save note")}</p>
                 )}
             </section>
 

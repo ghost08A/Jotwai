@@ -14,7 +14,7 @@ export function PrivateLayout() {
       <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4 shadow-sm">
         <div className="flex items-center gap-6">
           <span className="text-lg font-semibold text-card-foreground">Jotwai</span>
-          <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
+          <nav className="flex gap-4 text-base font-medium text-muted-foreground">
             <Link to={ROUTES.home} className="hover:text-foreground">
               Home
             </Link>
@@ -29,7 +29,7 @@ export function PrivateLayout() {
 
         <div className="flex items-center gap-4">
           {currentUser && (
-            <span className="text-sm text-muted-foreground">Signed in as {currentUser.userId}</span>
+            <span className="text-base text-muted-foreground">Signed in as {currentUser.userId}</span>
           )}
           <ThemeToggle />
           <Button type="button" variant="outline" onClick={() => logout.mutate()} disabled={logout.isPending}>

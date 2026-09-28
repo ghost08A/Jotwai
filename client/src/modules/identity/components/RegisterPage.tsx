@@ -39,7 +39,7 @@ export function RegisterPage() {
       >
         <div>
           <h1 className="text-2xl font-semibold text-card-foreground">Create an account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Start capturing notes with Jotwai.</p>
+          <p className="mt-1 text-base text-muted-foreground">Start capturing notes with Jotwai.</p>
         </div>
 
         <div className="space-y-1.5">
@@ -81,16 +81,16 @@ export function RegisterPage() {
           />
         </div>
 
-        {mismatchError && <p className="text-sm text-destructive">Passwords do not match.</p>}
+        {mismatchError && <p className="text-base text-destructive">Passwords do not match.</p>}
         {register.isError && (
-          <p className="text-sm text-destructive">{getErrorMessage(register.error, "Failed to register")}</p>
+          <p className="text-base text-destructive">{getErrorMessage(register.error, "Failed to register")}</p>
         )}
 
         <Button type="submit" disabled={register.isPending} className="w-full">
           {register.isPending ? "Creating account…" : "Create account"}
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-base text-muted-foreground">
           Already have an account?{" "}
           <Link to={ROUTES.login} className="font-medium text-foreground hover:underline">
             Log in

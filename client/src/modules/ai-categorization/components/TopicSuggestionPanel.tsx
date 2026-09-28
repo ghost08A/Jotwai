@@ -87,7 +87,7 @@ export function TopicSuggestionPanel({ topicId, getContent }: TopicSuggestionPan
 
     return (
         <div className="mb-4 rounded-md border border-primary/40 bg-primary/5 p-3">
-            <p className="text-sm text-foreground">
+            <p className="text-base text-foreground">
                 {isMerge ? (
                     <>
                         This looks like a duplicate of <strong>{suggestion.data.targetTopicName}</strong>. Merge into it?
@@ -120,8 +120,8 @@ export function TopicSuggestionPanel({ topicId, getContent }: TopicSuggestionPan
             {confirmingMerge && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="w-full max-w-sm rounded-lg border border-border bg-card p-4 shadow-lg">
-                        <h2 className="mb-2 text-sm font-medium text-card-foreground">Are you sure?</h2>
-                        <p className="mb-3 text-sm text-muted-foreground">
+                        <h2 className="mb-2 text-base font-medium text-card-foreground">Are you sure?</h2>
+                        <p className="mb-3 text-base text-muted-foreground">
                             This deletes this Topic and moves its Notes and subtopics into{" "}
                             <strong>{suggestion.data.targetTopicName}</strong>. This can't be undone.
                         </p>

@@ -87,14 +87,14 @@ export function TopicBrowserPage() {
             <CategoryFilterChips selectedCategoryIds={selectedCategoryIds} onToggle={toggleCategory} />
 
             <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-muted-foreground">Topics</h2>
+                <h2 className="text-base font-medium text-muted-foreground">Topics</h2>
                 <Button type="button" size="sm" onClick={handleNewTopic} disabled={createTopic.isPending}>
                     {createTopic.isPending ? "Creating…" : "+ New topic"}
                 </Button>
             </div>
 
             {createTopic.isError && (
-                <p className="text-sm text-destructive">{getErrorMessage(createTopic.error, "Failed to create topic")}</p>
+                <p className="text-base text-destructive">{getErrorMessage(createTopic.error, "Failed to create topic")}</p>
             )}
 
             <div className="rounded-lg border border-border bg-card p-2">
@@ -107,13 +107,13 @@ export function TopicBrowserPage() {
                 )}
 
                 {(topics.isError || search.isError) && (
-                    <p className="p-2 text-sm text-destructive">
+                    <p className="p-2 text-base text-destructive">
                         {getErrorMessage(topics.error ?? search.error, "Failed to load topics")}
                     </p>
                 )}
 
                 {!topics.isLoading && !search.isLoading && tree.length === 0 && (
-                    <p className="p-2 text-center text-sm text-muted-foreground">
+                    <p className="p-2 text-center text-base text-muted-foreground">
                         {isFiltering ? "No matching topics or notes." : "No topics yet."}
                     </p>
                 )}

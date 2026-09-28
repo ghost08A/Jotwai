@@ -73,7 +73,7 @@ export function NoteEditorBubbleMenu({ editor }: NoteEditorBubbleMenuProps) {
           onChange={(event) =>
             editor.chain().focus().updateAttributes("codeBlock", { language: event.target.value }).run()
           }
-          className="cursor-pointer rounded-md border border-input bg-background px-2 py-1 text-sm focus:border-ring focus:outline-none"
+          className="cursor-pointer rounded-md border border-input bg-background px-2 py-1 text-base focus:border-ring focus:outline-none"
         >
           {CODE_BLOCK_LANGUAGES.map((language) => (
             <option key={language.value} value={language.value}>
@@ -181,7 +181,7 @@ function BubbleMenuButton({ label, active, onClick, children }: BubbleMenuButton
       aria-pressed={active}
       title={label}
       onClick={onClick}
-      className={`cursor-pointer rounded-md px-2 py-1 text-sm font-medium hover:bg-accent active:bg-accent/70 ${
+      className={`cursor-pointer rounded-md px-2 py-1 text-base font-medium hover:bg-accent active:bg-accent/70 ${
         active ? "bg-accent text-accent-foreground" : "text-muted-foreground"
       }`}
     >

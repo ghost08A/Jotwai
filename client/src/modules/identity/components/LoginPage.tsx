@@ -30,7 +30,7 @@ export function LoginPage() {
       >
         <div>
           <h1 className="text-2xl font-semibold text-card-foreground">Log in</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Welcome back to Jotwai.</p>
+          <p className="mt-1 text-base text-muted-foreground">Welcome back to Jotwai.</p>
         </div>
 
         <div className="space-y-1.5">
@@ -58,14 +58,14 @@ export function LoginPage() {
         </div>
 
         {login.isError && (
-          <p className="text-sm text-destructive">{getErrorMessage(login.error, "Failed to log in")}</p>
+          <p className="text-base text-destructive">{getErrorMessage(login.error, "Failed to log in")}</p>
         )}
 
         <Button type="submit" disabled={login.isPending} className="w-full">
           {login.isPending ? "Logging in…" : "Log in"}
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-base text-muted-foreground">
           No account?{" "}
           <Link to={ROUTES.register} className="font-medium text-foreground hover:underline">
             Register

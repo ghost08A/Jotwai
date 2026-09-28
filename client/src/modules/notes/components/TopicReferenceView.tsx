@@ -16,7 +16,7 @@ export function TopicReferenceView({ node }: NodeViewProps) {
         type="button"
         contentEditable={false}
         onClick={() => navigate(ROUTES.topicDetail(topicId))}
-        className="my-1 flex w-full cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
+        className="my-1 flex w-full cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-left text-base text-foreground hover:bg-accent"
       >
         <span aria-hidden="true">📄</span>
         <span className="font-medium">{name}</span>

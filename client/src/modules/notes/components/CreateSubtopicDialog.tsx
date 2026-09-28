@@ -29,7 +29,7 @@ export function CreateSubtopicDialog({ parentId, onCreated, onCancel }: CreateSu
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-sm rounded-lg border border-border bg-card p-4 shadow-lg">
-        <h2 className="mb-3 text-sm font-medium text-card-foreground">New subtopic</h2>
+        <h2 className="mb-3 text-base font-medium text-card-foreground">New subtopic</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <Input
             value={name}
@@ -38,7 +38,7 @@ export function CreateSubtopicDialog({ parentId, onCreated, onCancel }: CreateSu
             autoFocus
           />
           {createTopic.isError && (
-            <p className="text-sm text-destructive">{getErrorMessage(createTopic.error, "Failed to create topic")}</p>
+            <p className="text-base text-destructive">{getErrorMessage(createTopic.error, "Failed to create topic")}</p>
           )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onCancel} disabled={createTopic.isPending}>

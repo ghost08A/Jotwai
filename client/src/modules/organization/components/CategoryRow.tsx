@@ -49,7 +49,7 @@ export function CategoryRow({ category }: CategoryRowProps) {
           </>
         ) : (
           <>
-            <span className="flex-1 text-sm text-foreground">{category.name}</span>
+            <span className="flex-1 text-base text-foreground">{category.name}</span>
             <Button type="button" size="sm" variant="ghost" onClick={startRenaming}>
               Rename
             </Button>

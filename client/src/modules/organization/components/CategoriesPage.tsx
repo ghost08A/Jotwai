@@ -37,13 +37,13 @@ export function CategoriesPage() {
         )}
 
         {categories.isError && (
-          <p className="p-2 text-sm text-destructive">
+          <p className="p-2 text-base text-destructive">
             {getErrorMessage(categories.error, "Failed to load categories")}
           </p>
         )}
 
         {sorted.length === 0 && !categories.isLoading && (
-          <p className="p-2 text-center text-sm text-muted-foreground">No categories yet.</p>
+          <p className="p-2 text-center text-base text-muted-foreground">No categories yet.</p>
         )}
 
         {sorted.map((category) => (

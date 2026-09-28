@@ -55,7 +55,7 @@ export function NoteCard({ note }: NoteCardProps) {
       </select>
 
       {assignTopic.isError && (
-        <p className="mb-2 text-sm text-destructive">{getErrorMessage(assignTopic.error, "Failed to move note")}</p>
+        <p className="mb-2 text-base text-destructive">{getErrorMessage(assignTopic.error, "Failed to move note")}</p>
       )}
 
       <NoteCategoryChips noteId={note.id} categoryIds={note.categoryIds} />
@@ -67,7 +67,7 @@ export function NoteCard({ note }: NoteCardProps) {
           <NoteEditor content={draft} onChange={setDraft} topicId={note.topicId ?? undefined} />
 
           {updateNote.isError && (
-            <p className="mt-2 text-sm text-destructive">{getErrorMessage(updateNote.error, "Failed to save note")}</p>
+            <p className="mt-2 text-base text-destructive">{getErrorMessage(updateNote.error, "Failed to save note")}</p>
           )}
 
           <div className="mt-3 flex justify-end gap-2">
@@ -84,13 +84,13 @@ export function NoteCard({ note }: NoteCardProps) {
           <button
             type="button"
             onClick={startEditing}
-            className="line-clamp-3 block w-full cursor-pointer whitespace-pre-line text-left text-sm text-card-foreground"
+            className="line-clamp-3 block w-full cursor-pointer whitespace-pre-line text-left text-base text-card-foreground"
           >
             {note.content || <span className="text-muted-foreground">Empty note</span>}
           </button>
 
           {deleteNote.isError && (
-            <p className="mt-2 text-sm text-destructive">{getErrorMessage(deleteNote.error, "Failed to delete note")}</p>
+            <p className="mt-2 text-base text-destructive">{getErrorMessage(deleteNote.error, "Failed to delete note")}</p>
           )}
 
           <div className="mt-3 flex justify-end">

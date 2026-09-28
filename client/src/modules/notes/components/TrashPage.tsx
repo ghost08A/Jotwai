@@ -15,10 +15,10 @@ export function TrashPage() {
       {trash.isLoading && Array.from({ length: 3 }).map((_, index) => <NoteCardSkeleton key={index} />)}
 
       {trash.isError && (
-        <p className="text-sm text-destructive">{getErrorMessage(trash.error, "Failed to load trash")}</p>
+        <p className="text-base text-destructive">{getErrorMessage(trash.error, "Failed to load trash")}</p>
       )}
 
-      {trash.data?.length === 0 && <p className="text-center text-sm text-muted-foreground">Trash is empty.</p>}
+      {trash.data?.length === 0 && <p className="text-center text-base text-muted-foreground">Trash is empty.</p>}
 
       {trash.data?.map((note) => <TrashedNoteCard key={note.id} note={note} />)}
     </div>
@@ -30,12 +30,12 @@ function TrashedNoteCard({ note }: { note: NoteResponse }) {
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <p className="line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">
+      <p className="line-clamp-3 whitespace-pre-line text-base text-muted-foreground">
         {note.content || "Empty note"}
       </p>
 
       {restoreNote.isError && (
-        <p className="mt-2 text-sm text-destructive">{getErrorMessage(restoreNote.error, "Failed to restore note")}</p>
+        <p className="mt-2 text-base text-destructive">{getErrorMessage(restoreNote.error, "Failed to restore note")}</p>
       )}
 
       <div className="mt-3 flex justify-end">

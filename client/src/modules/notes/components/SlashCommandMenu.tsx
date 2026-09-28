@@ -33,7 +33,7 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SuggestionPro
 
     if (items.length === 0) {
       return (
-        <div className="w-56 rounded-md border border-border bg-popover px-3 py-2 text-sm text-muted-foreground shadow-md">
+        <div className="w-56 rounded-md border border-border bg-popover px-3 py-2 text-base text-muted-foreground shadow-md">
           No matches
         </div>
       );
@@ -46,7 +46,7 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SuggestionPro
             key={item.title}
             type="button"
             onClick={() => command(item)}
-            className={`block w-full cursor-pointer rounded px-2 py-1.5 text-left text-sm ${
+            className={`block w-full cursor-pointer rounded px-2 py-1.5 text-left text-base ${
               index === selectedIndex ? "bg-accent text-accent-foreground" : "text-popover-foreground"
             }`}
           >

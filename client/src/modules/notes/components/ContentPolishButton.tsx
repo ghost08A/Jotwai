@@ -48,7 +48,7 @@ export function ContentPolishButton({ content, onApply }: ContentPolishButtonPro
             {preview !== null && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="flex max-h-[80vh] w-full max-w-2xl flex-col rounded-lg border border-border bg-card p-4 shadow-lg">
-                        <h2 className="mb-3 text-sm font-medium text-card-foreground">Preview</h2>
+                        <h2 className="mb-3 text-base font-medium text-card-foreground">Preview</h2>
                         <div className="flex-1 overflow-y-auto rounded-md border border-border p-3">
                             <NoteEditor content={preview} onChange={() => {}} editable={false} />
                         </div>
