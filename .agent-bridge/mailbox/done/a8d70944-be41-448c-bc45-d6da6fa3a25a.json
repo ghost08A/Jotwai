@@ -1,0 +1,74 @@
+{
+  "id": "a8d70944-be41-448c-bc45-d6da6fa3a25a",
+  "from": "claude",
+  "to": "chatgpt",
+  "type": "delegate",
+  "content": "ค้นหาตัวอย่าง/ไลบรารีที่ใช้ Tiptap สำหรับสร้างแอปจดโน้ต (note-taking app) พร้อมสรุปให้",
+  "context": {
+    "files": [
+      "client/src/modules/notes/components/NoteEditor.tsx"
+    ],
+    "diff": null,
+    "instructions": "บริบท: Jotwai เป็นแอปจดโน้ตแบบ capture-first-organize-later ใช้ React + TypeScript + Vite เป็น client และใช้ Tiptap เป็น editor อยู่แล้ว (ดู client/src/modules/notes/components/NoteEditor.tsx) ต้องการตัวอย่างจริง/โอเพนซอร์สโปรเจกต์ หรือไลบรารี extension ของ Tiptap ที่เกี่ยวกับการจดโน้ต เช่น note-taking apps ที่ build ด้วย Tiptap, extension สำหรับ slash command, backlink/wiki-link, markdown shortcuts, checklist, embed ฯลฯ ให้ระบุชื่อ repo/lib, ลิงก์ GitHub/npm, และสรุปสั้นๆ ว่าแต่ละอันมีจุดเด่นอะไร ไม่ต้องแก้โค้ดใดๆ เป็นงานค้นคว้าอย่างเดียว"
+  },
+  "taskId": "c429e892-c0d1-4855-bad9-60329748c227",
+  "projectPath": "D:\\Jotwai",
+  "createdAt": "2026-09-28T08:52:37.991Z",
+  "status": "done",
+  "result": {
+    "summary": "ค้นคว้า Tiptap สำหรับ Jotwai แล้ว โดยโฟกัส note-taking apps, slash command, backlinks/wiki links, Markdown, checklist และ embeds. ดูผลสรุปด้านล่าง/ใน response ของ ChatGPT.",
+    "findings": [
+      {
+        "name": "Open Note",
+        "url": "https://github.com/open-tolls/open-note",
+        "why": "แอป note-taking แบบ local-first ที่ใช้ TipTap/ProseMirror จริง มี headings, lists, code blocks, checklists, callouts, embeds และ slash command; เหมาะเป็น reference ด้าน product/editor integration"
+      },
+      {
+        "name": "p32929/notes",
+        "url": "https://github.com/p32929/notes",
+        "why": "note-taking app ที่ใช้ React + TypeScript + Vite + Tailwind และ TipTap เหมาะดูโครงสร้างแอปจดโน้ตที่ใกล้ stack ของ Jotwai"
+      },
+      {
+        "name": "Text-Editor-Tiptap",
+        "url": "https://github.com/ZanyuanYang/Text-Editor-Tiptap",
+        "why": "Notion-style local-first block editor บน React + Tiptap 3 มี slash commands, bubble menu, drag handle, markdown shortcuts, multi-document; เหมาะดู UX/editor patterns"
+      },
+      {
+        "name": "notion-text-editor",
+        "url": "https://github.com/habdullahjaved/notion-text-editor",
+        "why": "Notion-style editor ด้วย Tiptap v3 + React + Vite + Tailwind + shadcn มี slash commands, task lists, tables, images; เหมาะดู extension composition"
+      },
+      {
+        "name": "@harshtalks/slash-tiptap",
+        "url": "https://github.com/harshtalks/tiptap-plugins",
+        "why": "third-party React slash command extension ใช้ Tiptap Suggestion + cmdk; เป็น reference ทางเลือก แต่ Jotwai มี custom SlashCommand อยู่แล้ว"
+      },
+      {
+        "name": "Tiptap official slash commands",
+        "url": "https://tiptap.dev/docs/examples/experiments/slash-commands",
+        "why": "official example แต่ระบุชัดว่าเป็น experiment, ไม่ maintained และไม่มี published package; Tiptap แนะนำ pattern ที่ใช้ @tiptap/suggestion ซึ่งสอดคล้องกับแนวทางทำ custom extension"
+      },
+      {
+        "name": "Tiptap official custom extensions",
+        "url": "https://tiptap.dev/docs/editor/extensions/custom-extensions",
+        "why": "เอกสารหลักสำหรับสร้าง custom Node/Mark/Extension; สำคัญกับ Jotwai เพราะมี TopicReference และ SlashCommand ของตัวเอง"
+      },
+      {
+        "name": "Tiptap TaskList",
+        "url": "https://tiptap.dev/docs/editor/extensions/nodes/task-list",
+        "why": "official task list support; ปัจจุบันอยู่ใน @tiptap/extension-list และต้องใช้ TaskItem"
+      },
+      {
+        "name": "Tiptap Markdown",
+        "url": "https://tiptap.dev/docs/editor/markdown",
+        "why": "Tiptap มี Markdown package ทางการแบบ open source สำหรับ parse/serialize Markdown; ปัจจุบัน official package คือ @tiptap/markdown และยังอยู่สถานะ Beta"
+      },
+      {
+        "name": "reactjs-tiptap-editor",
+        "url": "https://github.com/hunghg255/reactjs-tiptap-editor",
+        "why": "reference ขนาดใหญ่ที่รวม slash command, task list, search/replace, tables, embeds/video, mermaid ฯลฯ เหมาะใช้เป็น catalog ของ extension patterns มากกว่า copy ทั้งระบบ"
+      }
+    ],
+    "recommendation": "สำหรับ Jotwai ให้ใช้ reference 3 ชั้น: (1) Open Note/Text-Editor-Tiptap เพื่อดู note-taking UX จริง, (2) Tiptap official docs สำหรับ extension architecture และ Markdown/TaskList, (3) third-party slash/editor repos เฉพาะตอนต้องการ implementation pattern. ไม่แนะนำยก editor framework จาก repo อื่นมาใช้ทั้งก้อน เพราะ NoteEditor.tsx ของ Jotwai มี custom SlashCommand + TopicReference และมีข้อกำหนด Markdown เป็น source of truth อยู่แล้ว."
+  }
+}
