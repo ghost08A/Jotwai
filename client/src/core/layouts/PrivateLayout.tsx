@@ -10,7 +10,7 @@ export function PrivateLayout() {
   const logout = useLogout();
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen bg-muted dark:bg-background">
       <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4 shadow-sm">
         <div className="flex items-center gap-6">
           <span className="text-lg font-semibold text-card-foreground">Jotwai</span>
