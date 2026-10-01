@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/shared/components/ui/button";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { NoteEditor } from "../../notes/components/NoteEditor";
 import { useTopicNote } from "../../notes/hooks/useTopicNote";
@@ -72,6 +71,7 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
     // re-render this whole page (title input, breadcrumb, panel, ...) on every keystroke;
     // TopicDocumentEditor already isolates that churn to itself.
     const contentRef = useRef("");
+    const documentRef = useRef<HTMLElement>(null);
     const hasEditedRef = useRef(false);
 
     // Fires exactly once, when this Topic's page is left (navigating elsewhere, or to a
@@ -105,10 +105,11 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
     }
 
     return (
-        <div className="w-full space-y-6 px-6 py-6 md:px-12 lg:px-24">
-            <nav className="flex flex-wrap items-center gap-1 text-base text-muted-foreground">
+        <main className="mx-auto w-full max-w-[59rem] space-y-4 px-6 pb-24 pt-8">
+            <div className="flex items-center justify-between gap-4">
+            <nav className="flex min-w-0 flex-wrap items-center gap-1 text-sm text-muted-foreground">
                 <Link to={ROUTES.home} className="hover:text-foreground hover:underline">
-                    Home
+                    Topics
                 </Link>
                 {ancestorChain.map((ancestor, index) => (
                     <span key={ancestor.id} className="flex items-center gap-1">
@@ -124,36 +125,48 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                 ))}
             </nav>
 
-            <div className="flex items-center justify-between gap-2">
-                {/* Notion-style: the title is always editable in place - no separate
-                    Rename button/mode, just type and blur (or Enter) to save. */}
-                <input
-                    aria-label="Topic name"
-                    value={nameDraft}
-                    onChange={(event) => setNameDraft(event.target.value)}
-                    onBlur={commitRename}
-                    onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                            event.preventDefault();
-                            event.currentTarget.blur();
-                        }
-                    }}
-                    className="w-full bg-transparent text-3xl font-bold text-foreground outline-none focus-visible:outline-none"
-                />
-                <div className="flex shrink-0 items-center gap-3">
-                    <NoteSaveStatus isSaving={upsertTopicNote.isPending} />
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={handleDelete}
-                        disabled={deleteTopic.isPending}
+            <div className="flex shrink-0 items-center gap-2">
+                <NoteSaveStatus isSaving={upsertTopicNote.isPending} />
+                {/* Native <details> as the menu: no dependency, keyboard-toggleable.
+                    ponytail: doesn't close on outside click/Escape - swap for a Radix dropdown if that matters. */}
+                <details className="group relative">
+                    <summary
+                        aria-label="Topic actions"
+                        className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md text-lg text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:scale-95 [&::-webkit-details-marker]:hidden"
                     >
-                        {deleteTopic.isPending ? "Deleting…" : "Delete"}
-                    </Button>
-                </div>
+                        ⋯
+                    </summary>
+                    <div className="absolute right-0 z-20 mt-1 w-40 rounded-md bg-card p-1 shadow-lg ring-1 ring-border">
+                        <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={deleteTopic.isPending}
+                            className="w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-base text-destructive hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {deleteTopic.isPending ? "Deleting…" : "Delete topic"}
+                        </button>
+                    </div>
+                </details>
             </div>
+            </div>
+
+            {/* Notion-style: the title is always editable in place - no separate
+                Rename button/mode, just type and blur to save. Enter drops the caret
+                into the document below instead of just blurring. */}
+            <input
+                aria-label="Topic name"
+                value={nameDraft}
+                onChange={(event) => setNameDraft(event.target.value)}
+                onBlur={commitRename}
+                onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        documentRef.current?.querySelector<HTMLElement>("[contenteditable=true]")?.focus();
+                    }
+                }}
+                className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-none"
+                placeholder="Untitled"
+            />
             {(renameTopic.isError || deleteTopic.isError) && (
                 <p className="text-base text-destructive">
                     {getErrorMessage(renameTopic.error ?? deleteTopic.error, "Failed to update topic")}
@@ -162,7 +175,7 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
 
             <TopicSuggestionPanel topicId={topicId} getContent={() => contentRef.current} />
 
-            <section className="space-y-3">
+            <section ref={documentRef} className="space-y-3">
                 {topicNote.isLoading ? (
                     <div className="h-40 animate-pulse rounded-md bg-muted" />
                 ) : (
@@ -190,12 +203,12 @@ function TopicDetailPageContent({ topicId, topic, allTopics }: TopicDetailPageCo
                 creates a child Topic and drops a Topic Reference node right where the
                 cursor was, so subtopics show up inline as part of the continuous document
                 instead of a separate list competing for attention. */}
-        </div>
+        </main>
     );
 }
 
 function NoteSaveStatus({ isSaving }: { isSaving: boolean }) {
-    return <span className="text-xs text-muted-foreground">{isSaving ? "กำลังบันทึก…" : "บันทึกแล้ว"}</span>;
+    return <span className="text-sm text-muted-foreground">{isSaving ? "Saving…" : "Saved"}</span>;
 }
 
 interface TopicDocumentEditorProps {

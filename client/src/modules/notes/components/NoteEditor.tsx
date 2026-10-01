@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { Editor, Range } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
 import type { MarkdownStorage } from "tiptap-markdown";
 import { NoteEditorBubbleMenu } from "./NoteEditorBubbleMenu";
-import { CreateSubtopicDialog } from "./CreateSubtopicDialog";
 import { ContentPolishButton } from "./ContentPolishButton";
 import { SlashCommand } from "../extensions/slashCommand";
 import { TopicReference } from "../extensions/topicReference";
-import type { TopicResponse } from "../../organization/types";
+import { useTopics } from "../../organization/hooks/useTopics";
+import { useCreateTopic } from "../../organization/hooks/useCreateTopic";
+import { nextUntitledTopicName } from "../../organization/utils/nextUntitledTopicName";
+import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 
 // tiptap-markdown doesn't ship a `@tiptap/core` Storage module augmentation,
 // so `editor.storage.markdown` isn't visible to the type checker on its own.
@@ -34,7 +37,15 @@ interface NoteEditorProps {
 // confirmed scope; Topic Reference has its own dedicated node instead of the
 // generic link mark (ticket 042).
 export function NoteEditor({ content, onChange, editable = true, topicId }: NoteEditorProps) {
-  const [subtopicPrompt, setSubtopicPrompt] = useState<{ insertPos: number } | null>(null);
+  const topics = useTopics();
+  const createTopic = useCreateTopic();
+
+  // The editor's extensions are built once, so "/subtopic" below can't close over fresh
+  // render values - it reads the latest mutation and sibling names through these refs.
+  const createTopicRef = useRef(createTopic);
+  createTopicRef.current = createTopic;
+  const siblingNamesRef = useRef<string[]>([]);
+  siblingNamesRef.current = (topics.data ?? []).filter((topic) => topic.parentId === topicId).map((topic) => topic.name);
 
   const editor = useEditor({
     extensions: [
@@ -42,13 +53,31 @@ export function NoteEditor({ content, onChange, editable = true, topicId }: Note
         link: false,
         underline: false,
       }),
+      Placeholder.configure({ placeholder: "Write, or press '/' for commands…" }),
       TopicReference,
       SlashCommand.configure({
         onCreateSubtopic: topicId
           ? (editorInstance: Editor, range: Range) => {
+              // Notion-style "/page": no name prompt - create an "Untitled" child right away
+              // (capture first, name it later by opening it) and drop the reference in.
+              // Editing is locked while the request is in flight so insertPos can't drift.
               editorInstance.chain().focus().deleteRange(range).run();
               editorInstance.setEditable(false);
-              setSubtopicPrompt({ insertPos: editorInstance.state.selection.from });
+              const insertPos = editorInstance.state.selection.from;
+              createTopicRef.current.mutate(
+                { name: nextUntitledTopicName(siblingNamesRef.current), parentId: topicId },
+                {
+                  onSuccess: (topic) => {
+                    editorInstance
+                      .chain()
+                      .focus()
+                      .insertContentAt(insertPos, { type: "topicReference", attrs: { topicId: topic.id, name: topic.name } })
+                      .run();
+                    editorInstance.setEditable(editable);
+                  },
+                  onError: () => editorInstance.setEditable(editable),
+                },
+              );
             }
           : undefined,
       }),
@@ -59,11 +88,14 @@ export function NoteEditor({ content, onChange, editable = true, topicId }: Note
     ],
     content,
     editable,
+    // Capture-first: an empty editable document is ready to type into straight away.
+    autofocus: editable && !content.trim() ? "start" : false,
     onUpdate: ({ editor: updatedEditor }) => onChange(getMarkdown(updatedEditor)),
     editorProps: {
       attributes: {
         class:
-          "min-h-40 focus:outline-none " +
+          "min-h-64 text-lg focus:outline-none " +
+          "[&_p.is-empty::before]:pointer-events-none [&_p.is-empty::before]:float-left [&_p.is-empty::before]:h-0 [&_p.is-empty::before]:text-muted-foreground [&_p.is-empty::before]:content-[attr(data-placeholder)] " +
           "[&_h1]:mb-2 [&_h1]:mt-1 [&_h1]:text-3xl [&_h1]:font-bold " +
           "[&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-xl [&_h2]:font-semibold " +
           "[&_h3]:mb-1 [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold " +
@@ -89,33 +121,22 @@ export function NoteEditor({ content, onChange, editable = true, topicId }: Note
     }
   }, [content, editor]);
 
-  function handleSubtopicCreated(topic: TopicResponse) {
-    if (!editor || !subtopicPrompt) return;
-
-    editor
-      .chain()
-      .focus()
-      .insertContentAt(subtopicPrompt.insertPos, { type: "topicReference", attrs: { topicId: topic.id, name: topic.name } })
-      .run();
-    editor.setEditable(editable);
-    setSubtopicPrompt(null);
-  }
-
-  function handleSubtopicCancelled() {
-    editor?.setEditable(editable);
-    setSubtopicPrompt(null);
-  }
-
   if (!editor) return null;
 
   return (
     <div className="relative flex flex-col gap-2">
       {editable && <NoteEditorBubbleMenu editor={editor} />}
-      <EditorContent editor={editor} className={editable ? "pb-14" : undefined} />
-      {subtopicPrompt && topicId && (
-        <CreateSubtopicDialog parentId={topicId} onCreated={handleSubtopicCreated} onCancel={handleSubtopicCancelled} />
+      <EditorContent editor={editor} />
+      {createTopic.isError && (
+        <p role="alert" className="text-base text-destructive">
+          {getErrorMessage(createTopic.error, "Failed to create subtopic")}
+        </p>
       )}
-      {editable && <ContentPolishButton content={content} onApply={onChange} />}
+      {editable && (
+        <div className="flex justify-end">
+          <ContentPolishButton content={content} onApply={onChange} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
 import type { SlashCommandItem } from "../extensions/slashCommand";
 
@@ -10,7 +10,12 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SuggestionPro
   ({ items, command }, ref) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
 
+    const selectedRef = useRef<HTMLButtonElement>(null);
+
     useEffect(() => setSelectedIndex(0), [items]);
+
+    // Keep the arrow-key selection visible now that the list scrolls (max-h below).
+    useEffect(() => selectedRef.current?.scrollIntoView({ block: "nearest" }), [selectedIndex]);
 
     useImperativeHandle(ref, () => ({
       onKeyDown: ({ event }) => {
@@ -40,10 +45,11 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SuggestionPro
     }
 
     return (
-      <div className="w-56 rounded-md border border-border bg-popover p-1 shadow-md">
+      <div className="max-h-72 w-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
         {items.map((item, index) => (
           <button
             key={item.title}
+            ref={index === selectedIndex ? selectedRef : undefined}
             type="button"
             onClick={() => command(item)}
             className={`block w-full cursor-pointer rounded px-2 py-1.5 text-left text-base ${

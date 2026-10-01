@@ -30,17 +30,16 @@ export function ContentPolishButton({ content, onApply }: ContentPolishButtonPro
         <>
             <button
                 type="button"
-                aria-label="Polish content with AI"
-                title="Polish content with AI"
+                title="Rewrite the whole document with AI (you confirm before anything changes)"
                 onClick={handleClick}
                 disabled={polish.isPending || !content.trim()}
-                className="fixed bottom-6 right-6 z-40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
-                {polish.isPending ? "…" : "✨"}
+                {polish.isPending ? "Polishing…" : "✨ Polish with AI"}
             </button>
 
             {polish.isError && (
-                <p className="fixed bottom-20 right-6 z-40 max-w-xs rounded-md bg-destructive px-3 py-2 text-xs text-destructive-foreground shadow-lg">
+                <p role="alert" className="fixed bottom-6 right-6 z-40 max-w-xs rounded-md bg-destructive px-3 py-2 text-xs text-destructive-foreground shadow-lg">
                     {getErrorMessage(polish.error, "Failed to polish content")}
                 </p>
             )}

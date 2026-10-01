@@ -58,11 +58,19 @@ export function filterSlashCommandItems(query: string, items: SlashCommandItem[]
   return items.filter((item) => item.title.toLowerCase().includes(normalized));
 }
 
+// Matches SlashCommandMenu's max-h-72 (18rem) plus its padding - how much room the menu
+// needs below the caret before it should flip above it instead of running off-screen.
+const MENU_MAX_HEIGHT_PX = 300;
+
 function positionMenu(element: HTMLElement, rect: DOMRect | null) {
   if (!rect) return;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const flipAbove = spaceBelow < MENU_MAX_HEIGHT_PX && rect.top > spaceBelow;
+
   element.style.position = "fixed";
-  element.style.left = `${rect.left}px`;
-  element.style.top = `${rect.bottom + 4}px`;
+  element.style.left = `${Math.min(rect.left, window.innerWidth - 240)}px`;
+  element.style.top = flipAbove ? "auto" : `${rect.bottom + 4}px`;
+  element.style.bottom = flipAbove ? `${window.innerHeight - rect.top + 4}px` : "auto";
   element.style.zIndex = "50";
 }
 

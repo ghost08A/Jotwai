@@ -54,8 +54,9 @@ export function TopicSuggestionPanel({ topicId, getContent }: TopicSuggestionPan
             <div className="mb-4">
                 <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
+                    className="-ml-3 cursor-pointer text-muted-foreground"
                     onClick={handleTrigger}
                     disabled={trigger.isPending || isPolling}
                 >
