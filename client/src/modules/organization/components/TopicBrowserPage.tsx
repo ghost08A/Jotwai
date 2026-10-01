@@ -1,19 +1,20 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/shared/components/ui/input";
-import { Button } from "@/shared/components/ui/button";
 import { useTopics } from "../hooks/useTopics";
 import { useCreateTopic } from "../hooks/useCreateTopic";
 import { buildTopicTree } from "../utils/buildTopicTree";
+import { buildNotePreview } from "../utils/buildNotePreview";
 import { computeVisibleTopicIds } from "../utils/computeVisibleTopicIds";
 import { nextUntitledTopicName } from "../utils/nextUntitledTopicName";
+import { useNotes } from "../../notes/hooks/useNotes";
 import { useSearch } from "../../search/hooks/useSearch";
 import { useActiveTopicSuggestions } from "../../ai-categorization/hooks/useActiveTopicSuggestions";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import { ROUTES } from "../../../shared/routes/paths";
 import { CategoryFilterChips } from "./CategoryFilterChips";
-import { TopicBrowserNode } from "./TopicBrowserNode";
+import { TopicCard } from "./TopicCard";
 
 export function TopicBrowserPage() {
     const navigate = useNavigate();
@@ -22,6 +23,7 @@ export function TopicBrowserPage() {
     const debouncedQuery = useDebouncedValue(query, 300);
 
     const topics = useTopics();
+    const notes = useNotes();
     const createTopic = useCreateTopic();
     const isFiltering = debouncedQuery.trim() !== "" || selectedCategoryIds.length > 0;
     const search = useSearch(debouncedQuery, selectedCategoryIds);
@@ -30,6 +32,17 @@ export function TopicBrowserPage() {
         () => new Set(activeSuggestions.data ?? []),
         [activeSuggestions.data],
     );
+
+    // A Topic is one continuous document (ticket 043), so GET /api/notes yields at most one
+    // active Note per Topic - it feeds each card's preview and last-edited date. If it fails
+    // the cards still render, just without a preview.
+    const noteByTopicId = useMemo(() => {
+        const map = new Map<string, { content: string; updatedAt: string }>();
+        for (const note of notes.data ?? []) {
+            if (note.topicId) map.set(note.topicId, note);
+        }
+        return map;
+    }, [notes.data]);
 
     // "Capture first, organize later" (root CLAUDE.md) applied to Topic creation itself
     // (ticket 044): no name/parent prompt upfront - create a placeholder-named root Topic
@@ -73,61 +86,102 @@ export function TopicBrowserPage() {
         return buildTopicTree(topics.data.filter((topic) => visibleIds.has(topic.id)));
     }, [topics.data, isFiltering, search.data, selectedCategoryIds, debouncedQuery]);
 
+    // Most recently touched first - what a returning user most likely wants, and it puts a
+    // brand-new Topic right next to the "+ New topic" card.
+    const cards = useMemo(
+        () =>
+            tree
+                .map((node) => {
+                    const note = noteByTopicId.get(node.id);
+                    const updatedAt = note && note.updatedAt > node.updatedAt ? note.updatedAt : node.updatedAt;
+                    return { node, note, updatedAt };
+                })
+                .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+        [tree, noteByTopicId],
+    );
+
+    const isListLoading = topics.isLoading || (isFiltering && search.isLoading);
+    const hasLoadError = topics.isError || search.isError;
+    const hasNoTopicsAtAll = !isListLoading && !hasLoadError && !isFiltering && cards.length === 0;
+    const hasNoMatches = !isListLoading && !hasLoadError && isFiltering && cards.length === 0;
+
     return (
-        <div className="w-full space-y-4 px-6 py-6 md:px-12 lg:px-24">
-            <h1 className="text-xl font-semibold text-foreground">Jotwai</h1>
-
-            <Input
-                type="search"
-                placeholder="Search topics and notes…"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-            />
-
-            <CategoryFilterChips selectedCategoryIds={selectedCategoryIds} onToggle={toggleCategory} />
-
-            <div className="flex items-center justify-between">
-                <h2 className="text-base font-medium text-muted-foreground">Topics</h2>
-                <Button type="button" size="sm" onClick={handleNewTopic} disabled={createTopic.isPending}>
-                    {createTopic.isPending ? "Creating…" : "+ New topic"}
-                </Button>
-            </div>
+        <main className="mx-auto w-full max-w-5xl space-y-8 px-6 pb-16 pt-10">
+            <header className="space-y-1.5">
+                <h1 className="text-3xl font-semibold tracking-tight text-foreground">Topics</h1>
+                <p className="max-w-lg text-base text-muted-foreground text-pretty">
+                    Everything you write lives in a topic. Start a new one and just write &mdash; you can name and
+                    organise it later.
+                </p>
+            </header>
 
             {createTopic.isError && (
-                <p className="text-base text-destructive">{getErrorMessage(createTopic.error, "Failed to create topic")}</p>
+                <p role="alert" className="text-base text-destructive">
+                    {getErrorMessage(createTopic.error, "Failed to create topic")}
+                </p>
             )}
 
-            <div className="rounded-lg border border-border bg-card p-2">
-                {(topics.isLoading || (isFiltering && search.isLoading)) && (
-                    <div className="space-y-2 p-2">
-                        {Array.from({ length: 3 }).map((_, index) => (
-                            <div key={index} className="h-6 animate-pulse rounded bg-muted" />
-                        ))}
-                    </div>
-                )}
-
-                {(topics.isError || search.isError) && (
-                    <p className="p-2 text-base text-destructive">
-                        {getErrorMessage(topics.error ?? search.error, "Failed to load topics")}
-                    </p>
-                )}
-
-                {!topics.isLoading && !search.isLoading && tree.length === 0 && (
-                    <p className="p-2 text-center text-base text-muted-foreground">
-                        {isFiltering ? "No matching topics or notes." : "No topics yet."}
-                    </p>
-                )}
-
-                {tree.map((node) => (
-                    <TopicBrowserNode
-                        key={node.id}
-                        node={node}
-                        depth={0}
-                        isFiltering={isFiltering}
-                        topicIdsWithSuggestions={topicIdsWithSuggestions}
+            {/* Search and filters only earn their place once there is something to find. */}
+            {!hasNoTopicsAtAll && (
+                <section aria-label="Find a topic" className="max-w-xl space-y-3">
+                    <Input
+                        type="search"
+                        placeholder="Search topics and notes…"
+                        aria-label="Search topics and notes"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
                     />
-                ))}
-            </div>
-        </div>
+                    <CategoryFilterChips selectedCategoryIds={selectedCategoryIds} onToggle={toggleCategory} />
+                </section>
+            )}
+
+            {hasLoadError && (
+                <p role="alert" className="rounded-xl bg-muted p-4 text-base text-destructive">
+                    {getErrorMessage(topics.error ?? search.error, "Failed to load topics")}
+                </p>
+            )}
+
+            {hasNoMatches && (
+                <p className="rounded-xl bg-muted px-6 py-10 text-center text-base text-muted-foreground">
+                    No matching topics or notes.
+                </p>
+            )}
+
+            <section aria-label="Topic list" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {isListLoading &&
+                    Array.from({ length: 6 }).map((_, index) => (
+                        <div key={index} className="h-44 animate-pulse rounded-xl bg-muted" />
+                    ))}
+
+                {!isListLoading && !hasLoadError && !isFiltering && (
+                    <button
+                        type="button"
+                        onClick={handleNewTopic}
+                        disabled={createTopic.isPending}
+                        className="flex min-h-44 cursor-pointer flex-col items-start justify-center gap-2 rounded-xl border-2 border-dashed border-border p-5 text-left hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <span className="text-lg font-semibold text-foreground">
+                            {createTopic.isPending ? "Creating…" : "+ New topic"}
+                        </span>
+                        <span className="text-base text-muted-foreground text-pretty">
+                            {hasNoTopicsAtAll
+                                ? "Nothing here yet. Press to start writing — no name, no folder. Jotwai will suggest where it belongs afterwards."
+                                : "Start writing right away. Name it later."}
+                        </span>
+                    </button>
+                )}
+
+                {!isListLoading &&
+                    cards.map(({ node, note, updatedAt }) => (
+                        <TopicCard
+                            key={node.id}
+                            node={node}
+                            preview={buildNotePreview(note?.content)}
+                            updatedAt={updatedAt}
+                            hasSuggestion={topicIdsWithSuggestions.has(node.id)}
+                        />
+                    ))}
+            </section>
+        </main>
     );
 }
