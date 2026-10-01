@@ -69,6 +69,10 @@ Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Categ
 - ~~[Topic-first navigation — ตัด Notes nav, เลิกบังคับ H1 ของ Note, เพิ่ม /subtopic](tickets/042-feature-topic-first-navigation.md)~~ — ปิดแล้ว 2026-09-27 (build เสร็จและ verify ผ่าน browser จริงครบวงจร — ดู ticket 042 Resolution)
 - ~~[1 Topic = เอกสารต่อเนื่องเดียว (Notion-style autosave), เอา guard ลบ Topic ที่มี Note ออก](tickets/043-feature-topic-continuous-document.md)~~ — ปิดแล้ว 2026-09-27 (build เสร็จและ verify ผ่าน browser จริงกับ backend จริงครบวงจร รวม prototype-first validation — ดู ticket 043 Resolution)
 - ~~["+ New topic" เข้าหน้าจดทันที, Topic Suggestion ใช้ชื่อ+เนื้อหา พร้อม trigger เอง/อัตโนมัติ](tickets/044-feature-topic-first-capture.md)~~ — ปิดแล้ว 2026-09-27 (build เสร็จและ verify ผ่าน browser จริงครบวงจร — ดู ticket 044 Resolution)
+- [ปรับหน้า Home เป็น Grid Cards](tickets/045-feature-home-redesign.md): การ์ด Topic พร้อม preview + วันที่แก้ล่าสุด + การ์ด "+ New topic" ไม่ต้องแก้ backend (ใช้ GET /api/notes เดิม) verify ผ่าน browser จริงแล้ว รอผู้ใช้รีวิว
+- [ปรับหน้าเขียน Topic ให้เป็นหน้ากระดาษแบบ Notion](tickets/046-feature-topic-page-notion-layout.md): layout + placeholder + Enter จากชื่อลงเนื้อหา + เมนู ⋯ (เสร็จ รอรีวิว)
+- [ขยายหน้าเขียน ~944px, เมนู / พลิกขึ้นบน, /subtopic แบบ Notion](tickets/048-feature-editor-width-slash-menu-subtopic.md): เสร็จ รอรีวิว (เปลี่ยนพฤติกรรม /subtopic เป็นสร้าง Untitled ทันที)
+- [To-do list และ Link ใน editor](tickets/047-feature-todo-list-and-link.md): แยกมาจาก 046 ยังไม่ได้ทำ
 
 ## Open grilling tickets (database schema — not yet decided)
 
