@@ -72,7 +72,7 @@ Product spec ของ Requirements v0.1 (Note capture, Code Block, Topic, Categ
 - [ปรับหน้า Home เป็น Grid Cards](tickets/045-feature-home-redesign.md): การ์ด Topic พร้อม preview + วันที่แก้ล่าสุด + การ์ด "+ New topic" ไม่ต้องแก้ backend (ใช้ GET /api/notes เดิม) verify ผ่าน browser จริงแล้ว รอผู้ใช้รีวิว
 - [ปรับหน้าเขียน Topic ให้เป็นหน้ากระดาษแบบ Notion](tickets/046-feature-topic-page-notion-layout.md): layout + placeholder + Enter จากชื่อลงเนื้อหา + เมนู ⋯ (เสร็จ รอรีวิว)
 - [ขยายหน้าเขียน ~944px, เมนู / พลิกขึ้นบน, /subtopic แบบ Notion](tickets/048-feature-editor-width-slash-menu-subtopic.md): เสร็จ รอรีวิว (เปลี่ยนพฤติกรรม /subtopic เป็นสร้าง Untitled ทันที)
-- [To-do list และ Link ใน editor](tickets/047-feature-todo-list-and-link.md): แยกมาจาก 046 ยังไม่ได้ทำ
+- ~~[To-do list และ Link ใน editor](tickets/047-feature-todo-list-and-link.md)~~: เสร็จ 2026-10-01 รอรีวิว (checkbox + ลิงก์ผ่านปุ่ม 🔗 ในเมนูลอย)
 
 ## Open grilling tickets (database schema — not yet decided)
 

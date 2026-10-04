@@ -39,6 +39,10 @@ export const SLASH_COMMAND_ITEMS: SlashCommandItem[] = [
     run: (editor, range) => editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
   },
   {
+    title: "To-do list",
+    run: (editor, range) => editor.chain().focus().deleteRange(range).toggleTaskList().run(),
+  },
+  {
     title: "Quote",
     run: (editor, range) => editor.chain().focus().deleteRange(range).setBlockquote().run(),
   },

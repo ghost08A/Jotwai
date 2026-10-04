@@ -3,6 +3,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import type { Editor, Range } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { Markdown } from "tiptap-markdown";
 import type { MarkdownStorage } from "tiptap-markdown";
 import { NoteEditorBubbleMenu } from "./NoteEditorBubbleMenu";
@@ -33,9 +34,10 @@ interface NoteEditorProps {
 // Note content types (GLOSSARY.md "Note"): plain text, heading (levels 1-3),
 // blockquote, bulleted list, numbered list, code block, horizontal rule,
 // Topic Reference, plus bold/italic/strike/inline-code marks (ticket 037 -
-// Notion-like editor). `link`/`underline` stay disabled - not part of the
-// confirmed scope; Topic Reference has its own dedicated node instead of the
-// generic link mark (ticket 042).
+// Notion-like editor), to-do list and link (ticket 047). `underline` stays disabled -
+// not part of the confirmed scope; Topic Reference has its own dedicated node instead
+// of the link mark (ticket 042) and is rewritten out of the anchor tags before the
+// link mark ever sees them. Link's default URI allow-list already rejects javascript:.
 export function NoteEditor({ content, onChange, editable = true, topicId }: NoteEditorProps) {
   const topics = useTopics();
   const createTopic = useCreateTopic();
@@ -50,9 +52,12 @@ export function NoteEditor({ content, onChange, editable = true, topicId }: Note
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        link: false,
+        // Clicking a link opens it in a new tab (target/rel are Link's defaults).
+        link: { openOnClick: true, autolink: true },
         underline: false,
       }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
       Placeholder.configure({ placeholder: "Write, or press '/' for commands…" }),
       TopicReference,
       SlashCommand.configure({
@@ -101,6 +106,10 @@ export function NoteEditor({ content, onChange, editable = true, topicId }: Note
           "[&_h3]:mb-1 [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold " +
           "[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground " +
           "[&_hr]:my-4 [&_hr]:border-border " +
+          "[&_a]:cursor-pointer [&_a]:underline [&_a]:decoration-muted-foreground [&_a]:underline-offset-4 " +
+          "[&_ul[data-type=taskList]]:list-none [&_ul[data-type=taskList]]:pl-0 [&_li[data-checked]]:flex [&_li[data-checked]]:items-start [&_li[data-checked]]:gap-2 " +
+          "[&_li[data-checked]>label]:mt-2 [&_li[data-checked]_input]:cursor-pointer [&_li[data-checked]_input]:accent-primary " +
+          "[&_li[data-checked=true]>div]:text-muted-foreground [&_li[data-checked=true]>div]:line-through " +
           "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-base " +
           "[&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-1 " +
           "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-base " +

@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useEditorState } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
@@ -43,6 +44,10 @@ export function NoteEditorBubbleMenu({ editor }: NoteEditorBubbleMenuProps) {
     isStrikeActive,
     isCodeActive,
     isBlockquoteActive,
+    isTaskListActive,
+    isLinkActive,
+    linkHref,
+    selectionKey,
   } = useEditorState({
     editor,
     selector: ({ editor: currentEditor }) => ({
@@ -57,8 +62,36 @@ export function NoteEditorBubbleMenu({ editor }: NoteEditorBubbleMenuProps) {
       isStrikeActive: currentEditor.isActive("strike"),
       isCodeActive: currentEditor.isActive("code"),
       isBlockquoteActive: currentEditor.isActive("blockquote"),
+      isTaskListActive: currentEditor.isActive("taskList"),
+      isLinkActive: currentEditor.isActive("link"),
+      linkHref: (currentEditor.getAttributes("link").href as string | undefined) ?? "",
+      selectionKey: `${currentEditor.state.selection.from}-${currentEditor.state.selection.to}`,
     }),
   });
+
+  const [isEditingLink, setIsEditingLink] = useState(false);
+  const [linkDraft, setLinkDraft] = useState("");
+
+  // The URL input belongs to the selection it was opened for - a new selection starts fresh.
+  useEffect(() => setIsEditingLink(false), [selectionKey]);
+
+  function openLinkEditor() {
+    setLinkDraft(linkHref);
+    setIsEditingLink(true);
+  }
+
+  function applyLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = linkDraft.trim();
+    const chain = editor.chain().focus().extendMarkRange("link");
+    if (!trimmed) {
+      chain.unsetLink().run();
+    } else {
+      // Bare "example.com" gets https://; anything with a scheme is left to Link's own allow-list.
+      chain.setLink({ href: /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}` }).run();
+    }
+    setIsEditingLink(false);
+  }
 
   return (
     <BubbleMenu
@@ -66,7 +99,32 @@ export function NoteEditorBubbleMenu({ editor }: NoteEditorBubbleMenuProps) {
       shouldShow={({ editor: currentEditor, from, to }) => currentEditor.isActive("codeBlock") || from !== to}
       className="flex flex-wrap items-center gap-1 rounded-md border border-border bg-popover p-1 shadow-md"
     >
-      {isCodeBlockActive ? (
+      {isEditingLink ? (
+        <form onSubmit={applyLink} className="flex items-center gap-1">
+          <input
+            autoFocus
+            type="text"
+            aria-label="Link URL"
+            placeholder="Paste a link…"
+            value={linkDraft}
+            onChange={(event) => setLinkDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                setIsEditingLink(false);
+                editor.chain().focus().run();
+              }
+            }}
+            className="w-64 rounded-md border border-input bg-background px-2 py-1 text-base focus:border-ring focus:outline-none"
+          />
+          <button
+            type="submit"
+            className="cursor-pointer rounded-md bg-primary px-2 py-1 text-base font-medium text-primary-foreground hover:bg-primary/90 active:scale-95"
+          >
+            {linkDraft.trim() ? "Apply" : isLinkActive ? "Remove" : "Apply"}
+          </button>
+        </form>
+      ) : isCodeBlockActive ? (
         <select
           aria-label="Code block language"
           value={codeBlockLanguage}
@@ -151,6 +209,18 @@ export function NoteEditorBubbleMenu({ editor }: NoteEditorBubbleMenuProps) {
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
           >
             1.≡
+          </BubbleMenuButton>
+
+          <BubbleMenuButton
+            label="To-do list"
+            active={isTaskListActive}
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+          >
+            ☑
+          </BubbleMenuButton>
+
+          <BubbleMenuButton label="Link" active={isLinkActive} onClick={openLinkEditor}>
+            🔗
           </BubbleMenuButton>
 
           <BubbleMenuButton

@@ -2,7 +2,7 @@
 id: 45
 title: "ปรับหน้า Home (Topic browser) ให้ดูดีขึ้นและไม่งงสำหรับคนเริ่มใช้"
 type: wayfinder:task
-status: open
+status: closed
 assignee: null
 parent: ../map.md
 blocked_by: []
