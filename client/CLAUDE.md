@@ -25,7 +25,7 @@
 
 ## Project Structure
 
-`src/` ปัจจุบันแทบว่างเปล่า มีแค่ `assets/` — โครงสร้างด้านล่างคือโครงสร้างเป้าหมายที่จะสร้างขึ้น ไม่ใช่ผลสำรวจของสิ่งที่มีอยู่ Module จะสะท้อนตาม 5 Module ฝั่ง backend (ดู [../ARCHITECTURE.md](../ARCHITECTURE.md) "Backend modules") เพื่อให้คำศัพท์ฝั่ง frontend และ backend สอดคล้องกับ [../GLOSSARY.md](../GLOSSARY.md)
+`src/` ปัจจุบันแทบว่างเปล่า มีแค่ `assets/` — โครงสร้างด้านล่างคือโครงสร้างเป้าหมายที่จะสร้างขึ้น ไม่ใช่ผลสำรวจของสิ่งที่มีอยู่ Module จะสะท้อนตาม 5 Module ฝั่ง backend (ดู [../ARCHITECTURE.md](../ARCHITECTURE.md) "Backend modules") เพื่อให้คำศัพท์ฝั่ง frontend และ backend สอดคล้องกับ [../CONTEXT.md](../CONTEXT.md)
 
 ```
 .editorconfig

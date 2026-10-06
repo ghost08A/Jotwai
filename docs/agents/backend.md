@@ -22,7 +22,7 @@ Checklist สำหรับ agent ที่ implement ticket ฝั่ง backe
 - Async method: ลงท้ายด้วย `Async` (`RegisterAsync`, `LoginAsync`)
 - Boolean property/variable: นำหน้าด้วย `Is`/`Has`/`Can` (`IsActive`, `HasRefreshToken`)
 
-ใช้คำศัพท์ของ Jotwai จาก [`GLOSSARY.md`](../../GLOSSARY.md) ก่อนแหล่งอื่นเสมอ
+ใช้คำศัพท์ของ Jotwai จาก [`CONTEXT.md`](../../CONTEXT.md) ก่อนแหล่งอื่นเสมอ
 
 ## ก่อนถือว่างานเสร็จ
 

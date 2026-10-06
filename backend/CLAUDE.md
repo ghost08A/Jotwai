@@ -87,7 +87,7 @@ Jotwai.IntegrationTests/     # XUnit + Testcontainers.PostgreSql + WebApplicatio
 | `Service` suffix      | Service implementation (เช่น `AuthService`)                  |
 | `Is`/`Has`/`Can` prefix | Boolean property/variable (เช่น `IsActive`, `HasRefreshToken`) |
 
-ใช้คำศัพท์ของ Jotwai จาก [../GLOSSARY.md](../GLOSSARY.md) ก่อนแหล่งอื่นเสมอ
+ใช้คำศัพท์ของ Jotwai จาก [../CONTEXT.md](../CONTEXT.md) ก่อนแหล่งอื่นเสมอ
 
 ### Auto-DI (`IXxxService` / `XxxService`)
 
