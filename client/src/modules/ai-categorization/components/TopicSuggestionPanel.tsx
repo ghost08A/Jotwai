@@ -17,7 +17,7 @@ interface TopicSuggestionPanelProps {
     getContent: () => string;
 }
 
-// Topic Suggestion (GLOSSARY.md, ticket 040) - Merge and Placement share the same
+// Topic Suggestion (CONTEXT.md, ticket 040) - Merge and Placement share the same
 // accept/ignore actions, but Merge is destructive (deletes this Topic) so accepting it goes
 // through an extra confirm dialog first; Placement applies immediately. Since ticket 044, a
 // Topic's name alone may be a meaningless placeholder ("Untitled") - the "Suggest placement"

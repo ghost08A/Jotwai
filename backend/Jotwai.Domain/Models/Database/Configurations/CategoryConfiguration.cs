@@ -23,7 +23,7 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsRequired()
             .HasMaxLength(200);
 
-        // Category names are unique system-wide per user, case-insensitively (GLOSSARY.md) -
+        // Category names are unique system-wide per user, case-insensitively (CONTEXT.md) -
         // flat, so a single index suffices (no ParentId nullability pitfall like Topic's).
         builder.HasIndex(c => new { c.UserId, c.NormalizedName })
             .IsUnique();

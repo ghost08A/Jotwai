@@ -9,7 +9,7 @@ interface NoteCategoryChipsProps {
   categoryIds: string[];
 }
 
-// Category is a many-to-many tag on a Note (GLOSSARY.md "Category"), unlike
+// Category is a many-to-many tag on a Note (CONTEXT.md "Category"), unlike
 // Topic's single-value assignment - a toggleable chip per Category reads
 // clearer here than a multi-select, and works on touch without ctrl/cmd-click.
 export function NoteCategoryChips({ noteId, categoryIds }: NoteCategoryChipsProps) {

@@ -30,7 +30,7 @@ public sealed class TopicSuggestionsController(ITopicSuggestionsService topicSug
     }
 
     // Accepts whichever active Topic Suggestion this Topic has (Merge or Placement, see
-    // GLOSSARY.md) - the client shows its own extra confirm-dialog before calling this for a
+    // CONTEXT.md) - the client shows its own extra confirm-dialog before calling this for a
     // Merge, since that's the destructive one.
     [HttpPost("accept")]
     public async Task<IActionResult> Accept(Guid topicId, CancellationToken cancellationToken)

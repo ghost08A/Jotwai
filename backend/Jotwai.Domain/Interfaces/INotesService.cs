@@ -14,7 +14,7 @@ public interface INotesService
 
     Task<IReadOnlyList<NoteResponse>> ListTrashAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>Overwrites the Note's content - Notes have no version history (GLOSSARY.md).</summary>
+    /// <summary>Overwrites the Note's content - Notes have no version history (CONTEXT.md).</summary>
     Task<NoteResponse?> UpdateAsync(Guid userId, Guid noteId, UpdateNoteRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>The Topic's one active Note (a Topic has at most one - see
@@ -46,7 +46,7 @@ public interface INotesService
     /// Returns null if the Note isn't found/owned.</summary>
     Task<NoteResponse?> DetachCategoryAsync(Guid userId, Guid noteId, Guid categoryId, CancellationToken cancellationToken = default);
 
-    /// <summary>Explicit user action to (re-)run AI Categorization on demand (GLOSSARY.md
+    /// <summary>Explicit user action to (re-)run AI Categorization on demand (CONTEXT.md
     /// "AI Categorization") - unlike the automatic path, this ignores
     /// <c>AiCategorizationTriggeredAt</c> and can be called any number of times; it doesn't
     /// count as the one automatic trigger and doesn't affect it. Returns false if the Note

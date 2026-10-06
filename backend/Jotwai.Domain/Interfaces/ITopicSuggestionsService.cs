@@ -16,7 +16,7 @@ public interface ITopicSuggestionsService
     /// <summary>Accepts whichever active Topic Suggestion this Topic has - Merge (deletes this
     /// Topic, reassigns its Notes and subtopics to the target) or Placement (moves this Topic
     /// under the target). The client is responsible for its own extra confirm-dialog before
-    /// calling this for a Merge (GLOSSARY.md) - this method just performs the action.</summary>
+    /// calling this for a Merge (CONTEXT.md) - this method just performs the action.</summary>
     Task<AcceptTopicSuggestionResult> AcceptAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default);
 
     /// <summary>Explicit user action to (re-)run Topic Suggestion on demand, or automatically

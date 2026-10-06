@@ -14,7 +14,7 @@ interface NoteAiSuggestionPanelProps {
     noteId: string;
 }
 
-// AI Categorization (GLOSSARY.md) analyzes a Note in the background; a
+// AI Categorization (CONTEXT.md) analyzes a Note in the background; a
 // suggestion set only becomes visible once the outbox worker resolves it, so
 // after an on-demand trigger this polls briefly instead of leaving the user
 // staring at a stale "no suggestion" state.

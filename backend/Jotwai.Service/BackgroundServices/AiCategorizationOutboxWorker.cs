@@ -79,7 +79,7 @@ public sealed class AiCategorizationOutboxWorker(
             // no Suggestion row at all, not an empty one.
             if (suggested.Count > 0 && suggested[0].Confidence >= threshold)
             {
-                // A Note has at most one active Suggestion (GLOSSARY.md) - this only ever
+                // A Note has at most one active Suggestion (CONTEXT.md) - this only ever
                 // finds one here via the on-demand re-trigger (INotesService.TriggerCategorizationAsync),
                 // since the one-time automatic path can't fire twice for the same Note.
                 await db.Suggestions

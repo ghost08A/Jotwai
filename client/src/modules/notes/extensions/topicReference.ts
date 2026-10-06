@@ -7,7 +7,7 @@ export interface TopicReferenceAttrs {
   name: string;
 }
 
-// Block card referencing another Topic (GLOSSARY.md "Topic Reference", ticket
+// Block card referencing another Topic (CONTEXT.md "Topic Reference", ticket
 // 042) - inserted via the "/subtopic" slash command. Stored in Markdown as a
 // plain CommonMark link with a non-http scheme (`topic-ref:<id>`) so it
 // round-trips through tiptap-markdown without a custom markdown-it rule; the

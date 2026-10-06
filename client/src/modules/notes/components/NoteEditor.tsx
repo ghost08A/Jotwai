@@ -31,7 +31,7 @@ interface NoteEditorProps {
   topicId?: string;
 }
 
-// Note content types (GLOSSARY.md "Note"): plain text, heading (levels 1-3),
+// Note content types (CONTEXT.md "Note"): plain text, heading (levels 1-3),
 // blockquote, bulleted list, numbered list, code block, horizontal rule,
 // Topic Reference, plus bold/italic/strike/inline-code marks (ticket 037 -
 // Notion-like editor), to-do list and link (ticket 047). `underline` stays disabled -

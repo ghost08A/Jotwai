@@ -79,7 +79,7 @@ function positionMenu(element: HTMLElement, rect: DOMRect | null) {
 }
 
 export interface SlashCommandOptions {
-  // Only offered when a parent Topic is known (ticket 042/GLOSSARY.md "Topic
+  // Only offered when a parent Topic is known (ticket 042/CONTEXT.md "Topic
   // Reference") - creating a subtopic needs somewhere to attach it.
   onCreateSubtopic?: (editor: Editor, range: Range) => void;
 }

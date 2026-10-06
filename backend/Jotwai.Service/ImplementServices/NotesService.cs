@@ -74,7 +74,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         if (note is null)
             return null;
 
-        // Overwrite, not append - Notes have no version history (GLOSSARY.md).
+        // Overwrite, not append - Notes have no version history (CONTEXT.md).
         note.Content = request.Content;
         note.UpdatedAt = DateTimeOffset.UtcNow;
 

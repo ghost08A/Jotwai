@@ -15,7 +15,7 @@ public sealed class SearchDocument
     /// FK (ADR-0003).</summary>
     public Guid? TopicId { get; set; }
 
-    /// <summary>Denormalized copy of the assigned Topic's name (GLOSSARY.md "Search" -
+    /// <summary>Denormalized copy of the assigned Topic's name (CONTEXT.md "Search" -
     /// Topic name is searchable), kept in sync via <see cref="Events.TopicRenamed"/>.
     /// Not returned in API responses - matching only.</summary>
     public string? TopicName { get; set; }

@@ -4,7 +4,7 @@ using Jotwai.Domain.Interfaces;
 namespace Jotwai.Service.ImplementServices;
 
 /// <summary>
-/// Content Polish (GLOSSARY.md, ticket 041). Fenced code blocks are never sent to the AI
+/// Content Polish (CONTEXT.md, ticket 041). Fenced code blocks are never sent to the AI
 /// provider (ground rule: code content is never touched) - they're swapped for opaque
 /// placeholder lines before the call and restored verbatim from the original text afterwards.
 /// </summary>

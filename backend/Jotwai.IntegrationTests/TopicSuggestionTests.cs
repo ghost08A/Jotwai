@@ -53,7 +53,7 @@ public sealed class TopicSuggestionTests : IClassFixture<JotwaiApiFactory>
     {
         var client = await AuthenticatedClientAsync();
         // Two Topics named identically can only coexist under *different* parents - sibling
-        // uniqueness (GLOSSARY.md) already blocks the same-parent case outright at create time.
+        // uniqueness (CONTEXT.md) already blocks the same-parent case outright at create time.
         var existing = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Work" }))
             .Content.ReadFromJsonAsync<TopicResponse>();
         var otherContainer = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Other Container" }))

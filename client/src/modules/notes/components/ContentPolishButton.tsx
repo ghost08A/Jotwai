@@ -9,7 +9,7 @@ interface ContentPolishButtonProps {
     onApply: (polishedContent: string) => void;
 }
 
-// Content Polish (GLOSSARY.md, ticket 041) - on-demand, no state left behind if the user
+// Content Polish (CONTEXT.md, ticket 041) - on-demand, no state left behind if the user
 // doesn't confirm (no entity/table backs this at all, see ContentPolishService). Always
 // previews before overwriting anything, since Notes have no version history.
 export function ContentPolishButton({ content, onApply }: ContentPolishButtonProps) {

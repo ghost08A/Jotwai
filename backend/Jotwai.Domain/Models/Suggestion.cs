@@ -1,7 +1,7 @@
 namespace Jotwai.Domain.Models;
 
 /// <summary>
-/// A ranked set of Category candidates for a Note (GLOSSARY.md "Suggestion"). A Note has at
+/// A ranked set of Category candidates for a Note (CONTEXT.md "Suggestion"). A Note has at
 /// most one active (<see cref="ResolvedAt"/> null) Suggestion at a time.
 /// </summary>
 public sealed class Suggestion

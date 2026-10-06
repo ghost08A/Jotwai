@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Web.Jotwai.Controllers;
 
-// Content Polish (GLOSSARY.md, ticket 041) - stateless: takes whatever Markdown the client
+// Content Polish (CONTEXT.md, ticket 041) - stateless: takes whatever Markdown the client
 // currently has (saved or not), returns a polished version. Nothing is persisted here; the
 // client decides whether to keep the result via its own preview/confirm step.
 [Authorize]

@@ -9,7 +9,7 @@ interface NoteEditorBubbleMenuProps {
 }
 
 // Minimal, non-exhaustive language list - the language select is metadata on
-// the code block (GLOSSARY.md "Search"), not a syntax-highlighting config, so
+// the code block (CONTEXT.md "Search"), not a syntax-highlighting config, so
 // any value is accepted (the select allows a free "other" fallback via the
 // blank option, not built here beyond what a base editor needs).
 const CODE_BLOCK_LANGUAGES = [

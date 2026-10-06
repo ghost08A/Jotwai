@@ -19,6 +19,6 @@ public interface ITopicsService
     /// <paramref name="newParentId"/> is the Topic itself or one of its own descendants.</summary>
     Task<TopicWriteResult> MoveAsync(Guid userId, Guid topicId, Guid? newParentId, CancellationToken cancellationToken = default);
 
-    /// <summary>Fails with HasChildTopics/HasNotes if the Topic isn't empty (GLOSSARY.md).</summary>
+    /// <summary>Fails with HasChildTopics/HasNotes if the Topic isn't empty (CONTEXT.md).</summary>
     Task<TopicDeleteOutcome> DeleteAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default);
 }

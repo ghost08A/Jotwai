@@ -13,7 +13,7 @@ public interface ISuggestionsService
     /// <summary>Accepts a subset of candidates as one atomic transaction (ticket 010): creates
     /// any new Categories needed and attaches every accepted Category to the Note, all or
     /// nothing. Resolves the Suggestion either way - the rest of the candidates are dropped,
-    /// not left pending (GLOSSARY.md "Suggestion").</summary>
+    /// not left pending (CONTEXT.md "Suggestion").</summary>
     Task<AcceptSuggestionResult> AcceptAsync(Guid userId, Guid noteId, AcceptSuggestionRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Resolves the Suggestion without accepting anything. Returns false if there's

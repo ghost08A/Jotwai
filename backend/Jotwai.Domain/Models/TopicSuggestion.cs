@@ -3,7 +3,7 @@ using Jotwai.Domain.Enums;
 namespace Jotwai.Domain.Models;
 
 /// <summary>
-/// Topic Suggestion (GLOSSARY.md, ticket 040) - a single candidate suggestion for a newly
+/// Topic Suggestion (CONTEXT.md, ticket 040) - a single candidate suggestion for a newly
 /// created Topic, resolved by the user accepting or declining it. Unlike Suggestion
 /// (Category Suggestion), this is never a ranked list: a Topic has at most one parent, so
 /// there's only ever one candidate.

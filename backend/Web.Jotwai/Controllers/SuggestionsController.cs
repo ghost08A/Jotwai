@@ -42,7 +42,7 @@ public sealed class SuggestionsController(ISuggestionsService suggestionsService
         return ignored ? NoContent() : NotFound();
     }
 
-    // On-demand re-run of AI Categorization (GLOSSARY.md) - distinct from, and doesn't
+    // On-demand re-run of AI Categorization (CONTEXT.md) - distinct from, and doesn't
     // affect, the one-time automatic trigger on first save with content (ticket 025). Lives
     // on INotesService (it needs the Note's own content), called from here since it's a
     // suggestion-lifecycle action from the API's point of view.

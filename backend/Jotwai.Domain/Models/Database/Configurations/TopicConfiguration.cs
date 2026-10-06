@@ -30,7 +30,7 @@ public sealed class TopicConfiguration : IEntityTypeConfiguration<Topic>
             .IsRequired()
             .HasMaxLength(200);
 
-        // Sibling names must be unique case-insensitively per parent (GLOSSARY.md) - split
+        // Sibling names must be unique case-insensitively per parent (CONTEXT.md) - split
         // into two filtered indexes because a plain composite unique index would treat every
         // NULL ParentId (root Topics) as distinct, silently allowing duplicate root names.
         builder.HasIndex(t => new { t.UserId, t.ParentId, t.NormalizedName })

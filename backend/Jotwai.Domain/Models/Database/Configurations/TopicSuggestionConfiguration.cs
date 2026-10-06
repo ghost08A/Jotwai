@@ -27,7 +27,7 @@ public sealed class TopicSuggestionConfiguration : IEntityTypeConfiguration<Topi
         builder.Property(s => s.CreatedAt)
             .IsRequired();
 
-        // A Topic has at most one *active* Topic Suggestion at a time (GLOSSARY.md), mirroring
+        // A Topic has at most one *active* Topic Suggestion at a time (CONTEXT.md), mirroring
         // Suggestion's own filtered-unique index.
         builder.HasIndex(s => s.TopicId)
             .IsUnique()

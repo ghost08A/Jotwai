@@ -141,7 +141,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
         var categories = await client.GetFromJsonAsync<List<CategoryResponse>>("/api/categories");
         Assert.Contains(categories!, c => c.Name == "Suggested New Category");
 
-        // Resolved - the Suggestion is gone either way (GLOSSARY.md).
+        // Resolved - the Suggestion is gone either way (CONTEXT.md).
         var afterAccept = await client.GetAsync($"/api/notes/{note.Id}/suggestion");
         Assert.Equal(HttpStatusCode.NotFound, afterAccept.StatusCode);
     }
