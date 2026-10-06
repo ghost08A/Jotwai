@@ -27,4 +27,4 @@ blocked_by:
 
 **ไม่ได้ตัดสิน**: ผู้รับลิงก์แชร์เห็น Description ไหม — ถามใน [ticket 058](058-topic-sharing-details.md); ตำแหน่ง/หน้าตาที่แสดง Description ใน UI; วิธีสร้างเบื้องหลัง (ผ่าน outbox หรือไม่) เป็นขั้นออกแบบ; การลบ Description ตอนที่ Note ถูกลบ/กู้คืน
 
-**ผลต่อเอกสาร (ขั้นเอกสารปิดท้าย ยังไม่แก้ไฟล์)**: GLOSSARY เพิ่มคำ "Description" (และข้อความอธิบายกฎ User Ownership ของ Description), หัวข้อ Topic Suggestion/AI Categorization (ข้อมูลที่ส่งให้ AI เพิ่ม Description), ARCHITECTURE.md flow ของ AI ทั้งสอง
+**ผลต่อเอกสาร (ขั้นเอกสารปิดท้าย ยังไม่แก้ไฟล์)**: CONTEXT.md เพิ่มคำ "Description" (และข้อความอธิบายกฎ User Ownership ของ Description), หัวข้อ Topic Suggestion/AI Categorization (ข้อมูลที่ส่งให้ AI เพิ่ม Description), ARCHITECTURE.md flow ของ AI ทั้งสอง

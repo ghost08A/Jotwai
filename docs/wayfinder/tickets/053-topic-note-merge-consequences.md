@@ -11,7 +11,7 @@ blocked_by:
 
 ## Question
 
-เมื่อ Topic และ Note เป็น Entity เดียวกัน ([ticket 049](049-topic-note-merge.md)) สิ่งเดิมต่อไปนี้ต้องเป็นอย่างไร — ห้าม assume ถามเจ้าของโปรเจกต์ทีละข้อ: (1) Category ผูกกับอะไร (2) Note ที่ปัจจุบันอยู่ได้โดยไม่มี Topic (3) ชื่อ/Title และกฎชื่อซ้ำของพี่น้อง (4) soft delete/Trash และกฎลบ Topic ที่มีลูก (5) Search read model (6) AI Categorization / Topic Suggestion (Merge, Placement) / Content Polish (7) Module ไหนเป็นเจ้าของ Entity ที่รวมแล้ว (8) ข้อมูลที่มีอยู่แล้ว (migration — ระดับ "จะรักษาไหม" ไม่ใช่ขั้นตอน) (9) ศัพท์ใน GLOSSARY ที่จะเปลี่ยน
+เมื่อ Topic และ Note เป็น Entity เดียวกัน ([ticket 049](049-topic-note-merge.md)) สิ่งเดิมต่อไปนี้ต้องเป็นอย่างไร — ห้าม assume ถามเจ้าของโปรเจกต์ทีละข้อ: (1) Category ผูกกับอะไร (2) Note ที่ปัจจุบันอยู่ได้โดยไม่มี Topic (3) ชื่อ/Title และกฎชื่อซ้ำของพี่น้อง (4) soft delete/Trash และกฎลบ Topic ที่มีลูก (5) Search read model (6) AI Categorization / Topic Suggestion (Merge, Placement) / Content Polish (7) Module ไหนเป็นเจ้าของ Entity ที่รวมแล้ว (8) ข้อมูลที่มีอยู่แล้ว (migration — ระดับ "จะรักษาไหม" ไม่ใช่ขั้นตอน) (9) ศัพท์ใน CONTEXT.md ที่จะเปลี่ยน
 
 ## Progress (ตอบแล้วบางส่วน — ticket ยังเปิดอยู่)
 
@@ -59,7 +59,7 @@ blocked_by:
 8. **Module เจ้าของ**: Module **Notes** เป็นเจ้าของ Note ทั้งก้อน (ชื่อ เนื้อหา ลำดับชั้น ถังขยะ) Module Organization เหลือ **Category อย่างเดียว** — ต้องบันทึกเป็น ADR (กระทบ ADR-0001 ถึง 0003 และตาราง Module ใน ARCHITECTURE.md)
 9. **ข้อมูลเดิม**: ลบทิ้งได้ ไม่ต้อง migrate ฝาก: หลัง build เสร็จให้เพิ่มข้อมูลตัวอย่างให้เจ้าของโปรเจกต์เห็นภาพ (เป็นงาน implementation เปิด ticket ตอน build ไม่ใช่ที่นี่)
 
-### รายการศัพท์ GLOSSARY ที่ต้องเปลี่ยน (ยังไม่แก้ไฟล์ — ทำในขั้นเอกสารปิดท้าย)
+### รายการศัพท์ CONTEXT.md ที่ต้องเปลี่ยน (ยังไม่แก้ไฟล์ — ทำในขั้นเอกสารปิดท้าย)
 
 - **Note**: เขียนใหม่ — มีชื่อ, เนื้อหา, แม่/ลูก (ลึกไม่จำกัด), Category; ตัดข้อความเรื่อง "ไม่มี Title แยก", "Note อยู่ได้โดยไม่มี Topic", unique 1 Note ต่อ Topic, ถังขยะของ Note ตัวเดียว
 - **Topic**: ลบ entry (รวมกฎชื่อพี่น้อง unique และกฎลบ Topic ที่มีลูก ซึ่งถูกแทนที่ด้วยข้อ 3–4)

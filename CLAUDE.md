@@ -13,7 +13,8 @@
 
 ก่อนเริ่มทำงานใน repo นี้ ให้อ่าน:
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — แผนผัง Module, กลยุทธ์ข้อมูล, flow ของ AI categorization, frontend stack, deployment
-- **[GLOSSARY.md](GLOSSARY.md)** — คำศัพท์เฉพาะของ domain (Note, Topic, Category, Suggestion, Module, Read Model, ...) ใช้คำเหล่านี้ตามที่กำหนด ห้ามคิดคำพ้องความหมายขึ้นเอง
+- **[CONTEXT.md](CONTEXT.md)** — คำศัพท์เฉพาะของ domain (Note, Category, Description, Note Suggestion, Share Link, Attachment, Module, Read Model, ...) ใช้คำเหล่านี้ตามที่กำหนด ห้ามคิดคำพ้องความหมายขึ้นเอง (นิยามเป็นของรุ่น v2 — โค้ดปัจจุบันบางส่วนยังใช้ชื่อเดิม เช่น Topic จนกว่าจะ implement ดูหัวเอกสาร)
+- **[requirements-v2.md](requirements-v2.md)** — ความต้องการของรุ่น v2 ที่ตัดสินใจครบแล้ว (ที่มา: `docs/wayfinder/map-v2.md`)
 - **[docs/adr/](docs/adr/)** — เหตุผลเบื้องหลังการตัดสินใจเชิงสถาปัตยกรรมแต่ละอย่าง อ่าน ADR ที่เกี่ยวข้องก่อนแก้ไขส่วนนั้น
 
 ## Tech Stack
@@ -24,7 +25,7 @@
 ## โครงสร้าง Repo
 
 - `client/` — React + TypeScript + Vite SPA
-- `backend/` — ASP.NET Core modular monolith, global 3-tier (`Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai`) ตาม ADR-0010 แต่ละ Module (Notes, Organization, Nerd Assistant, Search, Identity) อยู่ภายใน 3 project นี้ในฐานะ feature ภายใน ไม่ใช่ project แยก
+- `backend/` — ASP.NET Core modular monolith, global 3-tier (`Jotwai.Domain`, `Jotwai.Service`, `Web.Jotwai`) ตาม ADR-0010 แต่ละ Module (Notes, Organization, Nerd Assistant, Search, Identity, Logging) อยู่ภายใน 3 project นี้ในฐานะ feature ภายใน ไม่ใช่ project แยก
 - `docs/adr/` — architecture decision records
 
 ## การสื่อสารกับผู้ใช้
@@ -37,7 +38,7 @@
 
 - Module ใน `backend/` สื่อสารกันผ่าน in-process Domain Events เท่านั้น โดยเป็น convention — ห้ามเรียกกันโดยตรงหรือ query ข้าม schema ระหว่าง module (ดู ADR 0001–0003, ADR-0010) แต่ละ Module ยังคงมี `DbContext` ของตัวเองที่ผูกกับ schema ของตัวเองภายใน `Jotwai.Service` แม้ project จะถูกแบ่งแบบ global ก็ตาม
 - เนื้อหา Note เป็น Markdown; editor (Tiptap) เป็นเพียง view ของข้อมูลนั้น ไม่ใช่ source of truth
-- ห้ามเพิ่ม real-time/push infrastructure, semantic search, การแชร์โน้ต หรือ version history โดยไม่ปรึกษาผู้ใช้ก่อน — สิ่งเหล่านี้เป็น non-goal ที่ระบุไว้ชัดเจนสำหรับ scope ปัจจุบัน (ดู ARCHITECTURE.md)
+- ห้ามเพิ่ม real-time/push infrastructure, semantic search, การทำงานร่วมกันของ Note (collaboration) หรือ version history โดยไม่ปรึกษาผู้ใช้ก่อน — สิ่งเหล่านี้เป็น non-goal ที่ระบุไว้ชัดเจนสำหรับ scope ปัจจุบัน (ดู ARCHITECTURE.md) ส่วนการแชร์ Note แบบอ่านอย่างเดียวผ่านลิงก์และการแนบไฟล์/รูป **อยู่ใน scope ของ v2 แล้ว** (ADR-0015, ADR-0018)
 - ห้ามรัน `git commit` เองโดยไม่ได้รับอนุญาตชัดเจน แม้ skill/workflow (เช่น `/implement`) จะบอกให้ commit เป็นหนึ่งในขั้นตอนก็ตาม ให้ implement, verify (build, tests) แล้วหยุดรอผู้ใช้รีวิวก่อนเสมอ — commit ให้ได้ต่อเมื่อผู้ใช้บอกชัดเจนหลังรีวิวแล้วว่าอนุญาตให้ commit (เช่น "รีวิวแล้ว commit ได้เลย") เท่านั้น ห้ามสมมติเอาเองว่าได้รับอนุญาตแล้วจากบริบทอื่น
 
 ## Security Rules
@@ -70,7 +71,7 @@ Issue อยู่ใน GitHub Issues ของ ghost08A/Jotwai โดยใช
 
 ### Domain docs
 
-โครงสร้างแบบ single-context: ARCHITECTURE.md, GLOSSARY.md และ docs/adr/ อยู่ที่ root ของ repo ดู `docs/agents/domain.md`
+โครงสร้างแบบ single-context: ARCHITECTURE.md, CONTEXT.md และ docs/adr/ อยู่ที่ root ของ repo ดู `docs/agents/domain.md`
 
 ### Backend tickets
 
