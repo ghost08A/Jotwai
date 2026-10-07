@@ -177,6 +177,108 @@ public sealed class GeminiAiProvider(HttpClient httpClient, IOptions<GeminiOptio
         public double Confidence { get; init; }
     }
 
+    public async Task<AiNoteSuggestion?> AnalyzeNoteAsync(
+        string newNoteName, string newNoteContent, IReadOnlyList<AiNoteCandidate> existingNotes, CancellationToken cancellationToken = default)
+    {
+        if (existingNotes.Count == 0)
+            return null;
+
+        var gemini = options.Value;
+        var prompt = BuildNotePrompt(newNoteName, newNoteContent, existingNotes);
+
+        var requestBody = new GeminiRequest
+        {
+            Contents = [new GeminiContent { Parts = [new GeminiPart { Text = prompt }] }],
+            GenerationConfig = new GeminiGenerationConfig
+            {
+                ResponseMimeType = "application/json",
+                ResponseSchema = NoteResponseSchema,
+            },
+        };
+
+        using var response = await httpClient.PostAsJsonAsync(
+            $"v1beta/models/{gemini.Model}:generateContent?key={gemini.ApiKey}", requestBody, JsonOptions, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            logger.LogWarning("Gemini request failed with {StatusCode}: {Body}", response.StatusCode, body);
+            throw new InvalidOperationException($"Gemini request failed with status {response.StatusCode}.");
+        }
+
+        var payload = await response.Content.ReadFromJsonAsync<GeminiResponse>(JsonOptions, cancellationToken);
+        var text = payload?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            logger.LogWarning("Gemini response had no content candidates for Note Suggestion.");
+            return null;
+        }
+
+        var result = JsonSerializer.Deserialize<GeminiNoteSuggestion>(text, JsonOptions);
+        if (result is null || !string.Equals(result.Kind, "placement", StringComparison.OrdinalIgnoreCase) || result.NoteId is null)
+            return null;
+
+        // Only an id we actually offered counts - never trust the model to invent one.
+        if (!Guid.TryParse(result.NoteId, out var matchedNoteId) || existingNotes.All(n => n.NoteId != matchedNoteId))
+            return null;
+
+        return new AiNoteSuggestion(NoteSuggestionKind.Placement, matchedNoteId, Math.Clamp(result.Confidence, 0, 1));
+    }
+
+    private static string BuildNotePrompt(string newNoteName, string newNoteContent, IReadOnlyList<AiNoteCandidate> existingNotes)
+    {
+        var existing = string.Join("\n", existingNotes.Select(n => $"- {n.NoteId}: {n.Name}"));
+        var contentSection = string.IsNullOrWhiteSpace(newNoteContent)
+            ? "(no content written yet)"
+            : newNoteContent;
+
+        return $"""
+            You are organizing a personal note-taking app where Notes can contain child Notes. A new
+            top-level Note was just created. Decide if it should be:
+            - "placement": it reads like it belongs inside (as a child of) one of the existing
+              Notes below.
+            - "none": it stands on its own.
+
+            Prefer "none" unless you are quite confident.
+
+            New Note name: {newNoteName}
+
+            Content written so far in the new Note (may be empty):
+            {contentSection}
+
+            Existing Notes (id: name):
+            {existing}
+
+            Respond with the matching existing Note's id when kind is "placement", and a
+            confidence between 0 and 1. When kind is "none", noteId can be null and confidence
+            should be 0.
+            """;
+    }
+
+    private static readonly GeminiSchema NoteResponseSchema = new()
+    {
+        Type = "OBJECT",
+        Properties = new Dictionary<string, GeminiSchema>
+        {
+            ["kind"] = new() { Type = "STRING" },
+            ["noteId"] = new() { Type = "STRING" },
+            ["confidence"] = new() { Type = "NUMBER" },
+        },
+        Required = ["kind", "confidence"],
+    };
+
+    private sealed class GeminiNoteSuggestion
+    {
+        [JsonPropertyName("kind")]
+        public string Kind { get; init; } = "none";
+
+        [JsonPropertyName("noteId")]
+        public string? NoteId { get; init; }
+
+        [JsonPropertyName("confidence")]
+        public double Confidence { get; init; }
+    }
+
     public async Task<string> PolishNoteContentAsync(string content, CancellationToken cancellationToken = default)
     {
         var gemini = options.Value;

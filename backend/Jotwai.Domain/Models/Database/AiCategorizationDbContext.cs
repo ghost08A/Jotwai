@@ -13,6 +13,9 @@ public sealed class AiCategorizationDbContext(DbContextOptions<AiCategorizationD
     public DbSet<TopicProjection> TopicProjections => Set<TopicProjection>();
     public DbSet<TopicSuggestion> TopicSuggestions => Set<TopicSuggestion>();
     public DbSet<TopicSuggestionOutboxEntry> TopicSuggestionOutboxEntries => Set<TopicSuggestionOutboxEntry>();
+    public DbSet<NoteProjection> NoteProjections => Set<NoteProjection>();
+    public DbSet<NoteSuggestion> NoteSuggestions => Set<NoteSuggestion>();
+    public DbSet<NoteSuggestionOutboxEntry> NoteSuggestionOutboxEntries => Set<NoteSuggestionOutboxEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,5 +32,8 @@ public sealed class AiCategorizationDbContext(DbContextOptions<AiCategorizationD
         modelBuilder.ApplyConfiguration(new Configurations.TopicProjectionConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.TopicSuggestionConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.TopicSuggestionOutboxEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.NoteProjectionConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.NoteSuggestionConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.NoteSuggestionOutboxEntryConfiguration());
     }
 }

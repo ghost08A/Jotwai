@@ -74,6 +74,22 @@ public static class AiCategorizationServiceRegistration
         // ITopicSuggestionsService/TopicSuggestionsService wired by RegisterAutoServices
         // (Web.Jotwai/Program.cs).
 
+        // Nerd Assistant subscribing to the Notes Module's Note lifecycle, to keep its own
+        // NoteProjection read model in sync (ADR-0003) - see NoteProjectionHandler.
+        services.AddScoped<IEventHandler<NoteCreated>, NoteProjectionHandler>();
+        services.AddScoped<IEventHandler<NoteRenamed>, NoteProjectionHandler>();
+        services.AddScoped<IEventHandler<NoteParentChanged>, NoteProjectionHandler>();
+        services.AddScoped<IEventHandler<NoteDeleted>, NoteProjectionHandler>();
+        services.AddScoped<IEventHandler<NoteRestored>, NoteProjectionHandler>();
+
+        // Note Suggestion (Spec 1, ticket 4/7): writes its own outbox row when a top-level Note is
+        // created, then NoteSuggestionOutboxWorker analyzes it in the background.
+        services.AddScoped<IEventHandler<NoteCreated>, NoteSuggestionOutboxWriterHandler>();
+        services.AddHostedService<NoteSuggestionOutboxWorker>();
+
+        // INoteSuggestionsService/NoteSuggestionsService wired by RegisterAutoServices
+        // (Web.Jotwai/Program.cs).
+
         return services;
     }
 }

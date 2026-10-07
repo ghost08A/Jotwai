@@ -52,6 +52,25 @@ public sealed class FakeAiProvider : IAiProvider
         return Task.FromResult<AiTopicSuggestion?>(null);
     }
 
+    // Deterministic stand-in for Note Suggestion (Spec 1, ticket 4/7): a name of the form
+    // "Sub of <existing note name>" is a Placement (0.9, above the threshold); "Maybe sub of
+    // <name>" is a weak one (0.5, below it); anything else is "none" (null).
+    public Task<AiNoteSuggestion?> AnalyzeNoteAsync(
+        string newNoteName, string newNoteContent, IReadOnlyList<AiNoteCandidate> existingNotes, CancellationToken cancellationToken = default)
+    {
+        AiNoteSuggestion? Match(string prefix, double confidence)
+        {
+            if (!newNoteName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var parentName = newNoteName[prefix.Length..];
+            var parent = existingNotes.FirstOrDefault(n => string.Equals(n.Name, parentName, StringComparison.OrdinalIgnoreCase));
+            return parent is null ? null : new AiNoteSuggestion(NoteSuggestionKind.Placement, parent.NoteId, confidence);
+        }
+
+        return Task.FromResult(Match("Sub of ", 0.9) ?? Match("Maybe sub of ", 0.5));
+    }
+
     private static Guid? TryFindPlacement(string text, string placementPrefix, IReadOnlyList<AiTopicCandidate> existingTopics)
     {
         if (!text.StartsWith(placementPrefix, StringComparison.OrdinalIgnoreCase))
