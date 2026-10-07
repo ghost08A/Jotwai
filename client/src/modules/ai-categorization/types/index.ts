@@ -36,3 +36,15 @@ export interface PolishContentRequest {
 export interface PolishContentResponse {
     content: string;
 }
+
+export type NoteSuggestionKind = "Placement";
+
+export interface NoteSuggestionResponse {
+    id: string;
+    noteId: string;
+    kind: NoteSuggestionKind;
+    targetNoteId: string;
+    targetNoteName: string;
+    confidence: number;
+    createdAt: string;
+}

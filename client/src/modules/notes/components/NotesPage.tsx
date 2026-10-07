@@ -4,6 +4,7 @@ import { CreateNoteForm } from "./CreateNoteForm";
 import { NoteFilters } from "./NoteFilters";
 import { NoteTreeItem } from "./NoteTreeItem";
 import { useNotes } from "../hooks/useNotes";
+import { useNotesWithSuggestions } from "../../ai-categorization/hooks/useNotesWithSuggestions";
 import { useSearch } from "../../search/hooks/useSearch";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { flattenNoteTree, listMoveTargets } from "../utils/flattenNoteTree";
@@ -20,6 +21,7 @@ export function NotesPage() {
   const treeRows = flattenNoteTree(notes.data ?? []);
   const isFiltering = debouncedQuery.trim() !== "" || parentFilterId !== "" || selectedCategoryIds.length > 0;
   const search = useSearch(debouncedQuery, selectedCategoryIds, parentFilterId || undefined);
+  const notesWithSuggestions = new Set(useNotesWithSuggestions().data ?? []);
 
   function toggleCategory(categoryId: string) {
     setSelectedCategoryIds((previous) =>
@@ -43,7 +45,7 @@ export function NotesPage() {
     <div className="w-full space-y-3 px-6 py-6 md:px-12 lg:px-24">
       <h1 className="text-xl font-semibold text-foreground">Notes</h1>
 
-      <CreateNoteForm submitLabel="New note" />
+      <CreateNoteForm />
 
       <NoteFilters
         query={query}
@@ -70,7 +72,12 @@ export function NotesPage() {
 
       {!isLoading &&
         rows.map((row) => (
-          <NoteTreeItem key={row.note.id} row={row} moveTargets={listMoveTargets(treeRows, row.note.id)} />
+          <NoteTreeItem
+            key={row.note.id}
+            row={row}
+            moveTargets={listMoveTargets(treeRows, row.note.id)}
+            hasSuggestion={notesWithSuggestions.has(row.note.id)}
+          />
         ))}
     </div>
   );

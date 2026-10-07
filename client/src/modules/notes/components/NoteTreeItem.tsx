@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { useDeleteNote } from "../hooks/useDeleteNote";
 import { useMoveNote } from "../hooks/useMoveNote";
-import { CreateNoteForm } from "./CreateNoteForm";
 import { DuplicateNameWarning } from "./DuplicateNameWarning";
 import { NoteCategoryChips } from "./NoteCategoryChips";
 import { NoteEditForm } from "./NoteEditForm";
 import { NoteAiSuggestionPanel } from "../../ai-categorization/components/NoteAiSuggestionPanel";
+import { NoteSuggestionPanel } from "../../ai-categorization/components/NoteSuggestionPanel";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import type { NoteTreeRow } from "../utils/flattenNoteTree";
 
@@ -16,12 +16,12 @@ const INDENT_CLASSES = ["pl-0", "pl-6", "pl-12", "pl-18", "pl-24"];
 interface NoteTreeItemProps {
   row: NoteTreeRow;
   moveTargets: NoteTreeRow[];
+  hasSuggestion: boolean;
 }
 
-export function NoteTreeItem({ row, moveTargets }: NoteTreeItemProps) {
+export function NoteTreeItem({ row, moveTargets, hasSuggestion }: NoteTreeItemProps) {
   const { note, depth } = row;
   const [isEditing, setIsEditing] = useState(false);
-  const [isAddingChild, setIsAddingChild] = useState(false);
   // Note: UI-only; set when the last rename/move produced a duplicate-name warning.
   const [duplicateName, setDuplicateName] = useState<string>();
   const deleteNote = useDeleteNote();
@@ -53,6 +53,7 @@ export function NoteTreeItem({ row, moveTargets }: NoteTreeItemProps) {
             <p className="mb-3 line-clamp-2 whitespace-pre-line text-base text-muted-foreground">
               {note.content || "Empty note"}
             </p>
+            {hasSuggestion && <NoteSuggestionPanel noteId={note.id} />}
             <NoteCategoryChips noteId={note.id} categoryIds={note.categoryIds} />
             <NoteAiSuggestionPanel noteId={note.id} />
           </>
@@ -87,9 +88,6 @@ export function NoteTreeItem({ row, moveTargets }: NoteTreeItemProps) {
               <Button type="button" variant="outline" onClick={() => setIsEditing(true)}>
                 Edit
               </Button>
-              <Button type="button" variant="outline" onClick={() => setIsAddingChild((isAdding) => !isAdding)}>
-                Add sub-note
-              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -99,12 +97,6 @@ export function NoteTreeItem({ row, moveTargets }: NoteTreeItemProps) {
                 {deleteNote.isPending ? "Deleting…" : "Delete"}
               </Button>
             </div>
-          </div>
-        )}
-
-        {isAddingChild && (
-          <div className="mt-3">
-            <CreateNoteForm parentId={note.id} submitLabel="Add" onCreated={() => setIsAddingChild(false)} />
           </div>
         )}
       </div>
