@@ -9,6 +9,15 @@ public sealed class SearchDocument
 {
     public required Guid NoteId { get; init; }
     public required Guid UserId { get; init; }
+    /// <summary>Copy of the Note's own name (CONTEXT.md "Search" - Note name is searchable), kept in
+    /// sync via <see cref="Events.NoteRenamed"/>. Empty for Notes created by the old Topic flow.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Plain value mirroring the Note's parent Note (null = top level), kept in sync via
+    /// <see cref="Events.NoteParentChanged"/> - lets Search filter by parent, counting every
+    /// level of children, without querying the `notes` schema (ADR-0003).</summary>
+    public Guid? ParentId { get; set; }
+
     public required string Content { get; set; }
 
     /// <summary>Plain value mirroring the Note's current Topic assignment - no cross-schema

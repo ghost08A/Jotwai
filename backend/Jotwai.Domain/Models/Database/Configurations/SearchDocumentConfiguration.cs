@@ -21,6 +21,10 @@ public sealed class SearchDocumentConfiguration : IEntityTypeConfiguration<Searc
 
         builder.HasIndex(d => d.TopicId);
 
+        builder.Property(d => d.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
         builder.Property(d => d.Content)
             .IsRequired();
 

@@ -14,6 +14,8 @@ namespace Jotwai.Service.EventHandlers;
 public sealed class SearchNoteProjectionHandler(SearchDbContext db) :
     IEventHandler<NoteCreated>,
     IEventHandler<NoteUpdated>,
+    IEventHandler<NoteRenamed>,
+    IEventHandler<NoteParentChanged>,
     IEventHandler<NoteDeleted>,
     IEventHandler<NoteRestored>,
     IEventHandler<NoteTopicAssigned>,
@@ -30,6 +32,8 @@ public sealed class SearchNoteProjectionHandler(SearchDbContext db) :
         {
             NoteId = domainEvent.NoteId,
             UserId = domainEvent.UserId,
+            Name = domainEvent.Name,
+            ParentId = domainEvent.ParentId,
             Content = domainEvent.Content,
             CreatedAt = domainEvent.CreatedAt,
             UpdatedAt = domainEvent.CreatedAt,
@@ -43,6 +47,24 @@ public sealed class SearchNoteProjectionHandler(SearchDbContext db) :
             .Where(d => d.NoteId == domainEvent.NoteId)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(d => d.Content, domainEvent.Content)
+                .SetProperty(d => d.UpdatedAt, domainEvent.UpdatedAt), cancellationToken);
+    }
+
+    public async Task HandleAsync(NoteRenamed domainEvent, CancellationToken cancellationToken = default)
+    {
+        await db.SearchDocuments
+            .Where(d => d.NoteId == domainEvent.NoteId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(d => d.Name, domainEvent.Name)
+                .SetProperty(d => d.UpdatedAt, domainEvent.UpdatedAt), cancellationToken);
+    }
+
+    public async Task HandleAsync(NoteParentChanged domainEvent, CancellationToken cancellationToken = default)
+    {
+        await db.SearchDocuments
+            .Where(d => d.NoteId == domainEvent.NoteId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(d => d.ParentId, domainEvent.NewParentId)
                 .SetProperty(d => d.UpdatedAt, domainEvent.UpdatedAt), cancellationToken);
     }
 

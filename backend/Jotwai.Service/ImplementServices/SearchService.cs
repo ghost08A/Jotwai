@@ -8,7 +8,7 @@ namespace Jotwai.Service.ImplementServices;
 
 public sealed class SearchService(SearchDbContext db) : ISearchService
 {
-    public async Task<IReadOnlyList<SearchResultResponse>> SearchAsync(Guid userId, string? query, Guid? topicId, IReadOnlyList<Guid>? categoryIds, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SearchResultResponse>> SearchAsync(Guid userId, string? query, Guid? topicId, Guid? parentId, IReadOnlyList<Guid>? categoryIds, CancellationToken cancellationToken = default)
     {
         var documents = db.SearchDocuments.AsNoTracking()
             .Where(d => d.UserId == userId && d.DeletedAt == null);
@@ -17,6 +17,12 @@ public sealed class SearchService(SearchDbContext db) : ISearchService
         {
             var topicIds = await DescendantTopicIdsAsync(userId, filterTopicId, cancellationToken);
             documents = documents.Where(d => d.TopicId != null && topicIds.Contains(d.TopicId.Value));
+        }
+
+        if (parentId is { } filterParentId)
+        {
+            var noteIds = await SubtreeNoteIdsAsync(userId, filterParentId, cancellationToken);
+            documents = documents.Where(d => noteIds.Contains(d.NoteId));
         }
 
         if (categoryIds is { Count: > 0 } requiredCategoryIds)
@@ -50,6 +56,7 @@ public sealed class SearchService(SearchDbContext db) : ISearchService
                 .ToListAsync(cancellationToken);
 
             documents = documents.Where(d =>
+                EF.Functions.ILike(d.Name, pattern, "\\") ||
                 EF.Functions.ILike(d.Content, pattern, "\\") ||
                 (d.TopicName != null && EF.Functions.ILike(d.TopicName, pattern, "\\")) ||
                 matchingNoteIds.Contains(d.NoteId));
@@ -60,6 +67,23 @@ public sealed class SearchService(SearchDbContext db) : ISearchService
             .ToListAsync(cancellationToken);
 
         return await ToResponsesAsync(results, cancellationToken);
+    }
+
+    // The Note itself plus all its descendants, walked over the Search read model's own
+    // (NoteId, ParentId) pairs - no join into the notes schema (ADR-0003). Trashed Notes are
+    // left out of the walk, so a trashed Note takes its whole subtree out of the filter.
+    private async Task<HashSet<Guid>> SubtreeNoteIdsAsync(Guid userId, Guid rootNoteId, CancellationToken cancellationToken)
+    {
+        var links = await db.SearchDocuments.AsNoTracking()
+            .Where(d => d.UserId == userId && d.DeletedAt == null && d.ParentId != null)
+            .Select(d => new { d.NoteId, ParentId = d.ParentId!.Value })
+            .ToListAsync(cancellationToken);
+        var childrenOf = links.ToLookup(l => l.ParentId, l => l.NoteId);
+
+        var ids = new List<Guid> { rootNoteId };
+        for (var i = 0; i < ids.Count; i++)
+            ids.AddRange(childrenOf[ids[i]]);
+        return ids.ToHashSet();
     }
 
     private async Task<HashSet<Guid>> DescendantTopicIdsAsync(Guid userId, Guid rootTopicId, CancellationToken cancellationToken)
@@ -105,6 +129,8 @@ public sealed class SearchService(SearchDbContext db) : ISearchService
         return documents.Select(d => new SearchResultResponse
         {
             Id = d.NoteId,
+            Name = d.Name,
+            ParentId = d.ParentId,
             Content = d.Content,
             TopicId = d.TopicId,
             CategoryIds = categoriesByNoteId.GetValueOrDefault(d.NoteId, []),

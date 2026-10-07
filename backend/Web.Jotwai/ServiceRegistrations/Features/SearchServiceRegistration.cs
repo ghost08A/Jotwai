@@ -29,6 +29,8 @@ public static class SearchServiceRegistration
         // SearchDocument read model in sync (ADR-0003) - see SearchNoteProjectionHandler.
         services.AddScoped<IEventHandler<NoteCreated>, SearchNoteProjectionHandler>();
         services.AddScoped<IEventHandler<NoteUpdated>, SearchNoteProjectionHandler>();
+        services.AddScoped<IEventHandler<NoteRenamed>, SearchNoteProjectionHandler>();
+        services.AddScoped<IEventHandler<NoteParentChanged>, SearchNoteProjectionHandler>();
         services.AddScoped<IEventHandler<NoteDeleted>, SearchNoteProjectionHandler>();
         services.AddScoped<IEventHandler<NoteRestored>, SearchNoteProjectionHandler>();
         services.AddScoped<IEventHandler<NoteTopicAssigned>, SearchNoteProjectionHandler>();

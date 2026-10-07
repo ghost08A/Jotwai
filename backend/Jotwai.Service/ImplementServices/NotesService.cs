@@ -50,7 +50,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         db.Notes.Add(note);
         await db.SaveChangesAsync(cancellationToken);
 
-        await eventPublisher.PublishAsync(new NoteCreated(note.Id, note.UserId, note.Content, note.CreatedAt), cancellationToken);
+        await eventPublisher.PublishAsync(new NoteCreated(note.Id, note.UserId, note.Name, note.ParentId, note.Content, note.CreatedAt), cancellationToken);
         if (hasContent)
             await eventPublisher.PublishAsync(new NoteReadyForCategorization(note.Id, note.UserId, note.Content, now), cancellationToken);
 
@@ -72,6 +72,8 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         note.Name = name;
         note.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+
+        await eventPublisher.PublishAsync(new NoteRenamed(note.Id, note.UserId, note.Name, note.UpdatedAt), cancellationToken);
 
         var categoryIds = await CategoryIdsForAsync(noteId, cancellationToken);
         return NoteWriteResult.Success(ToResponse(note, categoryIds, await HasDuplicateSiblingNameAsync(note, cancellationToken)));
@@ -100,13 +102,19 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
                 return NoteWriteResult.Failure(NoteWriteFailureReason.CircularMove);
         }
 
-        if (note.ParentId != request.ParentId)
+        var oldParentId = note.ParentId;
+        var hasMoved = oldParentId != request.ParentId;
+        if (hasMoved)
         {
             note.ParentId = request.ParentId;
             note.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
         }
         await transaction.CommitAsync(cancellationToken);
+
+        // Search filters by parent, so it needs to hear about the move (ticket 3/7).
+        if (hasMoved)
+            await eventPublisher.PublishAsync(new NoteParentChanged(note.Id, note.UserId, oldParentId, note.ParentId, note.UpdatedAt), cancellationToken);
 
         var categoryIds = await CategoryIdsForAsync(noteId, cancellationToken);
         return NoteWriteResult.Success(ToResponse(note, categoryIds, await HasDuplicateSiblingNameAsync(note, cancellationToken)));
@@ -319,7 +327,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         db.Notes.Add(created);
         await db.SaveChangesAsync(cancellationToken);
 
-        await eventPublisher.PublishAsync(new NoteCreated(created.Id, created.UserId, created.Content, created.CreatedAt), cancellationToken);
+        await eventPublisher.PublishAsync(new NoteCreated(created.Id, created.UserId, created.Name, created.ParentId, created.Content, created.CreatedAt), cancellationToken);
         // The Note is filed under the Topic from birth, not via a separate AssignTopicAsync
         // call - still publish NoteTopicAssigned so OrganizationNoteCountProjectionHandler's
         // Topic.NoteCount stays correct without needing to know about this new creation path.

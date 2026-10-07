@@ -60,6 +60,14 @@ namespace Jotwai.Domain.Models.Database.Migrations.Search
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("TopicId")
                         .HasColumnType("uuid");
 
