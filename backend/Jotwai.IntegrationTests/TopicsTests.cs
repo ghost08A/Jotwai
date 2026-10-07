@@ -152,7 +152,7 @@ public sealed class TopicsTests : IClassFixture<JotwaiApiFactory>
         Assert.Null(trashedNote.TopicId);
 
         var restoreResponse = await client.PostAsync($"/api/notes/{note.Id}/restore", null);
-        Assert.Equal(HttpStatusCode.NoContent, restoreResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, restoreResponse.StatusCode);
         var restored = await client.GetFromJsonAsync<NoteResponse>($"/api/notes/{note.Id}");
         Assert.Null(restored!.TopicId);
     }

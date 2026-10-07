@@ -37,11 +37,16 @@ public interface INotesService
     /// if the Topic doesn't exist.</summary>
     Task<UpsertTopicNoteResult> UpsertByTopicAsync(Guid userId, Guid topicId, UpdateNoteRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Soft-deletes the Note into the Trash. Returns false if not found/owned or already deleted.</summary>
+    /// <summary>Soft-deletes the Note and all its descendants into the Trash as one batch.
+    /// Returns false if not found/owned or already deleted.</summary>
     Task<bool> DeleteAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default);
 
-    /// <summary>Restores a Note out of the Trash. Returns false if not found/owned or not deleted.</summary>
-    Task<bool> RestoreAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default);
+    /// <summary>Restores a Note, and everything trashed in the same delete action, out of the
+    /// Trash. Fails with <see cref="NoteWriteFailureReason.NotFound"/> if not found/owned or not
+    /// deleted, or <see cref="NoteWriteFailureReason.ParentInTrash"/> if its parent is still in
+    /// the Trash. A duplicate sibling name is not a failure - see
+    /// <see cref="NoteResponse.HasDuplicateSiblingName"/>.</summary>
+    Task<NoteWriteResult> RestoreAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default);
 
     /// <summary>Moves the Note into a Topic, or clears it when <paramref name="topicId"/> is null.
     /// The Topic must already exist (ticket 036) - this never creates one.</summary>

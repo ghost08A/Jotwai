@@ -7,6 +7,7 @@ public enum NoteWriteFailureReason
     NotFound,
     ParentNotFound,
     InvalidName,
+    ParentInTrash,
 }
 
 public sealed class NoteWriteResult

@@ -1,3 +1,4 @@
+using System.Data;
 using Jotwai.Domain.Events;
 using Jotwai.Domain.Interfaces;
 using Jotwai.Domain.Models;
@@ -53,7 +54,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         if (hasContent)
             await eventPublisher.PublishAsync(new NoteReadyForCategorization(note.Id, note.UserId, note.Content, now), cancellationToken);
 
-        return NoteWriteResult.Success(ToResponse(note, []));
+        return NoteWriteResult.Success(ToResponse(note, [], await HasDuplicateSiblingNameAsync(note, cancellationToken)));
     }
 
     public async Task<NoteWriteResult> RenameAsync(Guid userId, Guid noteId, RenameNoteRequest request, CancellationToken cancellationToken = default)
@@ -73,7 +74,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         await db.SaveChangesAsync(cancellationToken);
 
         var categoryIds = await CategoryIdsForAsync(noteId, cancellationToken);
-        return NoteWriteResult.Success(ToResponse(note, categoryIds));
+        return NoteWriteResult.Success(ToResponse(note, categoryIds, await HasDuplicateSiblingNameAsync(note, cancellationToken)));
     }
 
     public async Task<NoteResponse?> GetByIdAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default)
@@ -100,7 +101,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
     public async Task<IReadOnlyList<NoteResponse>> ListTrashAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var notes = await db.Notes.AsNoTracking()
-            .Where(n => n.UserId == userId && n.DeletedAt != null)
+            .Where(n => n.UserId == userId && n.DeletedAt != null && (n.DeletionBatchId == null || n.DeletionBatchId == n.Id))
             .OrderByDescending(n => n.DeletedAt)
             .ToListAsync(cancellationToken);
 
@@ -150,42 +151,83 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
 
     public async Task<bool> DeleteAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default)
     {
-        var note = await db.Notes.SingleOrDefaultAsync(n => n.Id == noteId && n.UserId == userId && n.DeletedAt == null, cancellationToken);
-        if (note is null)
+        // Serializable: the subtree we read and the rows we trash must be one consistent snapshot, so
+        // a child created or moved meanwhile can't be left active under a trashed parent. On a clash
+        // the database aborts one side and the caller sees a failed request to retry.
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
+        var exists = await db.Notes.AnyAsync(n => n.Id == noteId && n.UserId == userId && n.DeletedAt == null, cancellationToken);
+        if (!exists)
             return false;
 
-        note.DeletedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(cancellationToken);
+        // The Note and every active descendant go to the Trash together, stamped with the
+        // deleted Note's Id as the batch. Descendants already in the Trash keep their own
+        // batch, so restoring this one later won't pull them back.
+        var treeIds = await ActiveSubtreeIdsAsync(userId, noteId, cancellationToken);
+        var deletedAt = DateTimeOffset.UtcNow;
+        await db.Notes.Where(n => treeIds.Contains(n.Id) && n.DeletedAt == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(n => n.DeletedAt, deletedAt)
+                .SetProperty(n => n.DeletionBatchId, noteId), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
-        await eventPublisher.PublishAsync(new NoteDeleted(note.Id, note.UserId, note.DeletedAt.Value), cancellationToken);
+        foreach (var id in treeIds)
+            await eventPublisher.PublishAsync(new NoteDeleted(id, userId, deletedAt), cancellationToken);
 
         return true;
     }
 
-    public async Task<bool> RestoreAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default)
+    public async Task<NoteWriteResult> RestoreAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default)
     {
+        // Serializable for the same reason as DeleteAsync: the parent check and the batch we
+        // restore must agree with each other.
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
         var note = await db.Notes.SingleOrDefaultAsync(n => n.Id == noteId && n.UserId == userId && n.DeletedAt != null, cancellationToken);
         if (note is null)
-            return false;
+            return NoteWriteResult.Failure(NoteWriteFailureReason.NotFound);
 
-        // Restoring must always succeed rather than fail outright - if the Note's old Topic
-        // has since gained another active Note (only possible while this one sat in the
-        // Trash), come back unfiled instead of colliding with whoever's there now.
-        if (note.TopicId is { } topicId)
+        // A Note can't come back under a parent that's still in the Trash.
+        if (note.ParentId is { } parentId
+            && await db.Notes.AnyAsync(n => n.Id == parentId && n.UserId == userId && n.DeletedAt != null, cancellationToken))
+            return NoteWriteResult.Failure(NoteWriteFailureReason.ParentInTrash);
+
+        // Everything trashed by the same delete action comes back together. A Note trashed
+        // before DeletionBatchId existed has no batch and restores alone.
+        var batch = note.DeletionBatchId is { } batchId
+            ? await db.Notes.Where(n => n.UserId == userId && n.DeletionBatchId == batchId).ToListAsync(cancellationToken)
+            : [note];
+
+        var now = DateTimeOffset.UtcNow;
+        var unfiled = new List<(Guid NoteId, Guid OldTopicId)>();
+        foreach (var member in batch)
         {
-            var topicOccupied = await db.Notes.AnyAsync(
-                n => n.TopicId == topicId && n.DeletedAt == null && n.Id != noteId, cancellationToken);
-            if (topicOccupied)
-                note.TopicId = null;
+            // Restoring must always succeed rather than fail outright - if the Note's old Topic
+            // has since gained another active Note (only possible while this one sat in the
+            // Trash), come back unfiled instead of colliding with whoever's there now.
+            if (member.TopicId is { } topicId
+                && await db.Notes.AnyAsync(n => n.TopicId == topicId && n.DeletedAt == null && n.Id != member.Id, cancellationToken))
+            {
+                unfiled.Add((member.Id, topicId));
+                member.TopicId = null;
+            }
+
+            // UpdatedAt stays as it was: a restore isn't an edit, so the Note keeps its place in the list.
+            member.DeletedAt = null;
+            member.DeletionBatchId = null;
         }
 
-        note.DeletedAt = null;
-        note.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
-        await eventPublisher.PublishAsync(new NoteRestored(note.Id, note.UserId, note.UpdatedAt), cancellationToken);
+        foreach (var member in batch)
+            await eventPublisher.PublishAsync(new NoteRestored(member.Id, member.UserId, now), cancellationToken);
+        // Search keeps its own copy of the Topic, so tell it the Note was unfiled.
+        foreach (var (unfiledNoteId, oldTopicId) in unfiled)
+            await eventPublisher.PublishAsync(new NoteTopicAssigned(unfiledNoteId, userId, oldTopicId, null, now), cancellationToken);
 
-        return true;
+        var categoryIds = await CategoryIdsForAsync(noteId, cancellationToken);
+        return NoteWriteResult.Success(ToResponse(note, categoryIds, await HasDuplicateSiblingNameAsync(note, cancellationToken)));
     }
 
     public async Task<NoteResponse?> GetByTopicAsync(Guid userId, Guid topicId, CancellationToken cancellationToken = default)
@@ -350,6 +392,33 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         return notes.Select(n => ToResponse(n, categoriesByNoteId.GetValueOrDefault(n.Id, []))).ToList();
     }
 
+    // The Note itself plus every active descendant, found level by level from one flat read
+    // of the user's active (Id, ParentId) pairs - no recursive query needed.
+    private async Task<List<Guid>> ActiveSubtreeIdsAsync(Guid userId, Guid rootId, CancellationToken cancellationToken)
+    {
+        var links = await db.Notes.AsNoTracking()
+            .Where(n => n.UserId == userId && n.DeletedAt == null && n.ParentId != null)
+            .Select(n => new { n.Id, ParentId = n.ParentId!.Value })
+            .ToListAsync(cancellationToken);
+        var childrenOf = links.ToLookup(l => l.ParentId, l => l.Id);
+
+        var ids = new List<Guid> { rootId };
+        for (var i = 0; i < ids.Count; i++)
+            ids.AddRange(childrenOf[ids[i]]);
+        return ids;
+    }
+
+    // Another active Note under the same parent with the same name (ignoring case) - only ever
+    // a warning for the user, never a reason to refuse the write.
+    private Task<bool> HasDuplicateSiblingNameAsync(Note note, CancellationToken cancellationToken)
+    {
+        var name = note.Name.ToLower();
+        return db.Notes.AsNoTracking().AnyAsync(
+            n => n.UserId == note.UserId && n.DeletedAt == null && n.Id != note.Id
+                 && n.ParentId == note.ParentId && n.Name.ToLower() == name,
+            cancellationToken);
+    }
+
     // Trims the name; null means invalid (empty after trimming, or over the max length).
     private static string? NormalizeName(string? name)
     {
@@ -357,7 +426,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         return string.IsNullOrEmpty(trimmed) || trimmed.Length > MaxNameLength ? null : trimmed;
     }
 
-    private static NoteResponse ToResponse(Note note, IReadOnlyList<Guid> categoryIds) => new()
+    private static NoteResponse ToResponse(Note note, IReadOnlyList<Guid> categoryIds, bool hasDuplicateSiblingName = false) => new()
     {
         Id = note.Id,
         Name = note.Name,
@@ -368,5 +437,6 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         CreatedAt = note.CreatedAt,
         UpdatedAt = note.UpdatedAt,
         DeletedAt = note.DeletedAt,
+        HasDuplicateSiblingName = hasDuplicateSiblingName,
     };
 }

@@ -111,7 +111,7 @@ public sealed class NotesTests : IClassFixture<JotwaiApiFactory>
         await client.DeleteAsync($"/api/notes/{created!.Id}");
 
         var restoreResponse = await client.PostAsync($"/api/notes/{created.Id}/restore", null);
-        Assert.Equal(HttpStatusCode.NoContent, restoreResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, restoreResponse.StatusCode);
 
         var activeList = await client.GetFromJsonAsync<List<NoteResponse>>("/api/notes");
         Assert.Contains(activeList!, n => n.Id == created.Id && n.DeletedAt == null);
@@ -207,7 +207,7 @@ public sealed class NotesTests : IClassFixture<JotwaiApiFactory>
         await client.PutAsJsonAsync($"/api/notes/by-topic/{topic.Id}", new UpdateNoteRequest { Content = "new occupant" });
 
         var restoreResponse = await client.PostAsync($"/api/notes/{original.Id}/restore", null);
-        Assert.Equal(HttpStatusCode.NoContent, restoreResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, restoreResponse.StatusCode);
 
         var restored = await client.GetFromJsonAsync<NoteResponse>($"/api/notes/{original.Id}");
         Assert.Null(restored!.TopicId);
@@ -406,5 +406,198 @@ public sealed class NotesTests : IClassFixture<JotwaiApiFactory>
         var response = await _factory.CreateClient().PutAsJsonAsync($"/api/notes/{Guid.NewGuid()}/name", new RenameNoteRequest { Name = "x" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    // --- Whole-tree Trash (Spec 1, ticket 2/7) ---
+
+    private static Task<HttpResponseMessage> RestoreAsync(HttpClient client, Guid id) =>
+        client.PostAsync($"/api/notes/{id}/restore", null);
+
+    private static async Task<List<NoteResponse>> ActiveAsync(HttpClient client) =>
+        (await client.GetFromJsonAsync<List<NoteResponse>>("/api/notes"))!;
+
+    private static async Task<List<NoteResponse>> TrashAsync(HttpClient client) =>
+        (await client.GetFromJsonAsync<List<NoteResponse>>("/api/notes/trash"))!;
+
+    [Fact]
+    public async Task Deleting_a_note_sends_all_its_descendants_to_trash_too()
+    {
+        var client = await AuthenticatedClientAsync();
+        var root = await CreateNamedNoteAsync(client, "root");
+        var child = await CreateNamedNoteAsync(client, "child", root.Id);
+        var grandchild = await CreateNamedNoteAsync(client, "grandchild", child.Id);
+
+        var response = await client.DeleteAsync($"/api/notes/{root.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var active = await ActiveAsync(client);
+        Assert.DoesNotContain(active, n => n.Id == root.Id || n.Id == child.Id || n.Id == grandchild.Id);
+    }
+
+    [Fact]
+    public async Task Trash_lists_only_the_root_of_each_deletion()
+    {
+        var client = await AuthenticatedClientAsync();
+        var root = await CreateNamedNoteAsync(client, "root");
+        var child = await CreateNamedNoteAsync(client, "child", root.Id);
+        await client.DeleteAsync($"/api/notes/{root.Id}");
+
+        var trash = await TrashAsync(client);
+
+        Assert.Contains(trash, n => n.Id == root.Id);
+        Assert.DoesNotContain(trash, n => n.Id == child.Id);
+    }
+
+    [Fact]
+    public async Task Restoring_the_root_brings_the_whole_tree_back()
+    {
+        var client = await AuthenticatedClientAsync();
+        var root = await CreateNamedNoteAsync(client, "root");
+        var child = await CreateNamedNoteAsync(client, "child", root.Id);
+        var grandchild = await CreateNamedNoteAsync(client, "grandchild", child.Id);
+        await client.DeleteAsync($"/api/notes/{root.Id}");
+
+        var response = await RestoreAsync(client, root.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var active = await ActiveAsync(client);
+        Assert.Contains(active, n => n.Id == root.Id && n.DeletedAt == null);
+        Assert.Contains(active, n => n.Id == child.Id && n.ParentId == root.Id);
+        Assert.Contains(active, n => n.Id == grandchild.Id && n.ParentId == child.Id);
+        Assert.DoesNotContain(await TrashAsync(client), n => n.Id == root.Id);
+    }
+
+    [Fact]
+    public async Task Restoring_the_root_does_not_restore_a_child_deleted_on_its_own_earlier()
+    {
+        var client = await AuthenticatedClientAsync();
+        var root = await CreateNamedNoteAsync(client, "root");
+        var earlier = await CreateNamedNoteAsync(client, "deleted earlier", root.Id);
+        var sibling = await CreateNamedNoteAsync(client, "deleted with root", root.Id);
+        await client.DeleteAsync($"/api/notes/{earlier.Id}");
+        await client.DeleteAsync($"/api/notes/{root.Id}");
+
+        await RestoreAsync(client, root.Id);
+
+        var active = await ActiveAsync(client);
+        Assert.Contains(active, n => n.Id == sibling.Id);
+        Assert.DoesNotContain(active, n => n.Id == earlier.Id);
+        Assert.Contains(await TrashAsync(client), n => n.Id == earlier.Id);
+    }
+
+    [Fact]
+    public async Task Restoring_a_child_while_its_parent_is_still_in_trash_is_a_conflict()
+    {
+        var client = await AuthenticatedClientAsync();
+        var root = await CreateNamedNoteAsync(client, "root");
+        var child = await CreateNamedNoteAsync(client, "child", root.Id);
+        await client.DeleteAsync($"/api/notes/{child.Id}");
+        await client.DeleteAsync($"/api/notes/{root.Id}");
+
+        var response = await RestoreAsync(client, child.Id);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.DoesNotContain(await ActiveAsync(client), n => n.Id == child.Id);
+    }
+
+    [Fact]
+    public async Task Restoring_a_note_whose_name_matches_another_succeeds_with_a_duplicate_name_warning()
+    {
+        var client = await AuthenticatedClientAsync();
+        var original = await CreateNamedNoteAsync(client, "Shopping");
+        await client.DeleteAsync($"/api/notes/{original.Id}");
+        await CreateNamedNoteAsync(client, "shopping");
+
+        var response = await RestoreAsync(client, original.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var restored = await response.Content.ReadFromJsonAsync<NoteResponse>();
+        Assert.True(restored!.HasDuplicateSiblingName);
+        Assert.Contains(await ActiveAsync(client), n => n.Id == original.Id);
+    }
+
+    [Fact]
+    public async Task Create_and_rename_warn_about_a_duplicate_sibling_name_without_failing()
+    {
+        var client = await AuthenticatedClientAsync();
+        var parent = await CreateNamedNoteAsync(client, "parent");
+        await CreateNamedNoteAsync(client, "Ideas", parent.Id);
+
+        var duplicate = await CreateNamedNoteAsync(client, "IDEAS", parent.Id);
+        var other = await CreateNamedNoteAsync(client, "Other", parent.Id);
+        var renamed = await (await client.PutAsJsonAsync($"/api/notes/{other.Id}/name", new RenameNoteRequest { Name = "ideas" }))
+            .Content.ReadFromJsonAsync<NoteResponse>();
+        var elsewhere = await CreateNamedNoteAsync(client, "Ideas");
+
+        Assert.True(duplicate.HasDuplicateSiblingName);
+        Assert.True(renamed!.HasDuplicateSiblingName);
+        Assert.False(elsewhere.HasDuplicateSiblingName);
+    }
+
+    [Fact]
+    public async Task Restoring_a_note_unfiled_from_its_topic_also_unfiles_it_in_search()
+    {
+        var client = await AuthenticatedClientAsync();
+        var topic = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Reused" }))
+            .Content.ReadFromJsonAsync<TopicResponse>();
+        var original = await CreateNamedNoteAsync(client, "original");
+        await client.PutAsJsonAsync($"/api/notes/{original.Id}/topic", new AssignNoteTopicRequest { TopicId = topic!.Id });
+        await client.DeleteAsync($"/api/notes/{original.Id}");
+        await client.PutAsJsonAsync($"/api/notes/by-topic/{topic.Id}", new UpdateNoteRequest { Content = "new occupant" });
+
+        await RestoreAsync(client, original.Id);
+
+        var inTopic = await client.GetFromJsonAsync<List<SearchResultResponse>>($"/api/search?topicId={topic.Id}");
+        Assert.DoesNotContain(inTopic!, r => r.Id == original.Id);
+    }
+
+    [Fact]
+    public async Task Restoring_does_not_change_the_notes_updated_at()
+    {
+        var client = await AuthenticatedClientAsync();
+        var created = await CreateNamedNoteAsync(client, "keeps its place");
+        // Read back from the database: the create response carries a finer timestamp than Postgres stores.
+        var before = await client.GetFromJsonAsync<NoteResponse>($"/api/notes/{created.Id}");
+        await client.DeleteAsync($"/api/notes/{created.Id}");
+
+        var restored = await (await RestoreAsync(client, created.Id)).Content.ReadFromJsonAsync<NoteResponse>();
+
+        Assert.Equal(before!.UpdatedAt, restored!.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task Restoring_a_note_with_a_unique_name_has_no_duplicate_name_warning()
+    {
+        var client = await AuthenticatedClientAsync();
+        var note = await CreateNamedNoteAsync(client, "Only one");
+        await client.DeleteAsync($"/api/notes/{note.Id}");
+
+        var restored = await (await RestoreAsync(client, note.Id)).Content.ReadFromJsonAsync<NoteResponse>();
+
+        Assert.False(restored!.HasDuplicateSiblingName);
+    }
+
+    [Fact]
+    public async Task Restoring_an_active_or_unknown_note_returns_not_found()
+    {
+        var client = await AuthenticatedClientAsync();
+        var active = await CreateNamedNoteAsync(client, "active");
+
+        Assert.Equal(HttpStatusCode.NotFound, (await RestoreAsync(client, active.Id)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await RestoreAsync(client, Guid.NewGuid())).StatusCode);
+    }
+
+    [Fact]
+    public async Task Another_user_cannot_delete_or_restore_my_tree()
+    {
+        var owner = await AuthenticatedClientAsync();
+        var root = await CreateNamedNoteAsync(owner, "root");
+        var child = await CreateNamedNoteAsync(owner, "child", root.Id);
+        using var other = await AuthenticatedClientAsync(_factory.CreateClient());
+
+        Assert.Equal(HttpStatusCode.NotFound, (await other.DeleteAsync($"/api/notes/{root.Id}")).StatusCode);
+        await owner.DeleteAsync($"/api/notes/{root.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, (await RestoreAsync(other, root.Id)).StatusCode);
+        Assert.DoesNotContain(await TrashAsync(other), n => n.Id == root.Id || n.Id == child.Id);
     }
 }

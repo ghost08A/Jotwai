@@ -89,8 +89,8 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
     [HttpPost("{id:guid}/restore")]
     public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
     {
-        var restored = await notesService.RestoreAsync(CurrentUserId(), id, cancellationToken);
-        return restored ? NoContent() : NotFound();
+        var result = await notesService.RestoreAsync(CurrentUserId(), id, cancellationToken);
+        return result.Succeeded ? Ok(result.Note) : MapWriteFailure(result);
     }
 
     [HttpPut("{id:guid}/topic")]
@@ -135,6 +135,7 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
     {
         NoteWriteFailureReason.ParentNotFound => BadRequest(new { error = "Parent Note not found." }),
         NoteWriteFailureReason.InvalidName => BadRequest(new { error = "Name must be 1-200 characters." }),
+        NoteWriteFailureReason.ParentInTrash => Conflict(new { error = "Restore the parent Note first - it is still in the Trash." }),
         NoteWriteFailureReason.NotFound => NotFound(),
         _ => StatusCode(StatusCodes.Status500InternalServerError),
     };
