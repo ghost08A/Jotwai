@@ -12,7 +12,17 @@ export interface NoteResponse {
 }
 
 export interface CreateNoteRequest {
+  name: string;
   content: string;
+  parentId?: string;
+}
+
+export interface RenameNoteRequest {
+  name: string;
+}
+
+export interface MoveNoteRequest {
+  parentId: string | null;
 }
 
 export interface UpdateNoteRequest {

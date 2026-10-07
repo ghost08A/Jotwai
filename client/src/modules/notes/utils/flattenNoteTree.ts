@@ -26,3 +26,15 @@ export function flattenNoteTree(notes: NoteResponse[]): NoteTreeRow[] {
   visit(null, 0);
   return rows;
 }
+
+// The rows a note may be moved under: everything except the note itself and its own
+// descendants (rows are parent-first, so the descendants are the deeper rows right after it).
+// Note: the backend is the real guard - this only keeps impossible choices out of the list.
+export function listMoveTargets(rows: NoteTreeRow[], noteId: string): NoteTreeRow[] {
+  const index = rows.findIndex((row) => row.note.id === noteId);
+  if (index === -1) return rows;
+
+  let end = index + 1;
+  while (end < rows.length && rows[end].depth > rows[index].depth) end++;
+  return [...rows.slice(0, index), ...rows.slice(end)];
+}

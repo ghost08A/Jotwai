@@ -1,9 +1,19 @@
 import axios from "axios";
 import { httpClient } from "../../../core/http/httpClient";
-import type { CreateNoteRequest, NoteResponse, UpdateNoteRequest } from "../types";
+import type { CreateNoteRequest, MoveNoteRequest, NoteResponse, RenameNoteRequest, UpdateNoteRequest } from "../types";
 
 export async function createNote(request: CreateNoteRequest): Promise<NoteResponse> {
   const { data } = await httpClient.post<NoteResponse>("/api/notes", request);
+  return data;
+}
+
+export async function renameNote(id: string, request: RenameNoteRequest): Promise<NoteResponse> {
+  const { data } = await httpClient.put<NoteResponse>(`/api/notes/${id}/name`, request);
+  return data;
+}
+
+export async function moveNote(id: string, request: MoveNoteRequest): Promise<NoteResponse> {
+  const { data } = await httpClient.put<NoteResponse>(`/api/notes/${id}/parent`, request);
   return data;
 }
 
