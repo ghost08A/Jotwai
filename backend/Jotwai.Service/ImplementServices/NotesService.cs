@@ -102,8 +102,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
                 return NoteWriteResult.Failure(NoteWriteFailureReason.CircularMove);
         }
 
-        var oldParentId = note.ParentId;
-        var hasMoved = oldParentId != request.ParentId;
+        var hasMoved = note.ParentId != request.ParentId;
         if (hasMoved)
         {
             note.ParentId = request.ParentId;
@@ -114,7 +113,7 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
 
         // Search filters by parent, so it needs to hear about the move (ticket 3/7).
         if (hasMoved)
-            await eventPublisher.PublishAsync(new NoteParentChanged(note.Id, note.UserId, oldParentId, note.ParentId, note.UpdatedAt), cancellationToken);
+            await eventPublisher.PublishAsync(new NoteParentChanged(note.Id, note.UserId, note.ParentId, note.UpdatedAt), cancellationToken);
 
         var categoryIds = await CategoryIdsForAsync(noteId, cancellationToken);
         return NoteWriteResult.Success(ToResponse(note, categoryIds, await HasDuplicateSiblingNameAsync(note, cancellationToken)));
