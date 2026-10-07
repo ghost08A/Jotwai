@@ -7,6 +7,7 @@ export async function search(params: SearchParams): Promise<SearchResultResponse
     // expects the key repeated instead (`categoryIds=...&categoryIds=...`).
     const query = new URLSearchParams();
     if (params.q) query.set("q", params.q);
+    if (params.parentId) query.set("parentId", params.parentId);
     for (const categoryId of params.categoryIds) query.append("categoryIds", categoryId);
 
     const { data } = await httpClient.get<SearchResultResponse[]>(`/api/search?${query.toString()}`);

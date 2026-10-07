@@ -4,7 +4,9 @@ import { useDeleteNote } from "../hooks/useDeleteNote";
 import { useMoveNote } from "../hooks/useMoveNote";
 import { CreateNoteForm } from "./CreateNoteForm";
 import { DuplicateNameWarning } from "./DuplicateNameWarning";
+import { NoteCategoryChips } from "./NoteCategoryChips";
 import { NoteEditForm } from "./NoteEditForm";
+import { NoteAiSuggestionPanel } from "../../ai-categorization/components/NoteAiSuggestionPanel";
 import { getErrorMessage } from "../../../shared/utils/getErrorMessage";
 import type { NoteTreeRow } from "../utils/flattenNoteTree";
 
@@ -48,9 +50,11 @@ export function NoteTreeItem({ row, moveTargets }: NoteTreeItemProps) {
         ) : (
           <>
             <p className="text-base font-medium text-card-foreground">{note.name || "Untitled"}</p>
-            <p className="line-clamp-2 whitespace-pre-line text-base text-muted-foreground">
+            <p className="mb-3 line-clamp-2 whitespace-pre-line text-base text-muted-foreground">
               {note.content || "Empty note"}
             </p>
+            <NoteCategoryChips noteId={note.id} categoryIds={note.categoryIds} />
+            <NoteAiSuggestionPanel noteId={note.id} />
           </>
         )}
 
