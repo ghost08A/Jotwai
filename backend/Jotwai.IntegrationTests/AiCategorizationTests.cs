@@ -55,7 +55,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
     public async Task Creating_a_note_with_content_eventually_produces_a_suggestion()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "Plan the quarterly roadmap" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "Plan the quarterly roadmap" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var suggestion = await WaitForSuggestionAsync(client, note!.Id);
@@ -69,7 +69,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
     public async Task Low_confidence_never_produces_a_visible_suggestion()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "NOCONFIDENCE unclear scribble" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "NOCONFIDENCE unclear scribble" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         // Give the (fast, test-only) poller several ticks to have processed it, then assert
@@ -84,7 +84,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
     public async Task Manual_trigger_produces_a_fresh_suggestion_and_resolves_the_old_one()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "Plan the quarterly roadmap" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "Plan the quarterly roadmap" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var firstSuggestion = await WaitForSuggestionAsync(client, note!.Id);
@@ -103,7 +103,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
     public async Task Editing_a_note_never_triggers_a_second_categorization()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "first real content" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "first real content" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var firstSuggestion = await WaitForSuggestionAsync(client, note!.Id);
@@ -125,7 +125,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
     public async Task Accepting_candidates_atomically_creates_categories_and_attaches_them()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "Plan the quarterly roadmap" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "Plan the quarterly roadmap" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var suggestion = await WaitForSuggestionAsync(client, note!.Id);
@@ -150,7 +150,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
     public async Task Ignoring_a_suggestion_resolves_it_without_attaching_anything()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "Plan the quarterly roadmap" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "Plan the quarterly roadmap" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var suggestion = await WaitForSuggestionAsync(client, note!.Id);
@@ -173,7 +173,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
         var existing = await (await client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Roadmap" }))
             .Content.ReadFromJsonAsync<CategoryResponse>();
 
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "This mentions Roadmap directly" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "This mentions Roadmap directly" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var suggestion = await WaitForSuggestionAsync(client, note!.Id);
@@ -194,7 +194,7 @@ public sealed class AiCategorizationTests : IClassFixture<JotwaiApiFactory>
     public async Task Accepting_with_an_invalid_candidate_id_fails_the_whole_request()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "Plan the quarterly roadmap" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "Plan the quarterly roadmap" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var suggestion = await WaitForSuggestionAsync(client, note!.Id);

@@ -135,7 +135,7 @@ public sealed class TopicSuggestionTests : IClassFixture<JotwaiApiFactory>
             new CreateTopicRequest { Name = "Child", ParentId = duplicate!.Id }))
             .Content.ReadFromJsonAsync<TopicResponse>();
 
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "filed under the duplicate" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "filed under the duplicate" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
         await client.PutAsJsonAsync($"/api/notes/{note!.Id}/topic", new AssignNoteTopicRequest { TopicId = duplicate.Id });
 

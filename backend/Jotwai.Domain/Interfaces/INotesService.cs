@@ -6,7 +6,16 @@ namespace Jotwai.Domain.Interfaces;
 
 public interface INotesService
 {
-    Task<NoteResponse> CreateAsync(Guid userId, CreateNoteRequest request, CancellationToken cancellationToken = default);
+    /// <summary>Creates a Note with a required name, optionally under a parent Note. Fails with
+    /// <see cref="NoteWriteFailureReason.InvalidName"/> if the name is empty or longer than 200
+    /// characters once trimmed, or <see cref="NoteWriteFailureReason.ParentNotFound"/> if the
+    /// parent doesn't exist for this user or is in the Trash.</summary>
+    Task<NoteWriteResult> CreateAsync(Guid userId, CreateNoteRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Changes only the Note's name - never its content, so it can't clash with
+    /// autosave. Same name rules as <see cref="CreateAsync"/>; not found (or in the Trash) is
+    /// <see cref="NoteWriteFailureReason.NotFound"/>.</summary>
+    Task<NoteWriteResult> RenameAsync(Guid userId, Guid noteId, RenameNoteRequest request, CancellationToken cancellationToken = default);
 
     Task<NoteResponse?> GetByIdAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default);
 

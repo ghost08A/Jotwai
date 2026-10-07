@@ -31,6 +31,17 @@ public sealed class NoteConfiguration : IEntityTypeConfiguration<Note>
         builder.Property(n => n.Content)
             .IsRequired();
 
+        // Name and parent of the merged Note (ADR-0013). Sibling names are deliberately NOT
+        // unique - duplicates are allowed and only warned about, so no index covers Name.
+        builder.Property(n => n.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.HasOne<Note>()
+            .WithMany()
+            .HasForeignKey(n => n.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(n => n.CreatedAt)
             .IsRequired();
 

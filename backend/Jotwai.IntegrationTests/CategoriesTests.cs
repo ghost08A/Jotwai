@@ -86,7 +86,7 @@ public sealed class CategoriesTests : IClassFixture<JotwaiApiFactory>
         var client = await AuthenticatedClientAsync();
         var category = await (await client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Ideas" }))
             .Content.ReadFromJsonAsync<CategoryResponse>();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "note" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "note" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
         await client.PostAsync($"/api/notes/{note!.Id}/categories/{category!.Id}", null);
 
@@ -103,7 +103,7 @@ public sealed class CategoriesTests : IClassFixture<JotwaiApiFactory>
             .Content.ReadFromJsonAsync<CategoryResponse>();
         var urgent = await (await client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Urgent" }))
             .Content.ReadFromJsonAsync<CategoryResponse>();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "note" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "note" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         await client.PostAsync($"/api/notes/{note!.Id}/categories/{work!.Id}", null);
@@ -122,7 +122,7 @@ public sealed class CategoriesTests : IClassFixture<JotwaiApiFactory>
         var client = await AuthenticatedClientAsync();
         var category = await (await client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Ideas" }))
             .Content.ReadFromJsonAsync<CategoryResponse>();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "note" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "note" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         await client.PostAsync($"/api/notes/{note!.Id}/categories/{category!.Id}", null);
@@ -137,7 +137,7 @@ public sealed class CategoriesTests : IClassFixture<JotwaiApiFactory>
     public async Task Attaching_a_nonexistent_category_returns_bad_request()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "note" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "note" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var response = await client.PostAsync($"/api/notes/{note!.Id}/categories/{Guid.NewGuid()}", null);
@@ -151,7 +151,7 @@ public sealed class CategoriesTests : IClassFixture<JotwaiApiFactory>
         var client = await AuthenticatedClientAsync();
         var category = await (await client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Ideas" }))
             .Content.ReadFromJsonAsync<CategoryResponse>();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "note" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "note" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
         await client.PostAsync($"/api/notes/{note!.Id}/categories/{category!.Id}", null);
 
@@ -168,7 +168,7 @@ public sealed class CategoriesTests : IClassFixture<JotwaiApiFactory>
         var client = await AuthenticatedClientAsync();
         var category = await (await client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest { Name = "Ideas" }))
             .Content.ReadFromJsonAsync<CategoryResponse>();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "note" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "note" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
         await client.PostAsync($"/api/notes/{note!.Id}/categories/{category!.Id}", null);
 

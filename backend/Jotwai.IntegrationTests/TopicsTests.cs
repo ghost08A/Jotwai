@@ -139,7 +139,7 @@ public sealed class TopicsTests : IClassFixture<JotwaiApiFactory>
         var client = await AuthenticatedClientAsync();
         var topic = await (await client.PostAsJsonAsync("/api/topics", new CreateTopicRequest { Name = "Projects" }))
             .Content.ReadFromJsonAsync<TopicResponse>();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "under Projects" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "under Projects" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
         await client.PutAsJsonAsync($"/api/notes/{note!.Id}/topic", new AssignNoteTopicRequest { TopicId = topic!.Id });
 
@@ -161,7 +161,7 @@ public sealed class TopicsTests : IClassFixture<JotwaiApiFactory>
     public async Task Assigning_a_note_to_a_nonexistent_topic_returns_bad_request()
     {
         var client = await AuthenticatedClientAsync();
-        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "loose" }))
+        var note = await (await client.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "loose" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var response = await client.PutAsJsonAsync($"/api/notes/{note!.Id}/topic", new AssignNoteTopicRequest { TopicId = Guid.NewGuid() });
@@ -177,7 +177,7 @@ public sealed class TopicsTests : IClassFixture<JotwaiApiFactory>
             .Content.ReadFromJsonAsync<TopicResponse>();
 
         using var otherClient = await AuthenticatedClientAsync(_factory.CreateClient());
-        var note = await (await otherClient.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Content = "mine" }))
+        var note = await (await otherClient.PostAsJsonAsync("/api/notes", new CreateNoteRequest { Name = "Test note", Content = "mine" }))
             .Content.ReadFromJsonAsync<NoteResponse>();
 
         var response = await otherClient.PutAsJsonAsync($"/api/notes/{note!.Id}/topic", new AssignNoteTopicRequest { TopicId = topic!.Id });

@@ -11,14 +11,33 @@ namespace Jotwai.Service.ImplementServices;
 
 public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublisher) : INotesService
 {
-    public async Task<NoteResponse> CreateAsync(Guid userId, CreateNoteRequest request, CancellationToken cancellationToken = default)
+    // Matches the Name column's max length in NoteConfiguration.
+    private const int MaxNameLength = 200;
+
+    public async Task<NoteWriteResult> CreateAsync(Guid userId, CreateNoteRequest request, CancellationToken cancellationToken = default)
     {
+        var name = NormalizeName(request.Name);
+        if (name is null)
+            return NoteWriteResult.Failure(NoteWriteFailureReason.InvalidName);
+
+        // The parent must be the user's own active Note - a Note in the Trash isn't a valid
+        // parent, and another user's Note looks exactly like a missing one (no leak).
+        if (request.ParentId is { } parentId)
+        {
+            var parentIsActive = await db.Notes.AnyAsync(
+                n => n.Id == parentId && n.UserId == userId && n.DeletedAt == null, cancellationToken);
+            if (!parentIsActive)
+                return NoteWriteResult.Failure(NoteWriteFailureReason.ParentNotFound);
+        }
+
         var now = DateTimeOffset.UtcNow;
         var hasContent = !string.IsNullOrWhiteSpace(request.Content);
         var note = new Note
         {
             Id = Guid.NewGuid(),
             UserId = userId,
+            Name = name,
+            ParentId = request.ParentId,
             Content = request.Content,
             CreatedAt = now,
             UpdatedAt = now,
@@ -34,7 +53,27 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         if (hasContent)
             await eventPublisher.PublishAsync(new NoteReadyForCategorization(note.Id, note.UserId, note.Content, now), cancellationToken);
 
-        return ToResponse(note, []);
+        return NoteWriteResult.Success(ToResponse(note, []));
+    }
+
+    public async Task<NoteWriteResult> RenameAsync(Guid userId, Guid noteId, RenameNoteRequest request, CancellationToken cancellationToken = default)
+    {
+        var note = await db.Notes.SingleOrDefaultAsync(n => n.Id == noteId && n.UserId == userId && n.DeletedAt == null, cancellationToken);
+        if (note is null)
+            return NoteWriteResult.Failure(NoteWriteFailureReason.NotFound);
+
+        var name = NormalizeName(request.Name);
+        if (name is null)
+            return NoteWriteResult.Failure(NoteWriteFailureReason.InvalidName);
+
+        // Only Name and UpdatedAt change - Content and the AI trigger are untouched, so a
+        // rename never counts as a content save.
+        note.Name = name;
+        note.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+
+        var categoryIds = await CategoryIdsForAsync(noteId, cancellationToken);
+        return NoteWriteResult.Success(ToResponse(note, categoryIds));
     }
 
     public async Task<NoteResponse?> GetByIdAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default)
@@ -311,10 +350,19 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         return notes.Select(n => ToResponse(n, categoriesByNoteId.GetValueOrDefault(n.Id, []))).ToList();
     }
 
+    // Trims the name; null means invalid (empty after trimming, or over the max length).
+    private static string? NormalizeName(string? name)
+    {
+        var trimmed = name?.Trim();
+        return string.IsNullOrEmpty(trimmed) || trimmed.Length > MaxNameLength ? null : trimmed;
+    }
+
     private static NoteResponse ToResponse(Note note, IReadOnlyList<Guid> categoryIds) => new()
     {
         Id = note.Id,
+        Name = note.Name,
         Content = note.Content,
+        ParentId = note.ParentId,
         TopicId = note.TopicId,
         CategoryIds = categoryIds,
         CreatedAt = note.CreatedAt,

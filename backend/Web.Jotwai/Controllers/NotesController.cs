@@ -16,8 +16,15 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(CreateNoteRequest request, CancellationToken cancellationToken)
     {
-        var note = await notesService.CreateAsync(CurrentUserId(), request, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created, note);
+        var result = await notesService.CreateAsync(CurrentUserId(), request, cancellationToken);
+        return result.Succeeded ? StatusCode(StatusCodes.Status201Created, result.Note) : MapWriteFailure(result);
+    }
+
+    [HttpPut("{id:guid}/name")]
+    public async Task<IActionResult> Rename(Guid id, RenameNoteRequest request, CancellationToken cancellationToken)
+    {
+        var result = await notesService.RenameAsync(CurrentUserId(), id, request, cancellationToken);
+        return result.Succeeded ? Ok(result.Note) : MapWriteFailure(result);
     }
 
     [HttpGet]
@@ -123,6 +130,14 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
         var note = await notesService.DetachCategoryAsync(CurrentUserId(), id, categoryId, cancellationToken);
         return note is null ? NotFound() : Ok(note);
     }
+
+    private IActionResult MapWriteFailure(NoteWriteResult result) => result.FailureReason switch
+    {
+        NoteWriteFailureReason.ParentNotFound => BadRequest(new { error = "Parent Note not found." }),
+        NoteWriteFailureReason.InvalidName => BadRequest(new { error = "Name must be 1-200 characters." }),
+        NoteWriteFailureReason.NotFound => NotFound(),
+        _ => StatusCode(StatusCodes.Status500InternalServerError),
+    };
 
     // [Authorize] already guarantees a valid, signed token with a "sub" claim (see
     // AuthController.Me) - Guid.Parse here can only throw on a token-format change,

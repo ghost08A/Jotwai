@@ -70,6 +70,14 @@ namespace Jotwai.Domain.Models.Database.Migrations.Notes
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("TopicId")
                         .HasColumnType("uuid");
 
@@ -80,6 +88,8 @@ namespace Jotwai.Domain.Models.Database.Migrations.Notes
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
 
                     b.HasIndex("TopicId")
                         .IsUnique()
@@ -103,6 +113,14 @@ namespace Jotwai.Domain.Models.Database.Migrations.Notes
                     b.HasIndex("CategoryId");
 
                     b.ToTable("NoteCategories", "notes");
+                });
+
+            modelBuilder.Entity("Jotwai.Domain.Models.Note", b =>
+                {
+                    b.HasOne("Jotwai.Domain.Models.Note", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Jotwai.Domain.Models.NoteCategory", b =>
