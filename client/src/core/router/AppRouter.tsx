@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ROUTES } from "../../shared/routes/paths";
 import { PrivateLayout } from "../layouts/PrivateLayout";
+import { NotesPage } from "../../modules/notes/components/NotesPage";
 import { TrashPage } from "../../modules/notes/components/TrashPage";
 import { TopicBrowserPage } from "../../modules/organization/components/TopicBrowserPage";
 import { TopicDetailPage } from "../../modules/organization/components/TopicDetailPage";
@@ -21,6 +22,7 @@ export function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route element={<PrivateLayout />}>
             <Route path={ROUTES.home} element={<TopicBrowserPage />} />
+            <Route path={ROUTES.notes} element={<NotesPage />} />
             <Route path={ROUTES.trash} element={<TrashPage />} />
             <Route path={ROUTES.topicDetailPattern} element={<TopicDetailPage />} />
             <Route path={ROUTES.categories} element={<CategoriesPage />} />

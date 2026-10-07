@@ -43,8 +43,9 @@ export async function deleteNote(id: string): Promise<void> {
   await httpClient.delete(`/api/notes/${id}`);
 }
 
-export async function restoreNote(id: string): Promise<void> {
-  await httpClient.post(`/api/notes/${id}/restore`);
+export async function restoreNote(id: string): Promise<NoteResponse> {
+  const { data } = await httpClient.post<NoteResponse>(`/api/notes/${id}/restore`);
+  return data;
 }
 
 export async function assignNoteTopic(id: string, topicId: string | null): Promise<NoteResponse> {
