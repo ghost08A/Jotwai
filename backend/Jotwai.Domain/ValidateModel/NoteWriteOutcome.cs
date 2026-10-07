@@ -6,6 +6,7 @@ public enum NoteWriteFailureReason
 {
     NotFound,
     ParentNotFound,
+    CircularMove,
     InvalidName,
     ParentInTrash,
 }

@@ -77,6 +77,41 @@ public sealed class NotesService(NotesDbContext db, IEventPublisher eventPublish
         return NoteWriteResult.Success(ToResponse(note, categoryIds, await HasDuplicateSiblingNameAsync(note, cancellationToken)));
     }
 
+    public async Task<NoteWriteResult> MoveAsync(Guid userId, Guid noteId, MoveNoteRequest request, CancellationToken cancellationToken = default)
+    {
+        // Serializable so two moves at once can't each look fine alone yet together form a loop
+        // (A under B while B goes under A).
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
+        var note = await db.Notes.SingleOrDefaultAsync(n => n.Id == noteId && n.UserId == userId && n.DeletedAt == null, cancellationToken);
+        if (note is null)
+            return NoteWriteResult.Failure(NoteWriteFailureReason.NotFound);
+
+        if (request.ParentId is { } parentId)
+        {
+            var parentIsActive = await db.Notes.AnyAsync(
+                n => n.Id == parentId && n.UserId == userId && n.DeletedAt == null, cancellationToken);
+            if (!parentIsActive)
+                return NoteWriteResult.Failure(NoteWriteFailureReason.ParentNotFound);
+
+            // The Note itself is part of its own subtree, so this also rejects "under itself".
+            var subtreeIds = await ActiveSubtreeIdsAsync(userId, noteId, cancellationToken);
+            if (subtreeIds.Contains(parentId))
+                return NoteWriteResult.Failure(NoteWriteFailureReason.CircularMove);
+        }
+
+        if (note.ParentId != request.ParentId)
+        {
+            note.ParentId = request.ParentId;
+            note.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        await transaction.CommitAsync(cancellationToken);
+
+        var categoryIds = await CategoryIdsForAsync(noteId, cancellationToken);
+        return NoteWriteResult.Success(ToResponse(note, categoryIds, await HasDuplicateSiblingNameAsync(note, cancellationToken)));
+    }
+
     public async Task<NoteResponse?> GetByIdAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default)
     {
         var note = await db.Notes.AsNoTracking()

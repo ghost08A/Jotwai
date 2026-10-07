@@ -17,6 +17,13 @@ public interface INotesService
     /// <see cref="NoteWriteFailureReason.NotFound"/>.</summary>
     Task<NoteWriteResult> RenameAsync(Guid userId, Guid noteId, RenameNoteRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Moves the Note (with all its descendants) under another Note, or to the top level when
+    /// the parent is null. Fails with <see cref="NoteWriteFailureReason.NotFound"/> if the Note isn't the
+    /// user's active Note, <see cref="NoteWriteFailureReason.ParentNotFound"/> if the target parent isn't,
+    /// or <see cref="NoteWriteFailureReason.CircularMove"/> if the target is the Note itself or one of
+    /// its descendants. A duplicate sibling name is only a warning on the response.</summary>
+    Task<NoteWriteResult> MoveAsync(Guid userId, Guid noteId, MoveNoteRequest request, CancellationToken cancellationToken = default);
+
     Task<NoteResponse?> GetByIdAsync(Guid userId, Guid noteId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<NoteResponse>> ListAsync(Guid userId, CancellationToken cancellationToken = default);

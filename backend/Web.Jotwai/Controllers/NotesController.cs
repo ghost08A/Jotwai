@@ -27,6 +27,13 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
         return result.Succeeded ? Ok(result.Note) : MapWriteFailure(result);
     }
 
+    [HttpPut("{id:guid}/parent")]
+    public async Task<IActionResult> Move(Guid id, MoveNoteRequest request, CancellationToken cancellationToken)
+    {
+        var result = await notesService.MoveAsync(CurrentUserId(), id, request, cancellationToken);
+        return result.Succeeded ? Ok(result.Note) : MapWriteFailure(result);
+    }
+
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
@@ -135,6 +142,7 @@ public sealed class NotesController(INotesService notesService) : ControllerBase
     {
         NoteWriteFailureReason.ParentNotFound => BadRequest(new { error = "Parent Note not found." }),
         NoteWriteFailureReason.InvalidName => BadRequest(new { error = "Name must be 1-200 characters." }),
+        NoteWriteFailureReason.CircularMove => Conflict(new { error = "A Note can't be moved under itself or one of its own sub-notes." }),
         NoteWriteFailureReason.ParentInTrash => Conflict(new { error = "Restore the parent Note first - it is still in the Trash." }),
         NoteWriteFailureReason.NotFound => NotFound(),
         _ => StatusCode(StatusCodes.Status500InternalServerError),

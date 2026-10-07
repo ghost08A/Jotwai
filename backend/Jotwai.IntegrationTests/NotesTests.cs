@@ -408,6 +408,108 @@ public sealed class NotesTests : IClassFixture<JotwaiApiFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    // --- Moving a Note (Spec 1, ticket 1/7) ---
+
+    private static Task<HttpResponseMessage> MoveAsync(HttpClient client, Guid id, Guid? parentId) =>
+        client.PutAsJsonAsync($"/api/notes/{id}/parent", new MoveNoteRequest { ParentId = parentId });
+
+    [Fact]
+    public async Task Move_puts_a_note_under_another_parent_and_keeps_its_children()
+    {
+        var client = await AuthenticatedClientAsync();
+        var newParent = await CreateNamedNoteAsync(client, "new parent");
+        var moved = await CreateNamedNoteAsync(client, "moved");
+        var child = await CreateNamedNoteAsync(client, "child", moved.Id);
+
+        var response = await MoveAsync(client, moved.Id, newParent.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<NoteResponse>();
+        Assert.Equal(newParent.Id, result!.ParentId);
+        var active = await ActiveAsync(client);
+        Assert.Equal(newParent.Id, active.Single(n => n.Id == moved.Id).ParentId);
+        Assert.Equal(moved.Id, active.Single(n => n.Id == child.Id).ParentId);
+    }
+
+    [Fact]
+    public async Task Move_to_null_brings_a_note_up_to_the_top_level()
+    {
+        var client = await AuthenticatedClientAsync();
+        var parent = await CreateNamedNoteAsync(client, "parent");
+        var child = await CreateNamedNoteAsync(client, "child", parent.Id);
+
+        var response = await MoveAsync(client, child.Id, null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null((await response.Content.ReadFromJsonAsync<NoteResponse>())!.ParentId);
+    }
+
+    [Fact]
+    public async Task Move_under_itself_or_a_descendant_is_a_conflict_and_changes_nothing()
+    {
+        var client = await AuthenticatedClientAsync();
+        var root = await CreateNamedNoteAsync(client, "root");
+        var child = await CreateNamedNoteAsync(client, "child", root.Id);
+        var grandchild = await CreateNamedNoteAsync(client, "grandchild", child.Id);
+
+        Assert.Equal(HttpStatusCode.Conflict, (await MoveAsync(client, root.Id, root.Id)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await MoveAsync(client, root.Id, child.Id)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await MoveAsync(client, root.Id, grandchild.Id)).StatusCode);
+
+        Assert.Null((await ActiveAsync(client)).Single(n => n.Id == root.Id).ParentId);
+    }
+
+    [Fact]
+    public async Task Move_under_a_missing_trashed_or_other_users_note_is_a_bad_request()
+    {
+        var client = await AuthenticatedClientAsync();
+        var note = await CreateNamedNoteAsync(client, "note");
+        var trashed = await CreateNamedNoteAsync(client, "trashed");
+        await client.DeleteAsync($"/api/notes/{trashed.Id}");
+        using var other = await AuthenticatedClientAsync(_factory.CreateClient());
+        var othersNote = await CreateNamedNoteAsync(other, "theirs");
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await MoveAsync(client, note.Id, Guid.NewGuid())).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await MoveAsync(client, note.Id, trashed.Id)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await MoveAsync(client, note.Id, othersNote.Id)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Move_to_a_parent_with_a_same_named_child_succeeds_with_a_duplicate_name_warning()
+    {
+        var client = await AuthenticatedClientAsync();
+        var parent = await CreateNamedNoteAsync(client, "parent");
+        await CreateNamedNoteAsync(client, "Ideas", parent.Id);
+        var moved = await CreateNamedNoteAsync(client, "ideas");
+
+        var response = await MoveAsync(client, moved.Id, parent.Id);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True((await response.Content.ReadFromJsonAsync<NoteResponse>())!.HasDuplicateSiblingName);
+    }
+
+    [Fact]
+    public async Task Move_of_someone_elses_or_a_trashed_or_unknown_note_returns_not_found()
+    {
+        var owner = await AuthenticatedClientAsync();
+        var note = await CreateNamedNoteAsync(owner, "mine");
+        var trashed = await CreateNamedNoteAsync(owner, "trashed");
+        await owner.DeleteAsync($"/api/notes/{trashed.Id}");
+        using var intruder = await AuthenticatedClientAsync(_factory.CreateClient());
+
+        Assert.Equal(HttpStatusCode.NotFound, (await MoveAsync(intruder, note.Id, null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await MoveAsync(owner, trashed.Id, null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await MoveAsync(owner, Guid.NewGuid(), null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Move_rejects_requests_without_a_token()
+    {
+        var response = await MoveAsync(_factory.CreateClient(), Guid.NewGuid(), null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     // --- Whole-tree Trash (Spec 1, ticket 2/7) ---
 
     private static Task<HttpResponseMessage> RestoreAsync(HttpClient client, Guid id) =>
